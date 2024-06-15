@@ -4,4 +4,19 @@ version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
 
+[lib]
+name = "evalica"
+crate-type = ["cdylib"]
+
 [dependencies]
+pyo3 = "0.21.1"
+ndarray = "0.15.6"
+ndarray-linalg = "0.16.0"
+num-traits = "0.2.19"
+approx = "0.5.1"
+rand = "0.8.5"
+numpy = "0.21.0"
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
