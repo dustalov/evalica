@@ -25,6 +25,9 @@ jobs:
       with:
         python-version: "3.11"
     - name: Set up Maturin
-      run: maturin develop
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install maturin
+        maturin develop
     - name: Run tests (Python)
       run: python3 -m unittest discover python
