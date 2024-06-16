@@ -8,6 +8,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DO_NOT_TRACK: 1
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
 
 jobs:
   build:
@@ -16,9 +18,11 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
-    - name: Run tests
+    - name: Run tests (Rust)
       run: cargo test --verbose
     - uses: PyO3/maturin-action@v1
       with:
         command: build
         args: --release
+    - name: Run tests (Python)
+      run: python3 -m unittest discover python
