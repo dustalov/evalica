@@ -32,7 +32,7 @@ jobs:
         echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
     - name: Set up Maturin
       run: |
-        uv pip install maturin
+        uv pip install pip maturin
         maturin develop
     - name: Run tests (Python)
       run: python3 -m unittest discover python
