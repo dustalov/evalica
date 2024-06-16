@@ -5,6 +5,7 @@ build-backend = "maturin"
 [project]
 name = "evalica"
 requires-python = ">= 3.8"
+dependencies = ["numpy~=1.26.4"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -14,3 +15,4 @@ dynamic = ["version"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "python"
