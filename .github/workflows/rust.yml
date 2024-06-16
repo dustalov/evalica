@@ -24,5 +24,7 @@ jobs:
       with:
         command: build
         args: --release
+    - name: Set up Maturin
+      run: maturin develop
     - name: Run tests (Python)
       run: python3 -m unittest discover python
