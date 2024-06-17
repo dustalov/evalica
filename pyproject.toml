@@ -4,6 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "evalica"
+license = "Apache-2.0"
 requires-python = ">= 3.8"
 dependencies = ["numpy~=1.26.4"]
 classifiers = [
@@ -19,6 +20,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = ["mypy"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
