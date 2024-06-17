@@ -8,6 +8,12 @@ import numpy.typing as npt
 import evalica
 
 
+class TestMeta(unittest.TestCase):
+    def test_version(self) -> None:
+        self.assertIsInstance(evalica.__version__, str)
+        self.assertGreater(len(evalica.__version__), 0)
+
+
 class TestUnordered(unittest.TestCase):
     def setUp(self) -> None:
         self.M: npt.NDArray[np.int64] = np.array([

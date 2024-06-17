@@ -1,5 +1,5 @@
-use numpy::{IntoPyArray, PyArray1, PyArray2};
 use numpy::PyArrayMethods;
+use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 mod bradley_terry;
@@ -27,6 +27,7 @@ fn py_newman(
 
 #[pymodule]
 fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(py_bradley_terry, m)?)?;
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;
     Ok(())

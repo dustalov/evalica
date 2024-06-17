@@ -1,3 +1,3 @@
-from .evalica import py_bradley_terry as bradley_terry, py_newman as newman
+from .evalica import __version__, py_bradley_terry as bradley_terry, py_newman as newman
 
-__all__ = ['bradley_terry', 'newman']
+__all__ = ['__version__', 'bradley_terry', 'newman']
