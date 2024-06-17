@@ -26,6 +26,10 @@ jobs:
           target/
         # Cargo.lock is in .gitignore, so we use Cargo.toml
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
     - name: Build
       run: cargo build --verbose
     - name: Run tests (Rust)
@@ -34,10 +38,6 @@ jobs:
       with:
         command: build
         args: --release
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
     - name: Create virtual environment
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
