@@ -36,7 +36,10 @@ jobs:
         echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
     - name: Set up Maturin
       run: |
-        uv pip install pip maturin
+        uv pip install pip maturin mypy
         maturin develop
+    - uses: chartboost/ruff-action@v1
+    - name: Run Mypy
+      run: mypy .
     - name: Run tests (Python)
       run: python3 -m unittest discover python
