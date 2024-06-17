@@ -9,7 +9,6 @@ import evalica
 
 
 class TestUnordered(unittest.TestCase):
-    @classmethod
     def setUp(self) -> None:
         self.M: npt.NDArray[np.int64] = np.array([
             [0, 1, 2, 0, 1],
@@ -22,14 +21,14 @@ class TestUnordered(unittest.TestCase):
     def test_bradley_terry(self) -> None:
         p, iterations = evalica.bradley_terry(self.M)
 
-        assert np.isfinite(p).all()
-        assert iterations > 0
+        self.assertTrue(np.isfinite(p).all())
+        self.assertGreater(iterations, 0)
 
     def test_newman(self) -> None:
         p, iterations = evalica.newman(self.M, 0, 1e-6, 100)
 
-        assert np.isfinite(p).all()
-        assert iterations > 0
+        self.assertTrue(np.isfinite(p).all())
+        self.assertGreater(iterations, 0)
 
 
 if __name__ == '__main__':
