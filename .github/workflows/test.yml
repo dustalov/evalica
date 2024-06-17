@@ -24,7 +24,8 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        # Cargo.lock is in .gitignore, so we use Cargo.toml
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests (Rust)
