@@ -22,7 +22,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["mypy"]
+dev = ["mypy", "ruff"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
