@@ -82,6 +82,10 @@ jobs:
       with:
         python-version: "3.12"
         architecture: ${{ matrix.python-architecture || 'x64' }}
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install twine
     - name: Build
       uses: PyO3/maturin-action@v1
       with:
