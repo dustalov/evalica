@@ -15,6 +15,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: test
+    permissions:
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/cache@v4
@@ -51,3 +54,7 @@ jobs:
       run: mypy .
     - name: Run tests (Python)
       run: python3 -m unittest discover python
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
