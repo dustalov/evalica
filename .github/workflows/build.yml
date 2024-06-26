@@ -114,7 +114,7 @@ jobs:
     needs: build
     steps:
     - name: Download packages
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         pattern: wheel_*
         merge-multiple: true
