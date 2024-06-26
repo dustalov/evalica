@@ -24,6 +24,18 @@ class TestUnordered(unittest.TestCase):
             [2, 0, 1, 3, 0],
         ], dtype=np.int64)
 
+    def test_matrices(self) -> None:
+        first = [0, 1]
+        second = [1, 0]
+        statuses = [0, 0]
+
+        wins, ties = evalica.matrices(first, second, statuses)
+
+        self.assertEqual(wins.shape, (2, 2))
+        self.assertEqual(ties.shape, (2, 2))
+        self.assertSequenceEqual(wins.tolist(), [[0, 1], [1, 0]])
+        self.assertSequenceEqual(ties.tolist(), [[0, 0], [0, 0]])
+
     def test_counting(self) -> None:
         p = evalica.counting(self.M)
 
