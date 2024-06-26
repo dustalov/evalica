@@ -1,10 +1,19 @@
 use numpy::PyArrayMethods;
 use numpy::{IntoPyArray, PyArray1, PyArray2};
-use pyo3::prelude::*;
+use pyo3::{prelude::*, pyclass};
 
 mod bradley_terry;
 mod counting;
 mod newman;
+
+#[pyclass(eq, eq_int)]
+#[derive(PartialEq)]
+enum Status {
+    Won,
+    Lost,
+    Tied,
+    Skipped,
+}
 
 #[pyfunction]
 fn py_counting(py: Python, m: &Bound<PyArray2<i64>>) -> PyResult<Py<PyArray1<i64>>> {
@@ -36,6 +45,7 @@ fn py_newman(
 #[pymodule]
 fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add_class::<Status>()?;
     m.add_function(wrap_pyfunction!(py_counting, m)?)?;
     m.add_function(wrap_pyfunction!(py_bradley_terry, m)?)?;
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;

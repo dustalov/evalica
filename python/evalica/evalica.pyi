@@ -1,9 +1,16 @@
+from enum import Enum
 from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
 
 __version__: str = ...
+
+class Status(Enum):
+    Won = ...
+    Lost = ...
+    Tied = ...
+    Skipped = ...
 
 def py_counting(
     m: npt.NDArray[np.int64]
