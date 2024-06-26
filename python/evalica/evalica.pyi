@@ -5,6 +5,10 @@ import numpy.typing as npt
 
 __version__: str = ...
 
+def py_counting(
+    m: npt.NDArray[np.int64]
+) -> npt.NDArray[np.int64]: ...
+
 def py_bradley_terry(
     m: npt.NDArray[np.int64]
 ) -> Tuple[npt.NDArray[np.float64], int]: ...

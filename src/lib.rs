@@ -3,7 +3,15 @@ use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 mod bradley_terry;
+mod counting;
 mod newman;
+
+#[pyfunction]
+fn py_counting(py: Python, m: &Bound<PyArray2<i64>>) -> PyResult<Py<PyArray1<i64>>> {
+    let m = unsafe { m.as_array().to_owned() };
+    let counts = counting::counting(&m);
+    Ok(counts.into_pyarray_bound(py).unbind())
+}
 
 #[pyfunction]
 fn py_bradley_terry(py: Python, m: &Bound<PyArray2<i64>>) -> PyResult<(Py<PyArray1<f64>>, usize)> {
@@ -28,6 +36,7 @@ fn py_newman(
 #[pymodule]
 fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add_function(wrap_pyfunction!(py_counting, m)?)?;
     m.add_function(wrap_pyfunction!(py_bradley_terry, m)?)?;
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;
     Ok(())

@@ -24,6 +24,11 @@ class TestUnordered(unittest.TestCase):
             [2, 0, 1, 3, 0],
         ], dtype=np.int64)
 
+    def test_counting(self) -> None:
+        p = evalica.counting(self.M)
+
+        self.assertTrue(np.isfinite(p).all())
+
     def test_bradley_terry(self) -> None:
         p, iterations = evalica.bradley_terry(self.M)
 
