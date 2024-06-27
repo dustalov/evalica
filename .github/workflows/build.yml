@@ -134,4 +134,5 @@ jobs:
         pattern: package_*
         merge-multiple: true
         path: dist
+    - run: ls -lahR dist/
     # Deploy to TestPyPI with gh-action-pypi-publish when ready
