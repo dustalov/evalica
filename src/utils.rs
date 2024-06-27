@@ -23,6 +23,15 @@ impl TryFrom<u8> for Status {
     }
 }
 
+pub fn compute_ties_and_wins(m: &Array2<i64>) -> (Array2<i64>, Array2<i64>) {
+    let mut t = m.clone();
+    for ((i, j), t) in t.indexed_iter_mut() {
+        *t = std::cmp::min(m[[i, j]], m[[j, i]]);
+    }
+    let w = m - &t;
+    (t, w)
+}
+
 pub fn matrices(
     first: Vec<usize>,
     second: Vec<usize>,

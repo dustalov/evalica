@@ -1,18 +1,10 @@
+use crate::utils;
 use ndarray::{Array1, Array2, Axis};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 
-fn compute_ties_and_wins(m: &Array2<i64>) -> (Array2<i64>, Array2<i64>) {
-    let mut t = m.clone();
-    for ((i, j), t) in t.indexed_iter_mut() {
-        *t = std::cmp::min(m[[i, j]], m[[j, i]]);
-    }
-    let w = m - &t;
-    (t, w)
-}
-
 pub fn newman(m: &Array2<i64>, seed: u64, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
-    let (t, w) = compute_ties_and_wins(m);
+    let (t, w) = utils::compute_ties_and_wins(m);
 
     let mut rng = StdRng::seed_from_u64(seed);
 
