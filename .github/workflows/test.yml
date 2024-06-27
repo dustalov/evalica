@@ -35,14 +35,9 @@ jobs:
       run: cargo build --verbose
     - name: Run tests (Rust)
       run: cargo test --verbose
-    - name: Create virtual environment
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv venv --system
-        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
-        echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
     - name: Set up Maturin
       run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
         uv pip install maturin
         maturin develop --uv --extras dev
     - name: Lint with Ruff
