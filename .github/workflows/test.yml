@@ -38,7 +38,7 @@ jobs:
     - name: Set up Maturin
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv pip install maturin
+        uv pip install --system maturin
         maturin develop --uv --extras dev
     - name: Lint with Ruff
       run: ruff check
