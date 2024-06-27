@@ -120,6 +120,4 @@ jobs:
         pattern: wheel_*
         merge-multiple: true
         path: dist
-    # Replace this with gh-action-pypi-publish to TestPyPI
-    - name: Check with Twine
-      run: twine check --strict dist/*
+    # Deploy to TestPyPI with gh-action-pypi-publish when ready
