@@ -58,14 +58,14 @@ class TestUnordered(unittest.TestCase):
 
     @given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
     def test_bradley_terry(self, m: npt.NDArray[np.int64]) -> None:
-        p, iterations = evalica.bradley_terry(self.M, 1e-6, 100)
+        p, iterations = evalica.bradley_terry(self.M, 1e-4, 100)
 
         self.assertTrue(np.isfinite(p).all())
         self.assertGreater(iterations, 0)
 
     @given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
     def test_newman(self, m: npt.NDArray[np.int64]) -> None:
-        p, iterations = evalica.newman(m, 0, 1e-6, 100)
+        p, iterations = evalica.newman(m, 0, 1e-4, 100)
 
         self.assertTrue(np.isfinite(p).all())
         self.assertGreater(iterations, 0)

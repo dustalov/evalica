@@ -59,7 +59,7 @@ mod tests {
             [2, 0, 1, 3, 0]
         ];
 
-        let tolerance = 1e-6;
+        let tolerance = 1e-8;
         let limit = 100;
 
         let (p, iterations) = bradley_terry(&m, tolerance, limit);

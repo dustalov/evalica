@@ -90,7 +90,7 @@ mod tests {
         ];
 
         let seed = 0;
-        let tolerance = 1e-6;
+        let tolerance = 1e-8;
         let limit = 100;
 
         let (pi, iterations) = newman(&m, seed, tolerance, limit);
