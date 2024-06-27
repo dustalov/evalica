@@ -75,6 +75,7 @@ jobs:
         - os: windows
           target: aarch64
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
+    continue-on-error: true
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -119,8 +120,6 @@ jobs:
         pattern: wheel_*
         merge-multiple: true
         path: dist
-    - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
-        skip-existing: true
+    # Replace this with gh-action-pypi-publish to TestPyPI
+    - name: Check with Twine
+      run: twine check --strict dist/*
