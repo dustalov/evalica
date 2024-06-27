@@ -10,6 +10,20 @@ env:
 
 # Heavily inspired by https://github.com/pydantic/pydantic-core/blob/main/.github/workflows/ci.yml
 jobs:
+  build-sdist:
+    name: build sdist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: PyO3/maturin-action@v1
+      with:
+        command: sdist
+        args: --out dist
+        rust-toolchain: stable
+    - uses: actions/upload-artifact@v4
+      with:
+        name: package_sdist
+        path: dist
   build:
     strategy:
       fail-fast: false
@@ -102,7 +116,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: wheel_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
+        name: package_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
         path: dist
   pypi:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
@@ -117,7 +131,7 @@ jobs:
     - name: Download packages
       uses: actions/download-artifact@v4
       with:
-        pattern: wheel_*
+        pattern: package_*
         merge-multiple: true
         path: dist
     # Deploy to TestPyPI with gh-action-pypi-publish when ready
