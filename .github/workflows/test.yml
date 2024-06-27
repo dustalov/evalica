@@ -38,7 +38,7 @@ jobs:
     - name: Create virtual environment
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv venv
+        uv venv --system
         echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
         echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
     - name: Set up Maturin
