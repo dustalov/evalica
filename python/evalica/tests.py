@@ -4,6 +4,9 @@ import unittest
 
 import numpy as np
 import numpy.typing as npt
+from hypothesis import given
+import hypothesis.strategies as st
+from hypothesis.extra.numpy import arrays
 
 import evalica
 
@@ -16,43 +19,57 @@ class TestMeta(unittest.TestCase):
 
 class TestUnordered(unittest.TestCase):
     def setUp(self) -> None:
-        self.M: npt.NDArray[np.int64] = np.array([
-            [0, 1, 2, 0, 1],
-            [2, 0, 2, 1, 0],
-            [1, 2, 0, 0, 1],
-            [1, 2, 1, 0, 2],
-            [2, 0, 1, 3, 0],
-        ], dtype=np.int64)
+        self.M: npt.NDArray[np.int64] = np.array(
+            [
+                [0, 1, 2, 0, 1],
+                [2, 0, 2, 1, 0],
+                [1, 2, 0, 0, 1],
+                [1, 2, 1, 0, 2],
+                [2, 0, 1, 3, 0],
+            ],
+            dtype=np.int64,
+        )
 
-    def test_matrices(self) -> None:
-        first = [0, 1]
-        second = [1, 0]
-        statuses = [0, 0]
+    @given(
+        st.lists(st.integers(0, 2), min_size=2, max_size=2),
+        st.lists(st.integers(0, 2), min_size=2, max_size=2),
+        st.lists(st.integers(0, 3), min_size=2, max_size=2),
+    )
+    def test_matrices(
+        self, first: list[int], second: list[int], statuses: list[int]
+    ) -> None:
+        n = 1 + max(max(first), max(second))
+
+        win_count = sum(0 <= status <= 1 for status in statuses)
+        tie_count = sum(status == 2 for status in statuses)
 
         wins, ties = evalica.matrices(first, second, statuses)
 
-        self.assertEqual(wins.shape, (2, 2))
-        self.assertEqual(ties.shape, (2, 2))
-        self.assertSequenceEqual(wins.tolist(), [[0, 1], [1, 0]])
-        self.assertSequenceEqual(ties.tolist(), [[0, 0], [0, 0]])
+        self.assertEqual(wins.shape, (n, n))
+        self.assertEqual(ties.shape, (n, n))
+        self.assertEqual(wins.sum(), win_count)
+        self.assertEqual(ties.sum(), 2 * tie_count)
 
-    def test_counting(self) -> None:
-        p = evalica.counting(self.M)
-
-        self.assertTrue(np.isfinite(p).all())
-
-    def test_bradley_terry(self) -> None:
-        p, iterations = evalica.bradley_terry(self.M)
+    @given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
+    def test_counting(self, m: npt.NDArray[np.int64]) -> None:
+        p = evalica.counting(m)
 
         self.assertTrue(np.isfinite(p).all())
-        self.assertGreater(iterations, 0)
 
-    def test_newman(self) -> None:
-        p, iterations = evalica.newman(self.M, 0, 1e-6, 100)
+    @given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
+    def test_bradley_terry(self, m: npt.NDArray[np.int64]) -> None:
+        p, iterations = evalica.bradley_terry(self.M, 1e-6, 100)
 
         self.assertTrue(np.isfinite(p).all())
         self.assertGreater(iterations, 0)
 
+    @given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
+    def test_newman(self, m: npt.NDArray[np.int64]) -> None:
+        p, iterations = evalica.newman(m, 0, 1e-6, 100)
 
-if __name__ == '__main__':
+        self.assertTrue(np.isfinite(p).all())
+        self.assertGreater(iterations, 0)
+
+
+if __name__ == "__main__":
     unittest.main()

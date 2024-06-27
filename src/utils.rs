@@ -28,12 +28,30 @@ pub fn matrices(
     second: Vec<usize>,
     status: Vec<Status>,
 ) -> (Array2<i64>, Array2<i64>) {
-    let n = first.len();
+    assert_eq!(
+        first.len(),
+        second.len(),
+        "first and second length mismatch: {} vs. {}",
+        first.len(),
+        second.len()
+    );
+
+    assert_eq!(
+        first.len(),
+        status.len(),
+        "first and status length mismatch: {} vs. {}",
+        first.len(),
+        status.len()
+    );
+
+    assert!(!first.is_empty(), "empty inputs");
+
+    let n = 1 + std::cmp::max(*first.iter().max().unwrap(), *second.iter().max().unwrap());
 
     let mut wins = Array2::zeros((n, n));
     let mut ties = Array2::zeros((n, n));
 
-    for i in 0..n {
+    for i in 0..first.len() {
         match status[i] {
             Status::Won => {
                 wins[[first[i], second[i]]] += 1;

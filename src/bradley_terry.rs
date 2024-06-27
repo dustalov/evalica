@@ -1,9 +1,7 @@
 use ndarray::{Array1, Array2, Axis};
 use ndarray_linalg::Norm;
 
-const EPS: f64 = 1e-8;
-
-pub fn bradley_terry(m: &Array2<i64>) -> (Array1<f64>, usize) {
+pub fn bradley_terry(m: &Array2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
     let t = m.t().to_owned() + m;
 
     let active = t.mapv(|x| x > 0);
@@ -18,7 +16,7 @@ pub fn bradley_terry(m: &Array2<i64>) -> (Array1<f64>, usize) {
     let mut converged = false;
     let mut iterations = 0;
 
-    while !converged {
+    while !converged && iterations < limit {
         iterations += 1;
 
         for ((i, j), &active_val) in active.indexed_iter() {
@@ -37,7 +35,7 @@ pub fn bradley_terry(m: &Array2<i64>) -> (Array1<f64>, usize) {
 
         let diff_norm = (&p_new - &p).norm();
 
-        converged = diff_norm < EPS;
+        converged = diff_norm < tolerance;
 
         p.assign(&p_new);
     }
@@ -49,7 +47,7 @@ pub fn bradley_terry(m: &Array2<i64>) -> (Array1<f64>, usize) {
 mod tests {
     use ndarray::{array, Array2};
 
-    use super::{bradley_terry, EPS};
+    use super::bradley_terry;
 
     #[test]
     fn test_bradley_terry() {
@@ -61,7 +59,10 @@ mod tests {
             [2, 0, 1, 3, 0]
         ];
 
-        let (p, iterations) = bradley_terry(&m);
+        let tolerance = 1e-6;
+        let limit = 100;
+
+        let (p, iterations) = bradley_terry(&m, tolerance, limit);
 
         assert_eq!(p.len(), m.shape()[0]);
         assert_ne!(iterations, 0);
@@ -69,7 +70,7 @@ mod tests {
         let expected_p = array![0.12151104, 0.15699947, 0.11594851, 0.31022851, 0.29531247];
 
         for (a, b) in p.iter().zip(expected_p.iter()) {
-            assert!((a - b).abs() < EPS);
+            assert!((a - b).abs() < tolerance);
         }
     }
 }

@@ -22,7 +22,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["mypy", "ruff", "twine"]
+dev = ["hypothesis[numpy]", "mypy", "ruff", "twine"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

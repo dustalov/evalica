@@ -39,9 +39,14 @@ fn py_counting(py: Python, m: &Bound<PyArray2<i64>>) -> PyResult<Py<PyArray1<i64
 }
 
 #[pyfunction]
-fn py_bradley_terry(py: Python, m: &Bound<PyArray2<i64>>) -> PyResult<(Py<PyArray1<f64>>, usize)> {
+fn py_bradley_terry(
+    py: Python,
+    m: &Bound<PyArray2<i64>>,
+    tolerance: f64,
+    limit: usize,
+) -> PyResult<(Py<PyArray1<f64>>, usize)> {
     let m = unsafe { m.as_array().to_owned() };
-    let (pi, iterations) = bradley_terry::bradley_terry(&m);
+    let (pi, iterations) = bradley_terry::bradley_terry(&m, tolerance, limit);
     Ok((pi.into_pyarray_bound(py).unbind(), iterations))
 }
 
