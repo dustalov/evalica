@@ -13,7 +13,7 @@ class Status(Enum):
     Skipped = ...
 
 def py_matrices(
-    first: npt.ArrayLike, second: npt.ArrayLike, statuses: npt.ArrayLike
+    first: npt.ArrayLike, second: npt.ArrayLike, statuses: list[Status]
 ) -> Tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 def py_counting(m: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]: ...
 def py_bradley_terry(
@@ -23,6 +23,6 @@ def py_newman(
     m: npt.NDArray[np.int64], seed: int, tolerance: float, max_iter: int
 ) -> Tuple[npt.NDArray[np.float64], int]: ...
 def py_elo(
-    first: npt.ArrayLike, second: npt.ArrayLike, statuses: npt.ArrayLike,
+    first: npt.ArrayLike, second: npt.ArrayLike, statuses: list[Status],
     r: float, k: int, s: float
 ) -> npt.NDArray[np.int64]: ...
