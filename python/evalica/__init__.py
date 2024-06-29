@@ -1,5 +1,6 @@
 from .evalica import (
     __version__,
+    Status,
     py_matrices as matrices,
     py_counting as counting,
     py_bradley_terry as bradley_terry,
@@ -7,4 +8,4 @@ from .evalica import (
     py_elo as elo,
 )
 
-__all__ = ["__version__", "matrices", "counting", "bradley_terry", "newman", "elo"]
+__all__ = ["__version__", "Status", "matrices", "counting", "bradley_terry", "newman", "elo"]

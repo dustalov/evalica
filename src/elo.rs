@@ -1,6 +1,6 @@
 use ndarray::Array1;
 
-use crate::utils::Status;
+use crate::Status;
 
 pub fn elo(
     first: &Vec<usize>,

@@ -1,28 +1,6 @@
-use std::convert::TryFrom;
-
 use ndarray::Array2;
 
-#[repr(u8)]
-pub enum Status {
-    Won,
-    Lost,
-    Tied,
-    Skipped,
-}
-
-impl TryFrom<u8> for Status {
-    type Error = ();
-
-    fn try_from(v: u8) -> Result<Self, Self::Error> {
-        match v {
-            0 => Ok(Status::Won),
-            1 => Ok(Status::Lost),
-            2 => Ok(Status::Tied),
-            3 => Ok(Status::Skipped),
-            _ => Err(()),
-        }
-    }
-}
+use crate::Status;
 
 pub fn compute_ties_and_wins(m: &Array2<i64>) -> (Array2<i64>, Array2<i64>) {
     let mut t = m.clone();

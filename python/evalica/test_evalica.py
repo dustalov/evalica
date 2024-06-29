@@ -6,6 +6,12 @@ from hypothesis.extra.numpy import arrays
 
 import evalica
 
+STATUSES = [
+    evalica.Status.Won,
+    evalica.Status.Lost,
+    evalica.Status.Tied,
+    evalica.Status.Skipped
+]
 
 def test_version() -> None:
     assert isinstance(evalica.__version__, str)
@@ -14,15 +20,15 @@ def test_version() -> None:
 @given(
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
-    st.lists(st.integers(0, 3), min_size=2, max_size=2),
+    st.lists(st.sampled_from(STATUSES), min_size=2, max_size=2),
 )
 def test_matrices(
-    first: list[int], second: list[int], statuses: list[int]
+    first: list[int], second: list[int], statuses: list[evalica.Status]
 ) -> None:
     n = 1 + max(max(first), max(second))
 
-    win_count = sum(0 <= status <= 1 for status in statuses)
-    tie_count = sum(status == 2 for status in statuses)
+    win_count = sum(status in [evalica.Status.Won, evalica.Status.Lost] for status in statuses)
+    tie_count = sum(status == evalica.Status.Tied for status in statuses)
 
     wins, ties = evalica.matrices(first, second, statuses)
 
@@ -57,10 +63,10 @@ def test_newman(m: npt.NDArray[np.int64]) -> None:
 @given(
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
-    st.lists(st.integers(0, 3), min_size=2, max_size=2),
+    st.lists(st.sampled_from(STATUSES), min_size=2, max_size=2),
 )
 def test_elo(
-    first: list[int], second: list[int], statuses: list[int]
+    first: list[int], second: list[int], statuses: list[evalica.Status]
 ) -> None:
     n = 1 + max(max(first), max(second))
     p = evalica.elo(first, second, statuses, 1500, 30, 400)

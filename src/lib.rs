@@ -1,10 +1,6 @@
-use std::convert::TryInto;
-
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
+use numpy::{Element, IntoPyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayLike1};
 use numpy::PyArrayMethods;
 use pyo3::prelude::*;
-
-use crate::utils::Status;
 
 mod bradley_terry;
 mod counting;
@@ -12,13 +8,22 @@ mod elo;
 mod newman;
 mod utils;
 
-fn transform_statuses(statuses: &PyArrayLike1<u8>) -> Vec<Status> {
-    let statuses = statuses
-        .as_array()
-        .into_iter()
-        .map(|&x| x.try_into().unwrap())
-        .collect();
-    statuses
+#[pyclass]
+#[repr(u8)]
+#[derive(Clone, Debug, PartialEq)]
+pub enum Status {
+    Won,
+    Lost,
+    Tied,
+    Skipped,
+}
+
+unsafe impl Element for Status {
+    const IS_COPY: bool = true;
+
+    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+        numpy::dtype_bound::<u8>(py)
+    }
 }
 
 #[pyfunction]
@@ -26,11 +31,11 @@ fn py_matrices<'py>(
     py: Python<'py>,
     first: PyArrayLike1<'py, usize>,
     second: PyArrayLike1<'py, usize>,
-    statuses: PyArrayLike1<'py, u8>,
+    statuses: PyArrayLike1<'py, Status>,
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
     let first = first.as_array().to_vec();
     let second = second.as_array().to_vec();
-    let statuses = transform_statuses(&statuses);
+    let statuses = statuses.as_array().to_vec();
 
     let (wins, ties) = utils::matrices(&first, &second, &statuses);
 
@@ -77,14 +82,14 @@ fn py_elo<'py>(
     py: Python,
     first: PyArrayLike1<'py, usize>,
     second: PyArrayLike1<'py, usize>,
-    statuses: PyArrayLike1<'py, u8>,
+    statuses: PyArrayLike1<'py, Status>,
     r: f64,
     k: u64,
     s: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
     let first = first.as_array().to_vec();
     let second = second.as_array().to_vec();
-    let statuses = transform_statuses(&statuses);
+    let statuses = statuses.as_array().to_vec();
 
     let pi = elo::elo(&first, &second, &statuses, r, k, s);
     Ok(pi.into_pyarray_bound(py).unbind())
@@ -98,5 +103,6 @@ fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_bradley_terry, m)?)?;
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;
     m.add_function(wrap_pyfunction!(py_elo, m)?)?;
+    m.add_class::<Status>()?;
     Ok(())
 }
