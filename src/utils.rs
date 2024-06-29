@@ -34,9 +34,9 @@ pub fn compute_ties_and_wins(m: &Array2<i64>) -> (Array2<i64>, Array2<i64>) {
 }
 
 pub fn matrices(
-    first: Vec<usize>,
-    second: Vec<usize>,
-    status: Vec<Status>,
+    first: &Vec<usize>,
+    second: &Vec<usize>,
+    status: &Vec<Status>,
 ) -> (Array2<i64>, Array2<i64>) {
     assert_eq!(
         first.len(),
@@ -92,7 +92,7 @@ mod tests {
         let second = vec![1, 2, 3, 4];
         let status = vec![Status::Won, Status::Lost, Status::Tied, Status::Skipped];
 
-        let (wins, ties) = matrices(first, second, status);
+        let (wins, ties) = matrices(&first, &second, &status);
 
         assert_eq!(
             wins,

@@ -3,9 +3,9 @@ use ndarray::Array1;
 use crate::utils::Status;
 
 pub fn elo(
-    first: Vec<usize>,
-    second: Vec<usize>,
-    status: Vec<Status>,
+    first: &Vec<usize>,
+    second: &Vec<usize>,
+    status: &Vec<Status>,
     r: f64,
     k: u64,
     s: f64,
@@ -57,7 +57,7 @@ mod tests {
         let s: f64 = 400.0;
 
         let expected = array![1501.0, 1485.0, 1515.0, 1498.0];
-        let actual = elo(first, second, status, r, k, s);
+        let actual = elo(&first, &second, &status, r, k, s);
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);

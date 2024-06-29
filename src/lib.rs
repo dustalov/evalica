@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use numpy::{AllowTypeChange, IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
 use numpy::PyArrayMethods;
 use pyo3::prelude::*;
 
@@ -12,7 +12,7 @@ mod elo;
 mod newman;
 mod utils;
 
-fn transform_statuses(statuses: PyArrayLike1<u8, AllowTypeChange>) -> Vec<Status> {
+fn transform_statuses(statuses: &PyArrayLike1<u8>) -> Vec<Status> {
     let statuses = statuses
         .as_array()
         .into_iter()
@@ -24,15 +24,15 @@ fn transform_statuses(statuses: PyArrayLike1<u8, AllowTypeChange>) -> Vec<Status
 #[pyfunction]
 fn py_matrices<'py>(
     py: Python<'py>,
-    first: PyArrayLike1<'py, usize, AllowTypeChange>,
-    second: PyArrayLike1<'py, usize, AllowTypeChange>,
-    statuses: PyArrayLike1<'py, u8, AllowTypeChange>,
+    first: PyArrayLike1<'py, usize>,
+    second: PyArrayLike1<'py, usize>,
+    statuses: PyArrayLike1<'py, u8>,
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
     let first = first.as_array().to_vec();
     let second = second.as_array().to_vec();
-    let statuses = transform_statuses(statuses);
+    let statuses = transform_statuses(&statuses);
 
-    let (wins, ties) = utils::matrices(first, second, statuses);
+    let (wins, ties) = utils::matrices(&first, &second, &statuses);
 
     Ok((
         wins.into_pyarray_bound(py).unbind(),
@@ -75,18 +75,18 @@ fn py_newman(
 #[pyfunction]
 fn py_elo<'py>(
     py: Python,
-    first: PyArrayLike1<'py, usize, AllowTypeChange>,
-    second: PyArrayLike1<'py, usize, AllowTypeChange>,
-    statuses: PyArrayLike1<'py, u8, AllowTypeChange>,
+    first: PyArrayLike1<'py, usize>,
+    second: PyArrayLike1<'py, usize>,
+    statuses: PyArrayLike1<'py, u8>,
     r: f64,
     k: u64,
     s: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
     let first = first.as_array().to_vec();
     let second = second.as_array().to_vec();
-    let statuses = transform_statuses(statuses);
+    let statuses = transform_statuses(&statuses);
 
-    let pi = elo::elo(first, second, statuses, r, k, s);
+    let pi = elo::elo(&first, &second, &statuses, r, k, s);
     Ok(pi.into_pyarray_bound(py).unbind())
 }
 

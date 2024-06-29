@@ -1,7 +1,8 @@
-use crate::utils;
 use ndarray::{Array1, Array2, Axis};
-use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
+use rand::prelude::StdRng;
+
+use crate::utils;
 
 pub fn newman(m: &Array2<i64>, seed: u64, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
     let (t, w) = utils::compute_ties_and_wins(m);
