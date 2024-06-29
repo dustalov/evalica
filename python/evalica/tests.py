@@ -54,12 +54,14 @@ class TestUnordered(unittest.TestCase):
     def test_counting(self, m: npt.NDArray[np.int64]) -> None:
         p = evalica.counting(m)
 
+        self.assertEqual(m.shape[0], len(p))
         self.assertTrue(np.isfinite(p).all())
 
     @given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
     def test_bradley_terry(self, m: npt.NDArray[np.int64]) -> None:
-        p, iterations = evalica.bradley_terry(self.M, 1e-4, 100)
+        p, iterations = evalica.bradley_terry(m, 1e-4, 100)
 
+        self.assertEqual(m.shape[0], len(p))
         self.assertTrue(np.isfinite(p).all())
         self.assertGreater(iterations, 0)
 
@@ -67,9 +69,23 @@ class TestUnordered(unittest.TestCase):
     def test_newman(self, m: npt.NDArray[np.int64]) -> None:
         p, iterations = evalica.newman(m, 0, 1e-4, 100)
 
+        self.assertEqual(m.shape[0], len(p))
         self.assertTrue(np.isfinite(p).all())
         self.assertGreater(iterations, 0)
 
+    @given(
+        st.lists(st.integers(0, 2), min_size=2, max_size=2),
+        st.lists(st.integers(0, 2), min_size=2, max_size=2),
+        st.lists(st.integers(0, 3), min_size=2, max_size=2),
+    )
+    def test_elo(
+        self, first: list[int], second: list[int], statuses: list[int]
+    ) -> None:
+        n = 1 + max(max(first), max(second))
+        p = evalica.elo(first, second, statuses, 1500, 30, 400)
+
+        self.assertEqual(n, len(p))
+        self.assertTrue(np.isfinite(p).all())
 
 if __name__ == "__main__":
     unittest.main()

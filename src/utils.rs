@@ -1,5 +1,6 @@
-use ndarray::Array2;
 use std::convert::TryFrom;
+
+use ndarray::Array2;
 
 #[repr(u8)]
 pub enum Status {
@@ -72,7 +73,7 @@ pub fn matrices(
                 ties[[first[i], second[i]]] += 1;
                 ties[[second[i], first[i]]] += 1;
             }
-            Status::Skipped => {}
+            _ => {}
         }
     }
 

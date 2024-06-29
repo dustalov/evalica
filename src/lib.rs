@@ -1,12 +1,25 @@
-use numpy::PyArrayMethods;
-use numpy::{AllowTypeChange, IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
-use pyo3::prelude::*;
 use std::convert::TryInto;
+
+use numpy::{AllowTypeChange, IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
+use numpy::PyArrayMethods;
+use pyo3::prelude::*;
+
+use crate::utils::Status;
 
 mod bradley_terry;
 mod counting;
+mod elo;
 mod newman;
 mod utils;
+
+fn transform_statuses(statuses: PyArrayLike1<u8, AllowTypeChange>) -> Vec<Status> {
+    let statuses = statuses
+        .as_array()
+        .into_iter()
+        .map(|&x| x.try_into().unwrap())
+        .collect();
+    statuses
+}
 
 #[pyfunction]
 fn py_matrices<'py>(
@@ -17,11 +30,7 @@ fn py_matrices<'py>(
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
     let first = first.as_array().to_vec();
     let second = second.as_array().to_vec();
-    let statuses = statuses
-        .as_array()
-        .into_iter()
-        .map(|&x| x.try_into().unwrap())
-        .collect();
+    let statuses = transform_statuses(statuses);
 
     let (wins, ties) = utils::matrices(first, second, statuses);
 
@@ -63,6 +72,24 @@ fn py_newman(
     Ok((pi.into_pyarray_bound(py).unbind(), iterations))
 }
 
+#[pyfunction]
+fn py_elo<'py>(
+    py: Python,
+    first: PyArrayLike1<'py, usize, AllowTypeChange>,
+    second: PyArrayLike1<'py, usize, AllowTypeChange>,
+    statuses: PyArrayLike1<'py, u8, AllowTypeChange>,
+    r: f64,
+    k: u64,
+    s: f64,
+) -> PyResult<Py<PyArray1<f64>>> {
+    let first = first.as_array().to_vec();
+    let second = second.as_array().to_vec();
+    let statuses = transform_statuses(statuses);
+
+    let pi = elo::elo(first, second, statuses, r, k, s);
+    Ok(pi.into_pyarray_bound(py).unbind())
+}
+
 #[pymodule]
 fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
@@ -70,5 +97,6 @@ fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_counting, m)?)?;
     m.add_function(wrap_pyfunction!(py_bradley_terry, m)?)?;
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;
+    m.add_function(wrap_pyfunction!(py_elo, m)?)?;
     Ok(())
 }

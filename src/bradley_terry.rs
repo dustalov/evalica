@@ -28,10 +28,18 @@ pub fn bradley_terry(m: &Array2<i64>, tolerance: f64, limit: usize) -> (Array1<f
         p_new.fill(0.0);
 
         for i in 0..m.shape()[0] {
-            p_new[i] = w[i] as f64 / z.column(i).sum();
+            let d = z.column(i).sum();
+
+            if d != 0.0 {
+                p_new[i] = w[i] as f64 / d;
+            }
         }
 
-        p_new /= p_new.sum();
+        let p_sum = p_new.sum();
+
+        if p_sum != 0.0 {
+            p_new /= p_sum;
+        }
 
         let diff_norm = (&p_new - &p).norm();
 
