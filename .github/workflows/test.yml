@@ -50,7 +50,7 @@ jobs:
     - name: Lint with Mypy
       run: mypy .
     - name: Run tests (Python)
-      run: python3 -m unittest discover python
+      run: pytest
     - name: Build with Maturin
       run: maturin build --release --out=dist/
     - name: Check with Twine
