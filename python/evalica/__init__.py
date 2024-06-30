@@ -9,10 +9,10 @@ from .evalica import (
 )
 
 STATUSES = [
-    evalica.Status.Won,
-    evalica.Status.Lost,
-    evalica.Status.Tied,
-    evalica.Status.Skipped
+    Status.Won,
+    Status.Lost,
+    Status.Tied,
+    Status.Skipped
 ]
 
 __all__ = ["__version__", "Status", "matrices", "counting", "bradley_terry", "newman", "elo", "STATUSES"]
