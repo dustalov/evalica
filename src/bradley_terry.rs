@@ -1,5 +1,4 @@
 use ndarray::{Array1, Array2, ArrayView2, Axis};
-use ndarray_linalg::Norm;
 
 pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
     assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
@@ -43,7 +42,11 @@ pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Arra
             scores_new /= p_sum;
         }
 
-        let diff_norm = (&scores_new - &scores).norm();
+        let diff_norm = (&scores_new - &scores)
+            .iter()
+            .map(|x| x * x)
+            .sum::<f64>()
+            .sqrt();
 
         converged = diff_norm < tolerance;
 

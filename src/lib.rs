@@ -2,11 +2,11 @@ use numpy::{
     Element, IntoPyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayLike1, PyReadonlyArray2,
 };
 use pyo3::prelude::*;
+use pyo3::types::IntoPyDict;
 
 mod bradley_terry;
 mod counting;
 mod elo;
-mod linalg;
 mod newman;
 mod utils;
 
@@ -91,10 +91,25 @@ fn py_elo<'py>(
 }
 
 #[pyfunction]
-fn py_eigen<'py>(py: Python, m: PyReadonlyArray2<'py, f64>) -> PyResult<Py<PyArray1<f64>>> {
-    let eigen = linalg::eigen(&m.as_array());
+fn py_eigen<'py>(py: Python<'py>, m: PyReadonlyArray2<'py, f64>) -> PyResult<Py<PyArray1<f64>>> {
+    // I found this approach simpler than setting up BLAS
+    // for multiple platforms which is required by ndarray-linalg.
+    // We need to re-implement eigenvector centrality
+    // on our own instead of making a round-trip to Python.
 
-    Ok(eigen.into_pyarray_bound(py).unbind())
+    let np = py.import_bound("numpy")?;
+    let globals = [("np", np)].into_py_dict_bound(py);
+    let locals = [("m", m.as_unbound())].into_py_dict_bound(py);
+
+    let eigen = py
+        .eval_bound(
+            "np.linalg.eigh(m).eigenvalues",
+            Some(&globals),
+            Some(&locals),
+        )?
+        .downcast_into::<PyArray1<f64>>()?;
+
+    Ok(eigen.unbind())
 }
 
 #[pymodule]
