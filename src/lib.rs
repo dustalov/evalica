@@ -6,6 +6,7 @@ use pyo3::prelude::*;
 mod bradley_terry;
 mod counting;
 mod elo;
+mod linalg;
 mod newman;
 mod utils;
 
@@ -89,6 +90,13 @@ fn py_elo<'py>(
     Ok(pi.into_pyarray_bound(py).unbind())
 }
 
+#[pyfunction]
+fn py_eigen<'py>(py: Python, m: PyReadonlyArray2<'py, f64>) -> PyResult<Py<PyArray1<f64>>> {
+    let eigen = linalg::eigen(&m.as_array());
+
+    Ok(eigen.into_pyarray_bound(py).unbind())
+}
+
 #[pymodule]
 fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
@@ -97,6 +105,7 @@ fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_bradley_terry, m)?)?;
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;
     m.add_function(wrap_pyfunction!(py_elo, m)?)?;
+    m.add_function(wrap_pyfunction!(py_eigen, m)?)?;
     m.add_class::<Status>()?;
     Ok(())
 }

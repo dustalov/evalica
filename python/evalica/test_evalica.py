@@ -72,3 +72,11 @@ def test_elo(
 
     assert n == len(p)
     assert np.isfinite(p).all()
+
+
+@given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
+def test_eigen(m: npt.NDArray[np.int64]) -> None:
+    p = evalica.eigen(m.astype(np.float64))
+
+    assert m.shape[0] == len(p)
+    assert np.isfinite(p).all()

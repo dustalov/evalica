@@ -36,3 +36,8 @@ def py_elo(
         xs: npt.ArrayLike, ys: npt.ArrayLike, rs: list[Status],
         r: float, k: int, s: float
 ) -> npt.NDArray[np.float64]: ...
+
+
+def py_eigen(
+        m: npt.NDArray[np.int64]
+) -> npt.NDArray[np.float64]: ...

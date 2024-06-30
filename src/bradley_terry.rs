@@ -2,6 +2,8 @@ use ndarray::{Array1, Array2, ArrayView2, Axis};
 use ndarray_linalg::Norm;
 
 pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
+    assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
+
     let totals = m.t().to_owned() + m;
 
     let active = totals.mapv(|x| x > 0);

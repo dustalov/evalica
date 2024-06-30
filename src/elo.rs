@@ -10,6 +10,24 @@ pub fn elo(
     k: u64,
     s: f64,
 ) -> Array1<f64> {
+    assert_eq!(
+        xs.len(),
+        ys.len(),
+        "first and second length mismatch: {} vs. {}",
+        xs.len(),
+        ys.len()
+    );
+
+    assert_eq!(
+        xs.len(),
+        rs.len(),
+        "first and status length mismatch: {} vs. {}",
+        xs.len(),
+        rs.len()
+    );
+
+    assert!(!xs.is_empty(), "empty inputs");
+
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
 
     let mut scores = Array1::<f64>::ones(n) * r;

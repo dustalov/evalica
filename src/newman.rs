@@ -10,6 +10,8 @@ pub fn newman(
     tolerance: f64,
     limit: usize,
 ) -> (Array1<f64>, usize) {
+    assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
+
     let (t, w) = utils::compute_ties_and_wins(m);
 
     let mut rng = StdRng::seed_from_u64(seed);
