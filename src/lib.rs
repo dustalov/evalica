@@ -7,7 +7,6 @@ use pyo3::types::IntoPyDict;
 mod bradley_terry;
 mod counting;
 mod elo;
-mod newman;
 mod utils;
 
 #[pyclass]
@@ -70,7 +69,7 @@ fn py_newman<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let (pi, iterations) = newman::newman(&m.as_array(), seed, tolerance, limit);
+    let (pi, iterations) = bradley_terry::newman(&m.as_array(), seed, tolerance, limit);
 
     Ok((pi.into_pyarray_bound(py).unbind(), iterations))
 }
