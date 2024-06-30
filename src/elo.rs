@@ -1,44 +1,44 @@
-use ndarray::Array1;
+use ndarray::{Array1, ArrayView1};
 
 use crate::Status;
 
 pub fn elo(
-    first: &Vec<usize>,
-    second: &Vec<usize>,
-    status: &Vec<Status>,
+    xs: &ArrayView1<usize>,
+    ys: &ArrayView1<usize>,
+    rs: &ArrayView1<Status>,
     r: f64,
     k: u64,
     s: f64,
 ) -> Array1<f64> {
-    let n = 1 + std::cmp::max(*first.iter().max().unwrap(), *second.iter().max().unwrap());
+    let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
 
-    let mut ratings = Array1::<f64>::ones(n) * r;
+    let mut scores = Array1::<f64>::ones(n) * r;
 
-    for i in 0..first.len() {
-        let rating1 = ratings[first[i]];
-        let rating2 = ratings[second[i]];
+    for i in 0..xs.len() {
+        let rating1 = scores[xs[i]];
+        let rating2 = scores[ys[i]];
 
-        let ea = 1.0 / (1.0 + 10.0f64.powf((rating2 - rating1) / s));
-        let eb = 1.0 / (1.0 + 10.0f64.powf((rating1 - rating2) / s));
+        let expected_a = 1.0 / (1.0 + 10.0f64.powf((rating2 - rating1) / s));
+        let expected_b = 1.0 / (1.0 + 10.0f64.powf((rating1 - rating2) / s));
 
-        match status[i] {
+        match rs[i] {
             Status::Won => {
-                ratings[first[i]] = rating1 + k as f64 * (1.0 - ea);
-                ratings[second[i]] = rating2 + k as f64 * (0.0 - eb);
+                scores[xs[i]] = rating1 + k as f64 * (1.0 - expected_a);
+                scores[ys[i]] = rating2 + k as f64 * (0.0 - expected_b);
             }
             Status::Lost => {
-                ratings[first[i]] = rating1 + k as f64 * (0.0 - ea);
-                ratings[second[i]] = rating2 + k as f64 * (1.0 - eb);
+                scores[xs[i]] = rating1 + k as f64 * (0.0 - expected_a);
+                scores[ys[i]] = rating2 + k as f64 * (1.0 - expected_b);
             }
             Status::Tied => {
-                ratings[first[i]] = rating1 + k as f64 * (0.5 - ea);
-                ratings[second[i]] = rating2 + k as f64 * (0.5 - eb);
+                scores[xs[i]] = rating1 + k as f64 * (0.5 - expected_a);
+                scores[ys[i]] = rating2 + k as f64 * (0.5 - expected_b);
             }
             _ => {}
         }
     }
 
-    ratings
+    scores
 }
 
 #[cfg(test)]
@@ -49,15 +49,16 @@ mod tests {
 
     #[test]
     fn test_elo() {
-        let first = vec![3, 2, 1, 0];
-        let second = vec![0, 1, 2, 3];
-        let status = vec![Status::Won, Status::Tied, Status::Lost, Status::Won];
+        let xs = array![3, 2, 1, 0];
+        let ys = array![0, 1, 2, 3];
+        let rs = array![Status::Won, Status::Tied, Status::Lost, Status::Won];
         let r: f64 = 1500.0;
         let k: u64 = 30;
         let s: f64 = 400.0;
 
         let expected = array![1501.0, 1485.0, 1515.0, 1498.0];
-        let actual = elo(&first, &second, &status, r, k, s);
+
+        let actual = elo(&xs.view(), &ys.view(), &rs.view(), r, k, s);
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);

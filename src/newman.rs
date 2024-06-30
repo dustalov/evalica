@@ -1,15 +1,20 @@
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array1, ArrayView2, Axis};
 use rand::{Rng, SeedableRng};
 use rand::prelude::StdRng;
 
 use crate::utils;
 
-pub fn newman(m: &Array2<i64>, seed: u64, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
+pub fn newman(
+    m: &ArrayView2<i64>,
+    seed: u64,
+    tolerance: f64,
+    limit: usize,
+) -> (Array1<f64>, usize) {
     let (t, w) = utils::compute_ties_and_wins(m);
 
     let mut rng = StdRng::seed_from_u64(seed);
 
-    let mut pi: Array1<f64> = Array1::from_shape_fn(m.shape()[0], |_| rng.gen_range(0.0..1.0));
+    let mut scores: Array1<f64> = Array1::from_shape_fn(m.shape()[0], |_| rng.gen_range(0.0..1.0));
     let mut v: f64 = rng.gen_range(0.0..1.0);
 
     let mut converged = false;
@@ -18,7 +23,10 @@ pub fn newman(m: &Array2<i64>, seed: u64, tolerance: f64, limit: usize) -> (Arra
     while !converged && iterations < limit {
         iterations += 1;
 
-        let pi_broadcast = pi.broadcast((pi.len(), pi.len())).unwrap().to_owned();
+        let pi_broadcast = scores
+            .broadcast((scores.len(), scores.len()))
+            .unwrap()
+            .to_owned();
         let pi_broadcast_t = pi_broadcast.t().to_owned();
         let pi_sum = &pi_broadcast + &pi_broadcast_t;
         let sqrt_pi_product = (pi_broadcast.clone() * pi_broadcast_t.clone()).mapv(f64::sqrt);
@@ -38,7 +46,7 @@ pub fn newman(m: &Array2<i64>, seed: u64, tolerance: f64, limit: usize) -> (Arra
             v = tolerance;
         }
 
-        let pi_old = pi.clone();
+        let scores_old = scores.clone();
 
         let pi_numerator = ((w.mapv(|x| x as f64) + t.mapv(|x| x as f64) / 2.0)
             * (&pi_broadcast + v * &sqrt_pi_product)
@@ -50,20 +58,20 @@ pub fn newman(m: &Array2<i64>, seed: u64, tolerance: f64, limit: usize) -> (Arra
             / (&pi_sum + 2.0 + v * &sqrt_pi_product))
             .sum_axis(Axis(0));
 
-        pi = &pi_numerator / &pi_denominator;
+        scores = &pi_numerator / &pi_denominator;
 
-        pi.iter_mut().for_each(|x| {
+        scores.iter_mut().for_each(|x| {
             if x.is_nan() {
                 *x = tolerance;
             }
         });
 
-        converged = pi.iter().zip(pi_old.iter()).all(|(p_new, p_old)| {
+        converged = scores.iter().zip(scores_old.iter()).all(|(p_new, p_old)| {
             (p_new / (p_new + 1.0) - p_old / (p_old + 1.0)).abs() <= tolerance
         });
     }
 
-    (pi, iterations)
+    (scores, iterations)
 }
 
 #[cfg(test)]
@@ -86,9 +94,9 @@ mod tests {
         let tolerance = 1e-8;
         let limit = 100;
 
-        let (pi, iterations) = newman(&m, seed, tolerance, limit);
+        let (actual, iterations) = newman(&m.view(), seed, tolerance, limit);
 
-        assert_eq!(pi.len(), m.shape()[0]);
+        assert_eq!(actual.len(), m.shape()[0]);
         assert_ne!(iterations, 0);
     }
 }

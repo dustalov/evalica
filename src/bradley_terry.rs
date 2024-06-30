@@ -1,17 +1,17 @@
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array1, Array2, ArrayView2, Axis};
 use ndarray_linalg::Norm;
 
-pub fn bradley_terry(m: &Array2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
-    let t = m.t().to_owned() + m;
+pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
+    let totals = m.t().to_owned() + m;
 
-    let active = t.mapv(|x| x > 0);
+    let active = totals.mapv(|x| x > 0);
 
     let w: Array1<i64> = m.sum_axis(Axis(1));
 
     let mut z: Array2<f64> = Array2::zeros(m.raw_dim());
 
-    let mut p: Array1<f64> = Array1::ones(m.shape()[0]);
-    let mut p_new: Array1<f64> = p.clone();
+    let mut scores: Array1<f64> = Array1::ones(m.shape()[0]);
+    let mut scores_new: Array1<f64> = scores.clone();
 
     let mut converged = false;
     let mut iterations = 0;
@@ -21,34 +21,34 @@ pub fn bradley_terry(m: &Array2<i64>, tolerance: f64, limit: usize) -> (Array1<f
 
         for ((i, j), &active_val) in active.indexed_iter() {
             if active_val {
-                z[[i, j]] = t[[i, j]] as f64 / (p[i] + p[j]);
+                z[[i, j]] = totals[[i, j]] as f64 / (scores[i] + scores[j]);
             }
         }
 
-        p_new.fill(0.0);
+        scores_new.fill(0.0);
 
         for i in 0..m.shape()[0] {
             let d = z.column(i).sum();
 
             if d != 0.0 {
-                p_new[i] = w[i] as f64 / d;
+                scores_new[i] = w[i] as f64 / d;
             }
         }
 
-        let p_sum = p_new.sum();
+        let p_sum = scores_new.sum();
 
         if p_sum != 0.0 {
-            p_new /= p_sum;
+            scores_new /= p_sum;
         }
 
-        let diff_norm = (&p_new - &p).norm();
+        let diff_norm = (&scores_new - &scores).norm();
 
         converged = diff_norm < tolerance;
 
-        p.assign(&p_new);
+        scores.assign(&scores_new);
     }
 
-    (p, iterations)
+    (scores, iterations)
 }
 
 #[cfg(test)]
@@ -70,14 +70,14 @@ mod tests {
         let tolerance = 1e-8;
         let limit = 100;
 
-        let (p, iterations) = bradley_terry(&m, tolerance, limit);
+        let expected = array![0.12151104, 0.15699947, 0.11594851, 0.31022851, 0.29531247];
 
-        assert_eq!(p.len(), m.shape()[0]);
+        let (actual, iterations) = bradley_terry(&m.view(), tolerance, limit);
+
+        assert_eq!(actual.len(), m.shape()[0]);
         assert_ne!(iterations, 0);
 
-        let expected_p = array![0.12151104, 0.15699947, 0.11594851, 0.31022851, 0.29531247];
-
-        for (a, b) in p.iter().zip(expected_p.iter()) {
+        for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < tolerance);
         }
     }

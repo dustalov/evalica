@@ -1,55 +1,58 @@
-use ndarray::Array2;
+use ndarray::{Array2, ArrayView1, ArrayView2};
 
 use crate::Status;
 
-pub fn compute_ties_and_wins(m: &Array2<i64>) -> (Array2<i64>, Array2<i64>) {
-    let mut t = m.clone();
+pub fn compute_ties_and_wins(m: &ArrayView2<i64>) -> (Array2<i64>, Array2<i64>) {
+    let mut t = m.to_owned();
+
     for ((i, j), t) in t.indexed_iter_mut() {
         *t = std::cmp::min(m[[i, j]], m[[j, i]]);
     }
+
     let w = m - &t;
+
     (t, w)
 }
 
 pub fn matrices(
-    first: &Vec<usize>,
-    second: &Vec<usize>,
-    status: &Vec<Status>,
+    xs: &ArrayView1<usize>,
+    ys: &ArrayView1<usize>,
+    rs: &ArrayView1<Status>,
 ) -> (Array2<i64>, Array2<i64>) {
     assert_eq!(
-        first.len(),
-        second.len(),
+        xs.len(),
+        ys.len(),
         "first and second length mismatch: {} vs. {}",
-        first.len(),
-        second.len()
+        xs.len(),
+        ys.len()
     );
 
     assert_eq!(
-        first.len(),
-        status.len(),
+        xs.len(),
+        rs.len(),
         "first and status length mismatch: {} vs. {}",
-        first.len(),
-        status.len()
+        xs.len(),
+        rs.len()
     );
 
-    assert!(!first.is_empty(), "empty inputs");
+    assert!(!xs.is_empty(), "empty inputs");
 
-    let n = 1 + std::cmp::max(*first.iter().max().unwrap(), *second.iter().max().unwrap());
+    let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
 
     let mut wins = Array2::zeros((n, n));
     let mut ties = Array2::zeros((n, n));
 
-    for i in 0..first.len() {
-        match status[i] {
+    for i in 0..xs.len() {
+        match rs[i] {
             Status::Won => {
-                wins[[first[i], second[i]]] += 1;
+                wins[[xs[i], ys[i]]] += 1;
             }
             Status::Lost => {
-                wins[[second[i], first[i]]] += 1;
+                wins[[ys[i], xs[i]]] += 1;
             }
             Status::Tied => {
-                ties[[first[i], second[i]]] += 1;
-                ties[[second[i], first[i]]] += 1;
+                ties[[xs[i], ys[i]]] += 1;
+                ties[[ys[i], xs[i]]] += 1;
             }
             _ => {}
         }
@@ -66,32 +69,30 @@ mod tests {
 
     #[test]
     fn test_matrices() {
-        let first = vec![0, 1, 2, 3];
-        let second = vec![1, 2, 3, 4];
-        let status = vec![Status::Won, Status::Lost, Status::Tied, Status::Skipped];
+        let xs = array![0, 1, 2, 3];
+        let ys = array![1, 2, 3, 4];
+        let rs = array![Status::Won, Status::Lost, Status::Tied, Status::Skipped];
 
-        let (wins, ties) = matrices(&first, &second, &status);
+        let expected_wins = array![
+            [0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
 
-        assert_eq!(
-            wins,
-            array![
-                [0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0],
-            ]
-        );
+        let expected_ties = array![
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
 
-        assert_eq!(
-            ties,
-            array![
-                [0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0],
-                [0, 0, 0, 1, 0],
-                [0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 0],
-            ]
-        );
+        let (wins, ties) = matrices(&xs.view(), &ys.view(), &rs.view());
+
+        assert_eq!(wins, expected_wins);
+
+        assert_eq!(ties, expected_ties);
     }
 }

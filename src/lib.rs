@@ -1,5 +1,6 @@
-use numpy::{Element, IntoPyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayLike1};
-use numpy::PyArrayMethods;
+use numpy::{
+    Element, IntoPyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayLike1, PyReadonlyArray2,
+};
 use pyo3::prelude::*;
 
 mod bradley_terry;
@@ -29,15 +30,11 @@ unsafe impl Element for Status {
 #[pyfunction]
 fn py_matrices<'py>(
     py: Python<'py>,
-    first: PyArrayLike1<'py, usize>,
-    second: PyArrayLike1<'py, usize>,
-    statuses: PyArrayLike1<'py, Status>,
+    xs: PyArrayLike1<'py, usize>,
+    ys: PyArrayLike1<'py, usize>,
+    rs: PyArrayLike1<'py, Status>,
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
-    let first = first.as_array().to_vec();
-    let second = second.as_array().to_vec();
-    let statuses = statuses.as_array().to_vec();
-
-    let (wins, ties) = utils::matrices(&first, &second, &statuses);
+    let (wins, ties) = utils::matrices(&xs.as_array(), &ys.as_array(), &rs.as_array());
 
     Ok((
         wins.into_pyarray_bound(py).unbind(),
@@ -46,52 +43,49 @@ fn py_matrices<'py>(
 }
 
 #[pyfunction]
-fn py_counting(py: Python, m: &Bound<PyArray2<i64>>) -> PyResult<Py<PyArray1<i64>>> {
-    let m = unsafe { m.as_array().to_owned() };
-    let counts = counting::counting(&m);
+fn py_counting<'py>(py: Python, m: PyReadonlyArray2<'py, i64>) -> PyResult<Py<PyArray1<i64>>> {
+    let counts = counting::counting(&m.as_array());
+
     Ok(counts.into_pyarray_bound(py).unbind())
 }
 
 #[pyfunction]
-fn py_bradley_terry(
+fn py_bradley_terry<'py>(
     py: Python,
-    m: &Bound<PyArray2<i64>>,
+    m: PyReadonlyArray2<'py, i64>,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let m = unsafe { m.as_array().to_owned() };
-    let (pi, iterations) = bradley_terry::bradley_terry(&m, tolerance, limit);
-    Ok((pi.into_pyarray_bound(py).unbind(), iterations))
+    let (scores, iterations) = bradley_terry::bradley_terry(&m.as_array(), tolerance, limit);
+
+    Ok((scores.into_pyarray_bound(py).unbind(), iterations))
 }
 
 #[pyfunction]
-fn py_newman(
+fn py_newman<'py>(
     py: Python,
-    m: &Bound<PyArray2<i64>>,
+    m: PyReadonlyArray2<'py, i64>,
     seed: u64,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let m = unsafe { m.as_array().to_owned() };
-    let (pi, iterations) = newman::newman(&m, seed, tolerance, limit);
+    let (pi, iterations) = newman::newman(&m.as_array(), seed, tolerance, limit);
+
     Ok((pi.into_pyarray_bound(py).unbind(), iterations))
 }
 
 #[pyfunction]
 fn py_elo<'py>(
     py: Python,
-    first: PyArrayLike1<'py, usize>,
-    second: PyArrayLike1<'py, usize>,
-    statuses: PyArrayLike1<'py, Status>,
+    xs: PyArrayLike1<'py, usize>,
+    ys: PyArrayLike1<'py, usize>,
+    rs: PyArrayLike1<'py, Status>,
     r: f64,
     k: u64,
     s: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    let first = first.as_array().to_vec();
-    let second = second.as_array().to_vec();
-    let statuses = statuses.as_array().to_vec();
+    let pi = elo::elo(&xs.as_array(), &ys.as_array(), &rs.as_array(), r, k, s);
 
-    let pi = elo::elo(&first, &second, &statuses, r, k, s);
     Ok(pi.into_pyarray_bound(py).unbind())
 }
 

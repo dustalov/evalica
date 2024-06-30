@@ -1,18 +1,18 @@
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array1, ArrayView2, Axis};
 
-pub fn counting(m: &Array2<i64>) -> Array1<i64> {
+pub fn counting(m: &ArrayView2<i64>) -> Array1<i64> {
     m.sum_axis(Axis(1))
 }
 
 #[cfg(test)]
 mod tests {
-    use ndarray::{array, Array2};
+    use ndarray::array;
 
     use super::counting;
 
     #[test]
     fn test_counting() {
-        let m: Array2<i64> = array![
+        let m = array![
             [0, 1, 2, 0, 1],
             [2, 0, 2, 1, 0],
             [1, 2, 0, 0, 1],
@@ -20,14 +20,14 @@ mod tests {
             [2, 0, 1, 3, 0]
         ];
 
-        let p = counting(&m);
+        let expected = array![4, 5, 4, 6, 6];
 
-        assert_eq!(p.len(), m.shape()[0]);
+        let actual = counting(&m.view());
 
-        let expected_p = array![4, 5, 4, 6, 6];
+        assert_eq!(actual.len(), m.shape()[0]);
 
-        for (a, b) in p.iter().zip(expected_p.iter()) {
-            assert!(a == b);
+        for (a, b) in actual.iter().zip(expected.iter()) {
+            assert_eq!(a, b);
         }
     }
 }

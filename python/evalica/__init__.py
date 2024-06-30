@@ -8,4 +8,11 @@ from .evalica import (
     py_elo as elo,
 )
 
-__all__ = ["__version__", "Status", "matrices", "counting", "bradley_terry", "newman", "elo"]
+STATUSES = [
+    evalica.Status.Won,
+    evalica.Status.Lost,
+    evalica.Status.Tied,
+    evalica.Status.Skipped
+]
+
+__all__ = ["__version__", "Status", "matrices", "counting", "bradley_terry", "newman", "elo", "STATUSES"]
