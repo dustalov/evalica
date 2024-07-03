@@ -1,3 +1,4 @@
+
 import hypothesis.strategies as st
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +19,7 @@ def test_version() -> None:
     st.lists(st.sampled_from(evalica.STATUSES), min_size=2, max_size=2),
 )
 def test_matrices(
-        xs: list[int], ys: list[int], rs: list[evalica.Status]
+        xs: list[int], ys: list[int], rs: list[evalica.Status],
 ) -> None:
     n = 1 + max(max(xs), max(ys))
 
@@ -65,7 +66,7 @@ def test_newman(m: npt.NDArray[np.int64]) -> None:
     st.lists(st.sampled_from(evalica.STATUSES), min_size=2, max_size=2),
 )
 def test_elo(
-        xs: list[int], ys: list[int], rs: list[evalica.Status]
+        xs: list[int], ys: list[int], rs: list[evalica.Status],
 ) -> None:
     n = 1 + max(max(xs), max(ys))
     p = evalica.elo(xs, ys, rs, 1500, 30, 400)

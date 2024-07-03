@@ -32,3 +32,22 @@ python-source = "python"
 ignore_missing_imports = true
 plugins = ["numpy.typing.mypy_plugin"]
 strict = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D100",
+    "D103",
+    "D104",
+    "D203",
+    "D212",
+    "ERA001",
+    "FA102",
+    "PLR",
+    "PLW",
+    "S101",
+]
