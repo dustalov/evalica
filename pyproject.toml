@@ -25,7 +25,6 @@ dynamic = ["version"]
 dev = ["hypothesis[numpy]", "mypy", "pandas", "pytest", "ruff", "twine"]
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
 python-source = "python"
 
 [tool.mypy]
@@ -40,6 +39,7 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "FIX002",
     "D100",
     "D103",
     "D104",
@@ -50,4 +50,6 @@ ignore = [
     "PLR",
     "PLW",
     "S101",
+    "TD002",
+    "TD003",
 ]
