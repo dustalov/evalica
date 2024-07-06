@@ -1,17 +1,25 @@
 use ndarray::{Array1, Array2, ArrayView2, Axis};
 
-pub fn bradley_terry(m: &ArrayView2<f64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
-    assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
+pub fn bradley_terry(
+    matrix: &ArrayView2<f64>,
+    tolerance: f64,
+    limit: usize,
+) -> (Array1<f64>, usize) {
+    assert_eq!(
+        matrix.shape()[0],
+        matrix.shape()[1],
+        "The matrix must be square"
+    );
 
-    let totals = m.t().to_owned() + m;
+    let totals = matrix.t().to_owned() + matrix;
 
     let active = totals.mapv(|x| x > 0.0);
 
-    let w: Array1<f64> = m.sum_axis(Axis(1));
+    let w: Array1<f64> = matrix.sum_axis(Axis(1));
 
-    let mut z: Array2<f64> = Array2::zeros(m.raw_dim());
+    let mut z: Array2<f64> = Array2::zeros(matrix.raw_dim());
 
-    let mut scores: Array1<f64> = Array1::ones(m.shape()[0]);
+    let mut scores: Array1<f64> = Array1::ones(matrix.shape()[0]);
     let mut scores_new: Array1<f64> = scores.clone();
 
     let mut converged = false;
@@ -28,7 +36,7 @@ pub fn bradley_terry(m: &ArrayView2<f64>, tolerance: f64, limit: usize) -> (Arra
 
         scores_new.fill(0.0);
 
-        for i in 0..m.shape()[0] {
+        for i in 0..matrix.shape()[0] {
             let d = z.column(i).sum();
 
             if d != 0.0 {
@@ -54,8 +62,8 @@ pub fn bradley_terry(m: &ArrayView2<f64>, tolerance: f64, limit: usize) -> (Arra
 }
 
 pub fn newman(
-    w: &ArrayView2<f64>,
-    t: &ArrayView2<f64>,
+    win_matrix: &ArrayView2<f64>,
+    tie_matrix: &ArrayView2<f64>,
     v_init: f64,
     tolerance: f64,
     limit: usize,
@@ -63,10 +71,10 @@ pub fn newman(
     assert!(v_init.is_normal());
     assert!(v_init > 0.0);
 
-    let mut scores = Array1::ones(w.shape()[0]);
+    let mut scores = Array1::ones(win_matrix.shape()[0]);
     let mut scores_new = scores.clone();
 
-    let w_t_half = w + &(t / 2.0);
+    let w_t_half = win_matrix + &(tie_matrix / 2.0);
 
     let mut converged = false;
     let mut iterations = 0;
@@ -84,9 +92,9 @@ pub fn newman(
         let pi_denominator = w_scores.sum_axis(Axis(0));
 
         let t_denom = &scores + &scores.t() + 2.0 * v * &sqrt_scores;
-        let v_numerator = (*&t * (&scores + &scores.t()) / t_denom).sum() / 2.0;
+        let v_numerator = (*&tie_matrix * (&scores + &scores.t()) / t_denom).sum() / 2.0;
 
-        let v_denom = (2.0 * w * &sqrt_scores / &w_denom).sum();
+        let v_denom = (2.0 * win_matrix * &sqrt_scores / &w_denom).sum();
 
         v = v_numerator / v_denom;
 
@@ -128,15 +136,15 @@ mod tests {
 
     #[test]
     fn test_bradley_terry() {
-        let m = matrix();
+        let matrix = matrix();
         let tolerance = 1e-8;
         let limit = 100;
 
         let expected = array![0.12151104, 0.15699947, 0.11594851, 0.31022851, 0.29531247];
 
-        let (actual, iterations) = bradley_terry(&m.view(), tolerance, limit);
+        let (actual, iterations) = bradley_terry(&matrix.view(), tolerance, limit);
 
-        assert_eq!(actual.len(), m.shape()[0]);
+        assert_eq!(actual.len(), matrix.shape()[0]);
         assert_ne!(iterations, 0);
 
         for (a, b) in actual.iter().zip(expected.iter()) {
@@ -146,18 +154,18 @@ mod tests {
 
     #[test]
     fn test_newman() {
-        let m = matrix();
+        let matrix = matrix();
         let tolerance = 1e-8;
         let limit = 100;
 
-        let (w, t) = utils::compute_ties_and_wins(&m.view());
+        let (win_matrix, tie_matrix) = utils::compute_ties_and_wins(&matrix.view());
 
-        let w64 = w.map(|x| *x as f64);
-        let t64 = t.map(|x| *x as f64);
+        let w64 = win_matrix.map(|x| *x as f64);
+        let t64 = tie_matrix.map(|x| *x as f64);
 
         let (actual, v, iterations) = newman(&w64.view(), &t64.view(), 0.5, tolerance, limit);
 
-        assert_eq!(actual.len(), m.shape()[0]);
+        assert_eq!(actual.len(), matrix.shape()[0]);
         assert!(v.is_finite());
         assert_ne!(iterations, 0);
     }

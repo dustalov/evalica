@@ -51,7 +51,7 @@ def test_counting(xs_ys_ws: Example) -> None:
 
     result = evalica.counting(xs, ys, ws)
 
-    assert result.win_matrix.shape[0] == len(result.scores)
+    assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()
 
 

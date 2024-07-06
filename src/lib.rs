@@ -43,8 +43,13 @@ fn matrices_pyo3<'py>(
 }
 
 #[pyfunction]
-fn counting_pyo3<'py>(py: Python, m: PyReadonlyArray2<'py, i64>) -> PyResult<Py<PyArray1<i64>>> {
-    let counts = counting::counting(&m.as_array());
+fn counting_pyo3<'py>(
+    py: Python,
+    xs: PyArrayLike1<'py, usize>,
+    ys: PyArrayLike1<'py, usize>,
+    ws: PyArrayLike1<'py, Winner>,
+) -> PyResult<Py<PyArray1<i64>>> {
+    let counts = counting::counting(&xs.as_array(), &ys.as_array(), &ws.as_array());
 
     Ok(counts.into_pyarray_bound(py).unbind())
 }
@@ -52,11 +57,11 @@ fn counting_pyo3<'py>(py: Python, m: PyReadonlyArray2<'py, i64>) -> PyResult<Py<
 #[pyfunction]
 fn bradley_terry_pyo3<'py>(
     py: Python,
-    m: PyReadonlyArray2<'py, f64>,
+    matrix: PyReadonlyArray2<'py, f64>,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let (scores, iterations) = bradley_terry::bradley_terry(&m.as_array(), tolerance, limit);
+    let (scores, iterations) = bradley_terry::bradley_terry(&matrix.as_array(), tolerance, limit);
 
     Ok((scores.into_pyarray_bound(py).unbind(), iterations))
 }
@@ -64,14 +69,19 @@ fn bradley_terry_pyo3<'py>(
 #[pyfunction]
 fn newman_pyo3<'py>(
     py: Python,
-    w: PyReadonlyArray2<'py, f64>,
-    t: PyReadonlyArray2<'py, f64>,
+    win_matrix: PyReadonlyArray2<'py, f64>,
+    tie_matrix: PyReadonlyArray2<'py, f64>,
     v_init: f64,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, f64, usize)> {
-    let (scores, v, iterations) =
-        bradley_terry::newman(&w.as_array(), &t.as_array(), v_init, tolerance, limit);
+    let (scores, v, iterations) = bradley_terry::newman(
+        &win_matrix.as_array(),
+        &tie_matrix.as_array(),
+        v_init,
+        tolerance,
+        limit,
+    );
 
     Ok((scores.into_pyarray_bound(py).unbind(), v, iterations))
 }
@@ -92,7 +102,10 @@ fn elo_pyo3<'py>(
 }
 
 #[pyfunction]
-fn eigen_pyo3<'py>(py: Python<'py>, m: PyReadonlyArray2<'py, f64>) -> PyResult<Py<PyArray1<f64>>> {
+fn eigen_pyo3<'py>(
+    py: Python<'py>,
+    matrix: PyReadonlyArray2<'py, f64>,
+) -> PyResult<Py<PyArray1<f64>>> {
     /*
     I found this approach simpler than setting up BLAS
     for multiple platforms which is required by ndarray-linalg.
@@ -102,7 +115,7 @@ fn eigen_pyo3<'py>(py: Python<'py>, m: PyReadonlyArray2<'py, f64>) -> PyResult<P
 
     let np = py.import_bound("numpy")?;
     let globals = [("np", np)].into_py_dict_bound(py);
-    let locals = [("m", m.as_unbound())].into_py_dict_bound(py);
+    let locals = [("m", matrix.as_unbound())].into_py_dict_bound(py);
 
     let eigen = py
         .eval_bound(

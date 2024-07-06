@@ -87,7 +87,6 @@ def matrices(
 @dataclass(frozen=True)
 class CountingResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
-    win_matrix: npt.NDArray[np.int64]
 
 
 def counting(
@@ -95,13 +94,12 @@ def counting(
         ys: Iterable[T],
         ws: Iterable[Winner],
 ) -> CountingResult[T]:
-    _matrices = matrices(xs, ys, ws)
+    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
 
-    counts = counting_pyo3(_matrices.win_matrix)
+    counts = counting_pyo3(_xs, _ys, ws)
 
     return CountingResult(
-        scores=pd.Series(counts, index=_matrices.index, name=counting.__name__),
-        win_matrix=_matrices.win_matrix,
+        scores=pd.Series(counts, index=index, name=counting.__name__),
     )
 
 

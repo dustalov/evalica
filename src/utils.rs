@@ -1,17 +1,18 @@
-use ndarray::{Array2, ArrayView1, ArrayView2};
 use std::collections::HashMap;
 use std::hash::Hash;
 
+use ndarray::{Array2, ArrayView1, ArrayView2};
+
 use crate::Winner;
 
-pub fn compute_ties_and_wins(m: &ArrayView2<f64>) -> (Array2<f64>, Array2<f64>) {
-    let mut t = m.to_owned();
+pub fn compute_ties_and_wins(matrix: &ArrayView2<f64>) -> (Array2<f64>, Array2<f64>) {
+    let mut t = matrix.to_owned();
 
     for ((i, j), t) in t.indexed_iter_mut() {
-        *t = f64::min(m[[i, j]], m[[j, i]]);
+        *t = f64::min(matrix[[i, j]], matrix[[j, i]]);
     }
 
-    let w = m - &t;
+    let w = matrix - &t;
 
     (t, w)
 }
