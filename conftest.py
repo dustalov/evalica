@@ -28,8 +28,16 @@ def simple_win_tie(simple: npt.NDArray[np.float64]) -> tuple[npt.NDArray[np.floa
     return W, T
 
 
+class Example(NamedTuple):
+    """A tuple holding example data."""
+
+    xs: "list[str] | pd.Series[str]"
+    ys: "list[str] | pd.Series[str]"
+    ws: "list[evalica.Winner] | pd.Series[evalica.Winner]"  # type: ignore[type-var]
+
+
 @pytest.fixture()
-def food() -> tuple[list[str], list[str], list[evalica.Winner]]:
+def food() -> Example:  # type: ignore[type-var]
     df_food = pd.read_csv("food.csv", dtype=str)
 
     xs = df_food["left"]
@@ -40,11 +48,11 @@ def food() -> tuple[list[str], list[str], list[evalica.Winner]]:
         "tie": evalica.Winner.Draw,
     })
 
-    return xs.tolist(), ys.tolist(), ws.tolist()
+    return Example(xs=xs, ys=ys, ws=ws)
 
 
 @pytest.fixture()
-def llmfao() -> tuple[list[str], list[str], list[evalica.Winner]]:
+def llmfao() -> Example:
     df_llmfao = pd.read_csv("https://github.com/dustalov/llmfao/raw/master/crowd-comparisons.csv", dtype=str)
 
     xs = df_llmfao["left"]
@@ -55,25 +63,18 @@ def llmfao() -> tuple[list[str], list[str], list[evalica.Winner]]:
         "tie": evalica.Winner.Draw,
     })
 
-    return xs.tolist(), ys.tolist(), ws.tolist()
-
-
-class Example(NamedTuple):
-    """A tuple holding example data."""
-
-    xs: list[int] | npt.NDArray[np.int64]
-    ys: list[int] | npt.NDArray[np.int64]
-    ws: list[evalica.Winner]
+    return Example(xs=xs, ys=ys, ws=ws)
 
 
 @st.composite
 def xs_ys_ws(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:
     length = draw(st.integers(0, 5))
-    elements = st.lists(st.integers(0, length), min_size=length, max_size=length)
+
+    elements = st.lists(st.text(max_size=length), min_size=length, max_size=length)
     winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
 
     return Example(
         xs=draw(elements),
-        ys=np.array(draw(elements), dtype=np.int64),
+        ys=draw(elements),
         ws=draw(winners),
     )

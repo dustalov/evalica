@@ -18,7 +18,7 @@ def test_exports() -> None:
 
 
 @given(xs_ys_ws=xs_ys_ws())
-def test_enumerate_elements(xs_ys_ws: Example) -> None:
+def test_enumerate_elements(xs_ys_ws: Example) -> None:  # type: ignore[type-var]
     xs, ys, ws = xs_ys_ws
 
     index = evalica.enumerate_elements(xs, ys)
@@ -116,7 +116,7 @@ def test_newman_simple(simple_win_tie: tuple[npt.NDArray[np.float64], npt.NDArra
     assert p == pytest.approx(p_naive, abs=tolerance)
 
 
-def test_bradley_terry_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+def test_bradley_terry_food(food: Example) -> None:
     xs, ys, ws = food
 
     result = evalica.bradley_terry(xs, ys, ws)
@@ -126,7 +126,7 @@ def test_bradley_terry_food(food: tuple[list[str], list[str], list[evalica.Winne
     assert result.iterations > 0
 
 
-def test_newman_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+def test_newman_food(food: Example) -> None:
     xs, ys, ws = food
 
     result = evalica.newman(xs, ys, ws)
@@ -138,7 +138,7 @@ def test_newman_food(food: tuple[list[str], list[str], list[evalica.Winner]]) ->
     assert result.iterations > 0
 
 
-def test_elo_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+def test_elo_food(food: Example) -> None:
     xs, ys, ws = food
 
     result = evalica.elo(xs, ys, ws)
@@ -147,7 +147,7 @@ def test_elo_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> No
     assert np.isfinite(result.scores).all()
 
 
-def test_bradley_terry_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+def test_bradley_terry_llmfao(llmfao: Example) -> None:
     xs, ys, ws = llmfao
 
     result = evalica.bradley_terry(xs, ys, ws)
@@ -157,7 +157,7 @@ def test_bradley_terry_llmfao(llmfao: tuple[list[str], list[str], list[evalica.W
     assert result.iterations > 0
 
 
-def test_newman_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+def test_newman_llmfao(llmfao: Example) -> None:
     xs, ys, ws = llmfao
 
     result = evalica.newman(xs, ys, ws)
@@ -169,7 +169,7 @@ def test_newman_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]
     assert result.iterations > 0
 
 
-def test_elo_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+def test_elo_llmfao(llmfao: Example) -> None:
     xs, ys, ws = llmfao
 
     result = evalica.elo(xs, ys, ws)
