@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
 use crate::Winner;
@@ -12,6 +15,22 @@ pub fn compute_ties_and_wins(m: &ArrayView2<f64>) -> (Array2<f64>, Array2<f64>) 
     let w = m - &t;
 
     (t, w)
+}
+
+pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
+    let mut index: HashMap<I, usize> = HashMap::new();
+
+    for x in xs.iter() {
+        let len = index.len();
+        index.entry(x.clone()).or_insert(len);
+    }
+
+    for y in ys.iter() {
+        let len = index.len();
+        index.entry(y.clone()).or_insert(len);
+    }
+
+    index
 }
 
 pub fn matrices(
@@ -65,7 +84,22 @@ pub fn matrices(
 mod tests {
     use ndarray::array;
 
-    use super::{matrices, Winner};
+    use super::{index, matrices, Winner};
+
+    #[test]
+    fn test_index() {
+        let xs = array![0, 1, 2, 3];
+        let ys = array![1, 2, 3, 4];
+
+        let expected = [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
+            .iter()
+            .cloned()
+            .collect();
+
+        let actual = index(&xs.view(), &ys.view());
+
+        assert_eq!(actual, expected);
+    }
 
     #[test]
     fn test_matrices() {
