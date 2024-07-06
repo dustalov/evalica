@@ -78,14 +78,14 @@ jobs:
         # i686 not supported by pypy
         # aarch64 only 3.11 and up, also not PGO optimized
         - os: windows
-          target: x86_64
-          interpreter: pypy3.9 pypy3.10
-        - os: windows
           target: i686
           python-architecture: x86
           interpreter: 3.8 3.9 3.10 3.11 3.12
         exclude:
         # See above; disabled for now.
+        - os: windows
+          target: x86_64
+          interpreter: pypy3.9 pypy3.10
         - os: windows
           target: aarch64
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
