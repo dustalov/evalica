@@ -56,14 +56,16 @@ jobs:
     - name: Lint Jupyter with Ruff
       run: nbqa ruff *.ipynb
     - name: Run Jupyter
-      run: |
-        mkdir jupyter
-        jupyter nbconvert --to html --output jupyter/Tutorial.html --execute Tutorial.ipynb
+      run: jupyter nbconvert --to html --output Tutorial.html --execute Tutorial.ipynb
     - name: Build with Maturin
       run: maturin build --release --out=dist/
     - name: Check with Twine
       run: twine check --strict dist/*
-    - name: Upload Jupyter
-      uses: actions/upload-pages-artifact@v3
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
-        path: ./jupyter
+        name: jupyter
+        path: |
+          *.html
+        if-no-files-found: error
+        retention-days: 5
