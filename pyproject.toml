@@ -27,6 +27,7 @@ dev = [
     "mypy",
     "nbqa",
     "notebook",
+    "pandas-stubs",
     "plotly",
     "pytest",
     "ruff",

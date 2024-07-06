@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -17,8 +17,8 @@ from .evalica import (
     matrices_pyo3,
     newman_pyo3,
 )
-from .naive import bradley_terry as bradley_terry_naive
-from .naive import newman as newman_naive
+from .naive import bradley_terry as bradley_terry_naive  # noqa: F401
+from .naive import newman as newman_naive  # noqa: F401
 
 WINNERS = [
     Winner.X,
@@ -38,7 +38,7 @@ def index(xs: Iterable[T], *yss: Iterable[T]) -> dict[T, int]:
 
     return index
 
-def _index_elements(xs: Iterable[T], ys: Iterable[T]) -> tuple["pd.Index[T]", list[int], list[int]]:
+def _index_elements(xs: Iterable[T], ys: Iterable[T]) -> tuple["pd.Index[T]", list[int], list[int]]:  # type: ignore[type-var]
     xy_index = index(xs, ys)
 
     xs_indexed = [xy_index[x] for x in xs]
@@ -48,16 +48,16 @@ def _index_elements(xs: Iterable[T], ys: Iterable[T]) -> tuple["pd.Index[T]", li
 
 
 @dataclass(frozen=True)
-class MatricesResult:
+class MatricesResult(Generic[T]):
     win_matrix: npt.NDArray[np.int64]
     tie_matrix: npt.NDArray[np.int64]
-    index: "pd.Index[Hashable]"
+    index: "pd.Index[T]"  # type: ignore[type-var]
 
 def matrices(
     xs: Iterable[T],
     ys: Iterable[T],
     ws: Iterable[Winner],
-) -> MatricesResult:
+) -> MatricesResult[T]:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
     W, T = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
@@ -70,8 +70,8 @@ def matrices(
 
 
 @dataclass(frozen=True)
-class CountingResult:
-    scores: "pd.Series[T]"
+class CountingResult(Generic[T]):
+    scores: "pd.Series[T]"  # type: ignore[type-var]
     win_matrix: npt.NDArray[np.int64]
 
 
@@ -79,7 +79,7 @@ def counting(
     xs: Iterable[T],
     ys: Iterable[T],
     ws: Iterable[Winner],
-) -> CountingResult:
+) -> CountingResult[T]:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
     W, _ = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
@@ -92,8 +92,8 @@ def counting(
     )
 
 @dataclass(frozen=True)
-class BradleyTerryResult:
-    scores: "pd.Series[T]"
+class BradleyTerryResult(Generic[T]):
+    scores: "pd.Series[T]"  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
     tie_weight: float
     iterations: int
@@ -105,7 +105,7 @@ def bradley_terry(
     tie_weight: float = .5,
     tolerance: float = 1e-4,
     limit: int = 100,
-) -> BradleyTerryResult:
+) -> BradleyTerryResult[T]:
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
     xy_index, _xs, _ys = _index_elements(xs, ys)
@@ -124,8 +124,8 @@ def bradley_terry(
     )
 
 @dataclass(frozen=True)
-class NewmanResult:
-    scores: "pd.Series[T]"
+class NewmanResult(Generic[T]):
+    scores: "pd.Series[T]"  # type: ignore[type-var]
     win_matrix: npt.NDArray[np.float64]
     tie_matrix: npt.NDArray[np.float64]
     v: float
@@ -139,7 +139,7 @@ def newman(
     v_init: float = .5,
     tolerance: float = 1e-4,
     limit: int = 100,
-) -> NewmanResult:
+) -> NewmanResult[T]:
     assert np.isfinite(v_init), "v_init must be finite"
 
     xy_index, _xs, _ys = _index_elements(xs, ys)
@@ -159,8 +159,8 @@ def newman(
     )
 
 @dataclass(frozen=True)
-class EloResult:
-    scores: "pd.Series[T]"
+class EloResult(Generic[T]):
+    scores: "pd.Series[T]"  # type: ignore[type-var]
     r: float
     k: int
     s: float
@@ -172,7 +172,7 @@ def elo(
     r: float = 1500,
     k: int = 30,
     s: float = 400,
-) -> EloResult:
+) -> EloResult[T]:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
     scores = elo_pyo3(_xs, _ys, ws, r, k, s)
@@ -185,8 +185,8 @@ def elo(
     )
 
 @dataclass(frozen=True)
-class EigenResult:
-    scores: "pd.Series[T]"
+class EigenResult(Generic[T]):
+    scores: "pd.Series[T]"  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
     tie_weight: float
 
@@ -195,7 +195,7 @@ def eigen(
     ys: Iterable[T],
     ws: Iterable[Winner],
     tie_weight: float = .5,
-) -> EigenResult:
+) -> EigenResult[T]:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
     W, T = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
@@ -210,24 +210,26 @@ def eigen(
         tie_weight=tie_weight,
     )
 
-def pairwise(scores: "pd.Series[T] | npt.NDArray[np.float64]") -> npt.NDArray[np.float64]:
-    if isinstance(scores, pd.Series):
-        return pairwise(scores.sort_values(ascending=False).to_numpy())
 
+def _pairwise_ndarray(scores: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
 
+
+def pairwise(scores: "pd.Series[T]") -> npt.NDArray[np.float64]:  # type: ignore[type-var]
+    scores = scores.sort_values(ascending=False)
+    return _pairwise_ndarray(scores.to_numpy())
+
+
 __all__ = [
+    "WINNERS",
     "Winner",
     "__version__",
     "bradley_terry",
     "counting",
     "eigen",
     "elo",
-    "matrices_pyo3",
-    "newman",
-    "bradley_terry_naive",
-    "newman_naive",
-    "WINNERS",
     "index",
+    "matrices",
+    "newman",
     "pairwise",
 ]
