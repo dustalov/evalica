@@ -1,8 +1,4 @@
 use ndarray::{Array1, Array2, ArrayView2, Axis};
-use rand::{Rng, SeedableRng};
-use rand::prelude::StdRng;
-
-use crate::utils;
 
 pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
     assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
@@ -42,17 +38,14 @@ pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Arra
 
         let p_sum = scores_new.sum();
 
-        if p_sum != 0.0 {
+        if p_sum == 0.0 {
+            scores_new.assign(&scores)
+        } else {
             scores_new /= p_sum;
         }
 
-        let diff_norm = (&scores_new - &scores)
-            .iter()
-            .map(|x| x * x)
-            .sum::<f64>()
-            .sqrt();
-
-        converged = diff_norm < tolerance;
+        let difference = &scores_new - &scores;
+        converged = difference.dot(&difference).sqrt() < tolerance;
 
         scores.assign(&scores_new);
     }
@@ -61,80 +54,65 @@ pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Arra
 }
 
 pub fn newman(
-    m: &ArrayView2<i64>,
-    seed: u64,
+    w: &ArrayView2<f64>,
+    t: &ArrayView2<f64>,
+    v_init: f64,
     tolerance: f64,
     limit: usize,
-) -> (Array1<f64>, usize) {
-    assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
+) -> (Array1<f64>, f64, usize) {
+    assert!(v_init.is_normal());
+    assert!(v_init > 0.0);
 
-    let (t, w) = utils::compute_ties_and_wins(m);
+    let mut scores = Array1::ones(w.shape()[0]);
+    let mut scores_new = scores.clone();
 
-    let mut rng = StdRng::seed_from_u64(seed);
-
-    let mut scores: Array1<f64> = Array1::from_shape_fn(m.shape()[0], |_| rng.gen_range(0.0..1.0));
-    let mut v: f64 = rng.gen_range(0.0..1.0);
+    let w_t_half = w + &(t / 2.0);
 
     let mut converged = false;
     let mut iterations = 0;
 
+    let mut v = v_init;
+
     while !converged && iterations < limit {
         iterations += 1;
 
-        let pi_broadcast = scores
-            .broadcast((scores.len(), scores.len()))
-            .unwrap()
-            .to_owned();
-        let pi_broadcast_t = pi_broadcast.t().to_owned();
-        let pi_sum = &pi_broadcast + &pi_broadcast_t;
-        let sqrt_pi_product = (pi_broadcast.clone() * pi_broadcast_t.clone()).mapv(f64::sqrt);
+        let sqrt_scores = scores.mapv(f64::sqrt);
+        let w_denom = &scores + &scores.t() + 2.0 * v * &sqrt_scores;
+        let w_scores = &w_t_half * (&scores + v * &sqrt_scores) / &w_denom;
 
-        let denominator_common = &pi_sum + 2.0 * v * &sqrt_pi_product;
+        let pi_numerator = w_scores.sum_axis(Axis(1));
+        let pi_denominator = w_scores.sum_axis(Axis(0));
 
-        let v_numerator =
-            (&t.mapv(|x| x as f64) * (&pi_broadcast + &pi_broadcast_t) / &denominator_common).sum()
-                / 2.0;
+        let t_denom = &scores + &scores.t() + 2.0 * v * &sqrt_scores;
+        let v_numerator = (*&t * (&scores + &scores.t()) / t_denom).sum() / 2.0;
 
-        let v_denominator =
-            (&w.mapv(|x| x as f64) * (2.0 * &sqrt_pi_product) / &denominator_common).sum();
+        let v_denom = (2.0 * w * &sqrt_scores / &w_denom).sum();
 
-        v = v_numerator / v_denominator;
+        v = v_numerator / v_denom;
 
-        if v.is_nan() {
-            v = tolerance;
+        if !v.is_finite() {
+            v = 0.0;
         }
 
-        let scores_old = scores.clone();
+        let result = &pi_numerator / &pi_denominator;
 
-        let pi_numerator = ((w.mapv(|x| x as f64) + t.mapv(|x| x as f64) / 2.0)
-            * (&pi_broadcast + v * &sqrt_pi_product)
-            / (&pi_sum + 2.0 + v * &sqrt_pi_product))
-            .sum_axis(Axis(1));
+        if result.iter().all(|x| x.is_finite()) {
+            scores_new.assign(&result)
+        }
 
-        let pi_denominator = ((w.mapv(|x| x as f64) + t.mapv(|x| x as f64) / 2.0)
-            * (1.0 + v * &sqrt_pi_product)
-            / (&pi_sum + 2.0 + v * &sqrt_pi_product))
-            .sum_axis(Axis(0));
-
-        scores = &pi_numerator / &pi_denominator;
-
-        scores.iter_mut().for_each(|x| {
-            if x.is_nan() {
-                *x = tolerance;
-            }
-        });
-
-        converged = scores.iter().zip(scores_old.iter()).all(|(p_new, p_old)| {
-            (p_new / (p_new + 1.0) - p_old / (p_old + 1.0)).abs() <= tolerance
-        });
+        let difference = &scores_new - &scores;
+        converged = difference.dot(&difference).sqrt() < tolerance;
+        scores.assign(&scores_new);
     }
 
-    (scores, iterations)
+    (scores, v, iterations)
 }
 
 #[cfg(test)]
 mod tests {
     use ndarray::{array, Array2};
+
+    use crate::utils;
 
     use super::{bradley_terry, newman};
 
@@ -166,16 +144,31 @@ mod tests {
         }
     }
 
+    fn matrix2() -> Array2<i64> {
+        return array![
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
+    }
+
     #[test]
     fn test_newman() {
-        let m = matrix();
-        let seed = 0;
+        let m = matrix2();
         let tolerance = 1e-8;
         let limit = 100;
 
-        let (actual, iterations) = newman(&m.view(), seed, tolerance, limit);
+        let (w, t) = utils::compute_ties_and_wins(&m.view());
+
+        let w64 = w.map(|x| *x as f64);
+        let t64 = t.map(|x| *x as f64);
+
+        let (actual, v, iterations) = newman(&w64.view(), &t64.view(), 0.5, tolerance, limit);
 
         assert_eq!(actual.len(), m.shape()[0]);
+        assert!(v.is_finite());
         assert_ne!(iterations, 0);
     }
 }

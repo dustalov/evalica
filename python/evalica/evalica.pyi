@@ -27,8 +27,8 @@ def py_bradley_terry(
 
 
 def py_newman(
-        m: npt.NDArray[np.int64], seed: int, tolerance: float, limit: int,
-) -> tuple[npt.NDArray[np.float64], int]: ...
+        w: npt.NDArray[np.float64], t: npt.NDArray[np.float64], v_init: float, tolerance: float, limit: int,
+) -> tuple[npt.NDArray[np.float64], float, int]: ...
 
 
 def py_elo(

@@ -56,12 +56,18 @@ def test_bradley_terry(m: npt.NDArray[np.int64]) -> None:
     assert iterations > 0
 
 
-@given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
-def test_newman(m: npt.NDArray[np.int64]) -> None:
-    p, iterations = evalica.newman(m, 0, 1e-4, 100)
+@given(
+    arrays(dtype=np.float64, shape=(5, 5), elements=st.integers(0, 256)),
+    arrays(dtype=np.float64, shape=(5, 5), elements=st.integers(0, 256)),
+    st.floats(allow_nan=False, allow_infinity=False, allow_subnormal=False,
+              min_value=0., max_value=1., exclude_min=True),
+)
+def test_newman(w: npt.NDArray[np.float64], t: npt.NDArray[np.float64], v_init: float) -> None:
+    p, v, iterations = evalica.newman(w, t, v_init, 1e-4, 100)
 
-    assert m.shape[0] == len(p)
+    assert w.shape[0] == len(p)
     assert np.isfinite(p).all()
+    assert np.isfinite(v)
     assert iterations > 0
 
 
@@ -99,6 +105,14 @@ def simple() -> npt.NDArray[np.int64]:
     ], dtype=np.int64)
 
 
+@pytest.fixture()
+def simple_win_tie(simple: npt.NDArray[np.int64]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    T = np.minimum(simple, simple.T).astype(np.float64)  # noqa: N806
+    W = simple - T  # noqa: N806
+
+    return W, T
+
+
 def test_bradley_terry_simple(simple: npt.NDArray[np.int64], tolerance: float = 1e-4) -> None:
     p_naive, _ = evalica.bradley_terry_naive(simple, tolerance)
     p, _ = evalica.bradley_terry(simple, tolerance, 100)
@@ -106,15 +120,12 @@ def test_bradley_terry_simple(simple: npt.NDArray[np.int64], tolerance: float = 
     assert p == pytest.approx(p_naive, abs=tolerance)
 
 
-def test_newman_simple(simple: npt.NDArray[np.int64], tolerance: float = 1.) -> None:
-    T = np.minimum(simple, simple.T)  # noqa: N806
-    W = simple - T  # noqa: N806
+def test_newman_simple(simple_win_tie: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+                       tolerance: float = 1e-1) -> None:
+    w, t = simple_win_tie
 
-    # a workaround for Newman's method initialization
-    p_init, _ = evalica.newman(simple, 0, 1e-4, 0)
-
-    p_naive, _ = evalica.newman_naive(W, T, tolerance, p_init)
-    p, _ = evalica.newman(simple, 0, tolerance, 100)
+    p_naive, _, _ = evalica.newman_naive(w, t, .5, tolerance)
+    p, _, _ = evalica.newman(w, t, .5, tolerance, 100)
 
     # TODO: they are diverging
-    assert p == pytest.approx(p_naive, abs=1)
+    assert p == pytest.approx(p_naive, abs=tolerance)

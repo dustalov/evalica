@@ -34,19 +34,29 @@ def bradley_terry(M: npt.NDArray[np.int64], tolerance: float = 1e-8) -> tuple[  
     return scores, iterations
 
 
-def newman(W: npt.NDArray[np.int64], T: npt.NDArray[np.int64], tolerance: float = 1e-6,  # noqa: N803
-           scores_init: npt.NDArray[np.float64] | None = None,
-           v_init: float | None = None) -> tuple[npt.NDArray[np.float64], int]:
-    rng = np.random.default_rng()
+def newman(W: npt.NDArray[np.float64], T: npt.NDArray[np.float64], v: float = .5,  # noqa: N803
+           tolerance: float = 1e-6) -> tuple[npt.NDArray[np.float64], float, int]:
+    scores = np.ones(W.shape[0])
+    scores_new = scores.copy()
 
-    scores = rng.random(W.shape[0]) if scores_init is None else scores_init
-
-    v = rng.random() if v_init is None else v_init
+    W_T_half = W + T / 2  # noqa: N806
 
     converged, iterations = False, 0
 
     while not converged:
         iterations += 1
+
+        pi_numerator = np.sum(
+            W_T_half * (scores + v * np.sqrt(scores[:, np.newaxis] * scores)) /
+            (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
+            axis=1,
+        )
+
+        pi_denominator = np.sum(
+            W_T_half * (1 + v * np.sqrt(scores[:, np.newaxis] * scores)) /
+            (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
+            axis=0,
+        )
 
         v_numerator = np.sum(
             T * (scores[:, np.newaxis] + scores) /
@@ -58,24 +68,12 @@ def newman(W: npt.NDArray[np.int64], T: npt.NDArray[np.int64], tolerance: float 
             (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
         )
 
-        v = v_numerator / v_denominator
+        scores_new[:] = pi_numerator / pi_denominator
 
-        scores_old = scores.copy()
+        converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
-        pi_numerator = np.sum(
-            (W + T / 2) * (scores + v * np.sqrt(scores[:, np.newaxis] * scores)) /
-            (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
-            axis=1,
-        )
+        scores[:] = scores_new
 
-        pi_denominator = np.sum(
-            (W + T / 2) * (1 + v * np.sqrt(scores[:, np.newaxis] * scores)) /
-            (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
-            axis=0,
-        )
+        v = (v_numerator / v_denominator).item()
 
-        scores = pi_numerator / pi_denominator
-
-        converged = np.allclose(scores / (scores + 1), scores_old / (scores_old + 1), rtol=tolerance, atol=tolerance)
-
-    return scores, iterations
+    return scores, v, iterations

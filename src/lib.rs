@@ -64,14 +64,16 @@ fn py_bradley_terry<'py>(
 #[pyfunction]
 fn py_newman<'py>(
     py: Python,
-    m: PyReadonlyArray2<'py, i64>,
-    seed: u64,
+    w: PyReadonlyArray2<'py, f64>,
+    t: PyReadonlyArray2<'py, f64>,
+    v_init: f64,
     tolerance: f64,
     limit: usize,
-) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let (pi, iterations) = bradley_terry::newman(&m.as_array(), seed, tolerance, limit);
+) -> PyResult<(Py<PyArray1<f64>>, f64, usize)> {
+    let (scores, v, iterations) =
+        bradley_terry::newman(&w.as_array(), &t.as_array(), v_init, tolerance, limit);
 
-    Ok((pi.into_pyarray_bound(py).unbind(), iterations))
+    Ok((scores.into_pyarray_bound(py).unbind(), v, iterations))
 }
 
 #[pyfunction]
