@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "evalica"
 license = "Apache-2.0"
 requires-python = ">= 3.8"
-dependencies = ["numpy>=1.16.0"]
+dependencies = ["numpy>=1.16.0", "pandas"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
@@ -22,7 +22,16 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["hypothesis[numpy]", "mypy", "nbqa", "notebook", "pandas", "plotly", "pytest", "ruff", "twine"]
+dev = [
+    "hypothesis[numpy]",
+    "mypy",
+    "nbqa",
+    "notebook",
+    "plotly",
+    "pytest",
+    "ruff",
+    "twine",
+]
 
 [tool.maturin]
 python-source = "python"
@@ -33,7 +42,9 @@ plugins = ["numpy.typing.mypy_plugin"]
 strict = true
 
 [tool.nbqa.addopts]
-ruff = ["--ignore=B018"]
+ruff = [
+    "--ignore=B018", # useless-expression
+]
 
 [tool.ruff]
 line-length = 120
@@ -42,17 +53,11 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "FIX002",
-    "D100",
-    "D103",
-    "D104",
-    "D203",
-    "D212",
-    "ERA001",
-    "FA102",
-    "PLR",
-    "PLW",
-    "S101",
-    "TD002",
-    "TD003",
+    "D",       # pydocstyle
+    "ERA001",  # commented-out-code
+    "FIX002",  # line-contains-todo
+    "PLR0913", # too-many-arguments
+    "S101",    # assert
+    "TD002",   # missing-todo-author
+    "TD003",   # missing-todo-link
 ]
