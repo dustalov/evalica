@@ -7,7 +7,16 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from .evalica import Winner, __version__, py_bradley_terry, py_counting, py_eigen, py_elo, py_matrices, py_newman
+from .evalica import (
+    Winner,
+    __version__,
+    bradley_terry_pyo3,
+    counting_pyo3,
+    eigen_pyo3,
+    elo_pyo3,
+    matrices_pyo3,
+    newman_pyo3,
+)
 from .naive import bradley_terry as bradley_terry_naive
 from .naive import newman as newman_naive
 
@@ -51,7 +60,7 @@ def matrices(
 ) -> MatricesResult:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
-    W, T = py_matrices(_xs, _ys, ws)  # noqa: N806
+    W, T = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
 
     return MatricesResult(
         win_matrix=W,
@@ -73,9 +82,9 @@ def counting(
 ) -> CountingResult:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
-    W, _ = py_matrices(_xs, _ys, ws)  # noqa: N806
+    W, _ = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
 
-    counts = py_counting(W)
+    counts = counting_pyo3(W)
 
     return CountingResult(
         scores=pd.Series(counts, index=xy_index, name=counting.__name__),
@@ -101,11 +110,11 @@ def bradley_terry(
 
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
-    W, T = py_matrices(_xs, _ys, ws)  # noqa: N806
+    W, T = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
 
     M = W.astype(float) + tie_weight * T.astype(float)  # noqa: N806
 
-    scores, iterations = py_bradley_terry(M, tolerance, limit)
+    scores, iterations = bradley_terry_pyo3(M, tolerance, limit)
 
     return BradleyTerryResult(
         scores=pd.Series(scores, index=xy_index, name=bradley_terry.__name__),
@@ -135,10 +144,10 @@ def newman(
 
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
-    W, T = py_matrices(_xs, _ys, ws)  # noqa: N806
+    W, T = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
     W_float, T_float = W.astype(float), T.astype(float)  # noqa: N806
 
-    scores, v, iterations = py_newman(W_float, T_float, v_init, tolerance, limit)
+    scores, v, iterations = newman_pyo3(W_float, T_float, v_init, tolerance, limit)
 
     return NewmanResult(
         scores=pd.Series(scores, index=xy_index, name=newman.__name__),
@@ -166,7 +175,7 @@ def elo(
 ) -> EloResult:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
-    scores = py_elo(_xs, _ys, ws, r, k, s)
+    scores = elo_pyo3(_xs, _ys, ws, r, k, s)
 
     return EloResult(
         scores=pd.Series(scores, index=xy_index, name=elo.__name__),
@@ -189,11 +198,11 @@ def eigen(
 ) -> EigenResult:
     xy_index, _xs, _ys = _index_elements(xs, ys)
 
-    W, T = py_matrices(_xs, _ys, ws)  # noqa: N806
+    W, T = matrices_pyo3(_xs, _ys, ws)  # noqa: N806
 
     M = W.astype(float) + tie_weight * T.astype(float)  # noqa: N806
 
-    scores = py_eigen(M)
+    scores = eigen_pyo3(M)
 
     return EigenResult(
         scores=pd.Series(scores, index=xy_index, name=eigen.__name__),
@@ -214,7 +223,7 @@ __all__ = [
     "counting",
     "eigen",
     "elo",
-    "py_matrices",
+    "matrices_pyo3",
     "newman",
     "bradley_terry_naive",
     "newman_naive",

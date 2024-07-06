@@ -99,7 +99,7 @@ def test_eigen(xs_ys_ws: Example) -> None:
 
 def test_bradley_terry_simple(simple: npt.NDArray[np.float64], tolerance: float = 1e-4) -> None:
     p_naive, _ = evalica.bradley_terry_naive(simple, tolerance)
-    p, _ = evalica.py_bradley_terry(simple, tolerance, 100)  # type: ignore[attr-defined]
+    p, _ = evalica.bradley_terry_pyo3(simple, tolerance, 100)  # type: ignore[attr-defined]
 
     assert p == pytest.approx(p_naive, abs=tolerance)
 
@@ -109,7 +109,7 @@ def test_newman_simple(simple_win_tie: tuple[npt.NDArray[np.float64], npt.NDArra
     w, t = simple_win_tie
 
     p_naive, _, _ = evalica.newman_naive(w, t, .5, tolerance)
-    p, _, _ = evalica.py_newman(w, t, .5, tolerance, 100)  # type: ignore[attr-defined]
+    p, _, _ = evalica.newman_pyo3(w, t, .5, tolerance, 100)  # type: ignore[attr-defined]
 
     assert p == pytest.approx(p_naive, abs=tolerance)
 

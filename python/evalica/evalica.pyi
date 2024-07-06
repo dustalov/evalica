@@ -14,30 +14,30 @@ class Winner(Enum):
     Ignore = ...
 
 
-def py_matrices(
+def matrices_pyo3(
         xs: npt.ArrayLike, ys: npt.ArrayLike, ws: Iterable[Winner],
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 
 
-def py_counting(m: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]: ...
+def counting_pyo3(m: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]: ...
 
 
-def py_bradley_terry(
+def bradley_terry_pyo3(
         m: npt.NDArray[np.float64], tolerance: float, limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
-def py_newman(
+def newman_pyo3(
         w: npt.NDArray[np.float64], t: npt.NDArray[np.float64], v_init: float, tolerance: float, limit: int,
 ) -> tuple[npt.NDArray[np.float64], float, int]: ...
 
 
-def py_elo(
+def elo_pyo3(
         xs: npt.ArrayLike, ys: npt.ArrayLike, ws: Iterable[Winner],
         r: float, k: int, s: float,
 ) -> npt.NDArray[np.float64]: ...
 
 
-def py_eigen(
+def eigen_pyo3(
         m: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]: ...
