@@ -22,7 +22,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["hypothesis[numpy]", "mypy", "pandas", "pytest", "ruff", "twine"]
+dev = ["hypothesis[numpy]", "mypy", "nbqa", "notebook", "pandas", "pytest", "ruff", "twine"]
 
 [tool.maturin]
 python-source = "python"
@@ -31,6 +31,9 @@ python-source = "python"
 ignore_missing_imports = true
 plugins = ["numpy.typing.mypy_plugin"]
 strict = true
+
+[tool.nbqa.addopts]
+ruff = ["--ignore=B018"]
 
 [tool.ruff]
 line-length = 120
