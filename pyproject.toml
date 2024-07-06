@@ -22,7 +22,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["hypothesis[numpy]", "mypy", "nbqa", "notebook", "pandas", "pytest", "ruff", "twine"]
+dev = ["hypothesis[numpy]", "mypy", "nbqa", "notebook", "pandas", "plotly", "pytest", "ruff", "twine"]
 
 [tool.maturin]
 python-source = "python"
