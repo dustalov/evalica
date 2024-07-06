@@ -45,16 +45,16 @@ jobs:
       run: |
         uv pip install maturin
         maturin develop --uv --extras dev
-    - name: Lint with Ruff
-      run: ruff check
     - name: Lint with Mypy
       run: mypy .
+    - name: Lint with Ruff
+      run: ruff check
     - name: Run tests (Python)
       run: pytest
-    - name: Lint Jupyter with Ruff
-      run: nbqa ruff *.ipynb
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb
+    - name: Lint Jupyter with Ruff
+      run: nbqa ruff *.ipynb
     - name: Run Jupyter
       run: |
         mkdir jupyter
