@@ -52,7 +52,7 @@ fn py_counting<'py>(py: Python, m: PyReadonlyArray2<'py, i64>) -> PyResult<Py<Py
 #[pyfunction]
 fn py_bradley_terry<'py>(
     py: Python,
-    m: PyReadonlyArray2<'py, i64>,
+    m: PyReadonlyArray2<'py, f64>,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {

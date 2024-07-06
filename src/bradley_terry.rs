@@ -1,13 +1,13 @@
 use ndarray::{Array1, Array2, ArrayView2, Axis};
 
-pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
+pub fn bradley_terry(m: &ArrayView2<f64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
     assert_eq!(m.shape()[0], m.shape()[1], "The matrix must be square");
 
     let totals = m.t().to_owned() + m;
 
-    let active = totals.mapv(|x| x > 0);
+    let active = totals.mapv(|x| x > 0.0);
 
-    let w: Array1<i64> = m.sum_axis(Axis(1));
+    let w: Array1<f64> = m.sum_axis(Axis(1));
 
     let mut z: Array2<f64> = Array2::zeros(m.raw_dim());
 
@@ -32,7 +32,7 @@ pub fn bradley_terry(m: &ArrayView2<i64>, tolerance: f64, limit: usize) -> (Arra
             let d = z.column(i).sum();
 
             if d != 0.0 {
-                scores_new[i] = w[i] as f64 / d;
+                scores_new[i] = w[i] / d;
             }
         }
 
@@ -116,13 +116,13 @@ mod tests {
 
     use super::{bradley_terry, newman};
 
-    fn matrix() -> Array2<i64> {
+    fn matrix() -> Array2<f64> {
         return array![
-            [0, 1, 2, 0, 1],
-            [2, 0, 2, 1, 0],
-            [1, 2, 0, 0, 1],
-            [1, 2, 1, 0, 2],
-            [2, 0, 1, 3, 0]
+            [0.0, 1.0, 2.0, 0.0, 1.0],
+            [2.0, 0.0, 2.0, 1.0, 0.0],
+            [1.0, 2.0, 0.0, 0.0, 1.0],
+            [1.0, 2.0, 1.0, 0.0, 2.0],
+            [2.0, 0.0, 1.0, 3.0, 0.0]
         ];
     }
 
@@ -144,19 +144,9 @@ mod tests {
         }
     }
 
-    fn matrix2() -> Array2<i64> {
-        return array![
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-        ];
-    }
-
     #[test]
     fn test_newman() {
-        let m = matrix2();
+        let m = matrix();
         let tolerance = 1e-8;
         let limit = 100;
 

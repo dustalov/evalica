@@ -1,11 +1,15 @@
+from pathlib import Path
+
 import hypothesis.strategies as st
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import pytest
 from hypothesis import given
 from hypothesis.extra.numpy import arrays
 
 import evalica
+from evalica import Winner
 
 
 def test_version() -> None:
@@ -47,8 +51,8 @@ def test_counting(m: npt.NDArray[np.int64]) -> None:
     assert np.isfinite(p).all()
 
 
-@given(arrays(dtype=np.int64, shape=(5, 5), elements=st.integers(0, 256)))
-def test_bradley_terry(m: npt.NDArray[np.int64]) -> None:
+@given(arrays(dtype=np.float64, shape=(5, 5), elements=st.integers(0, 256)))
+def test_bradley_terry(m: npt.NDArray[np.float64]) -> None:
     p, iterations = evalica.bradley_terry(m, 1e-4, 100)
 
     assert m.shape[0] == len(p)
@@ -95,25 +99,25 @@ def test_eigen(m: npt.NDArray[np.int64]) -> None:
 
 
 @pytest.fixture()
-def simple() -> npt.NDArray[np.int64]:
+def simple() -> npt.NDArray[np.float64]:
     return np.array([
         [0, 1, 2, 0, 1],
         [2, 0, 2, 1, 0],
         [1, 2, 0, 0, 1],
         [1, 2, 1, 0, 2],
         [2, 0, 1, 3, 0],
-    ], dtype=np.int64)
+    ], dtype=np.float64)
 
 
 @pytest.fixture()
-def simple_win_tie(simple: npt.NDArray[np.int64]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+def simple_win_tie(simple: npt.NDArray[np.float64]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     T = np.minimum(simple, simple.T).astype(np.float64)  # noqa: N806
     W = simple - T  # noqa: N806
 
     return W, T
 
 
-def test_bradley_terry_simple(simple: npt.NDArray[np.int64], tolerance: float = 1e-4) -> None:
+def test_bradley_terry_simple(simple: npt.NDArray[np.float64], tolerance: float = 1e-4) -> None:
     p_naive, _ = evalica.bradley_terry_naive(simple, tolerance)
     p, _ = evalica.bradley_terry(simple, tolerance, 100)
 
@@ -127,5 +131,48 @@ def test_newman_simple(simple_win_tie: tuple[npt.NDArray[np.float64], npt.NDArra
     p_naive, _, _ = evalica.newman_naive(w, t, .5, tolerance)
     p, _, _ = evalica.newman(w, t, .5, tolerance, 100)
 
-    # TODO: they are diverging
     assert p == pytest.approx(p_naive, abs=tolerance)
+
+
+@pytest.fixture()
+def food() -> tuple[list[int], list[int], list[evalica.Winner]]:
+    df_food = pd.read_csv(Path().parent.parent / "food.csv", dtype=str)
+
+    xs = df_food["left"]
+    ys = df_food["right"]
+    ws = df_food["winner"].map({
+        "left": Winner.X,
+        "right": Winner.Y,
+        "tie": Winner.Draw,
+    })
+
+    # TODO: we need a better DX than this
+    index: dict[str, int] = {}
+
+    for xy in zip(xs, ys, strict=False):
+        for e in xy:
+            index[e] = index.get(e, len(index))
+
+    return [index[x] for x in xs], [index[y] for y in ys], ws.tolist()
+
+
+def test_bradley_terry_food(food: tuple[list[int], list[int], list[evalica.Winner]]) -> None:
+    xs, ys, ws = food
+
+    _wins, _ties = evalica.matrices(xs, ys, ws)
+    wins = _wins.astype(np.float64) + _ties / 2
+
+    scores, iterations = evalica.bradley_terry(wins, 1e-4, 100)
+
+    assert len(set(xs) | set(ys)) == len(scores)
+    assert np.isfinite(scores).all()
+    assert iterations > 0
+
+
+def test_elo_food(food: tuple[list[int], list[int], list[evalica.Winner]]) -> None:
+    xs, ys, ws = food
+
+    scores = evalica.elo(xs, ys, ws, 1500, 30, 400)
+
+    assert len(scores) == len(set(xs) | set(ys))
+    assert np.isfinite(scores).all()

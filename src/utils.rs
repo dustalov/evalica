@@ -2,11 +2,11 @@ use ndarray::{Array2, ArrayView1, ArrayView2};
 
 use crate::Winner;
 
-pub fn compute_ties_and_wins(m: &ArrayView2<i64>) -> (Array2<i64>, Array2<i64>) {
+pub fn compute_ties_and_wins(m: &ArrayView2<f64>) -> (Array2<f64>, Array2<f64>) {
     let mut t = m.to_owned();
 
     for ((i, j), t) in t.indexed_iter_mut() {
-        *t = std::cmp::min(m[[i, j]], m[[j, i]]);
+        *t = f64::min(m[[i, j]], m[[j, i]]);
     }
 
     let w = m - &t;

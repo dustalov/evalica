@@ -22,7 +22,7 @@ def py_counting(m: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]: ...
 
 
 def py_bradley_terry(
-        m: npt.NDArray[np.int64], tolerance: float, limit: int,
+        m: npt.NDArray[np.float64], tolerance: float, limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
