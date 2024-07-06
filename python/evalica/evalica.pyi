@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from enum import Enum
 
 import numpy as np
@@ -14,7 +15,7 @@ class Winner(Enum):
 
 
 def py_matrices(
-        xs: npt.ArrayLike, ys: npt.ArrayLike, rs: list[Winner],
+        xs: npt.ArrayLike, ys: npt.ArrayLike, ws: Iterable[Winner],
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 
 
@@ -32,11 +33,11 @@ def py_newman(
 
 
 def py_elo(
-        xs: npt.ArrayLike, ys: npt.ArrayLike, rs: list[Winner],
+        xs: npt.ArrayLike, ys: npt.ArrayLike, ws: Iterable[Winner],
         r: float, k: int, s: float,
 ) -> npt.NDArray[np.float64]: ...
 
 
 def py_eigen(
-        m: npt.NDArray[np.int64],
+        m: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]: ...
