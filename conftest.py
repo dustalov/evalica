@@ -7,7 +7,6 @@ import numpy.typing as npt
 import pandas as pd
 import pytest
 from hypothesis import strategies as st
-from hypothesis.strategies import SearchStrategy
 
 
 @pytest.fixture()
@@ -68,7 +67,7 @@ class Example(NamedTuple):
 
 
 @st.composite
-def xs_ys_ws(draw: Callable[[SearchStrategy[Any]], Any]) -> Example:
+def xs_ys_ws(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:
     length = draw(st.integers(0, 5))
     elements = st.lists(st.integers(0, length), min_size=length, max_size=length)
     winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
