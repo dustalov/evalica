@@ -56,7 +56,9 @@ jobs:
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb
     - name: Run Jupyter
-      run: jupyter nbconvert --to html --output Tutorial.html --execute Tutorial.ipynb
+      run: |
+        mkdir jupyter
+        jupyter nbconvert --to html --output jupyter/Tutorial.html --execute Tutorial.ipynb
     - name: Build with Maturin
       run: maturin build --release --out=dist/
     - name: Check with Twine
@@ -64,4 +66,4 @@ jobs:
     - name: Upload Jupyter
       uses: actions/upload-pages-artifact@v3
       with:
-        path: Tutorial.html
+        path: ./jupyter
