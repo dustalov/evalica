@@ -1,7 +1,6 @@
+use ndarray::{Array2, ArrayView1, ArrayView2};
 use std::collections::HashMap;
 use std::hash::Hash;
-
-use ndarray::{Array2, ArrayView1, ArrayView2};
 
 use crate::Winner;
 

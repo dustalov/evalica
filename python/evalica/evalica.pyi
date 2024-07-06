@@ -15,7 +15,9 @@ class Winner(Enum):
 
 
 def matrices_pyo3(
-        xs: npt.ArrayLike, ys: npt.ArrayLike, ws: Iterable[Winner],
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Iterable[Winner],
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 
 
@@ -23,18 +25,28 @@ def counting_pyo3(m: npt.NDArray[np.int64]) -> npt.NDArray[np.int64]: ...
 
 
 def bradley_terry_pyo3(
-        m: npt.NDArray[np.float64], tolerance: float, limit: int,
+        m: npt.NDArray[np.float64],
+        tolerance: float,
+        limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
 def newman_pyo3(
-        w: npt.NDArray[np.float64], t: npt.NDArray[np.float64], v_init: float, tolerance: float, limit: int,
+        w: npt.NDArray[np.float64],
+        t: npt.NDArray[np.float64],
+        v_init: float,
+        tolerance: float,
+        limit: int,
 ) -> tuple[npt.NDArray[np.float64], float, int]: ...
 
 
 def elo_pyo3(
-        xs: npt.ArrayLike, ys: npt.ArrayLike, ws: Iterable[Winner],
-        r: float, k: int, s: float,
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Iterable[Winner],
+        r: float,
+        k: int,
+        s: float,
 ) -> npt.NDArray[np.float64]: ...
 
 

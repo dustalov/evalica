@@ -18,10 +18,10 @@ def test_exports() -> None:
 
 
 @given(xs_ys_ws=xs_ys_ws())
-def test_index(xs_ys_ws: Example) -> None:
+def test_enumerate_elements(xs_ys_ws: Example) -> None:
     xs, ys, ws = xs_ys_ws
 
-    index = evalica.index(xs, ys)
+    index = evalica.enumerate_elements(xs, ys)
 
     assert isinstance(index, dict)
     assert len(index) == len(set(xs) | set(ys))
@@ -53,6 +53,7 @@ def test_counting(xs_ys_ws: Example) -> None:
 
     assert result.win_matrix.shape[0] == len(result.scores)
     assert np.isfinite(result.scores).all()
+
 
 @given(xs_ys_ws=xs_ys_ws())
 def test_bradley_terry(xs_ys_ws: Example) -> None:
@@ -97,6 +98,7 @@ def test_eigen(xs_ys_ws: Example) -> None:
     assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()
 
+
 def test_bradley_terry_simple(simple: npt.NDArray[np.float64], tolerance: float = 1e-4) -> None:
     p_naive, _ = evalica.bradley_terry_naive(simple, tolerance)  # type: ignore[attr-defined]
     p, _ = evalica.bradley_terry_pyo3(simple, tolerance, 100)  # type: ignore[attr-defined]
@@ -112,6 +114,7 @@ def test_newman_simple(simple_win_tie: tuple[npt.NDArray[np.float64], npt.NDArra
     p, _, _ = evalica.newman_pyo3(w, t, .5, tolerance, 100)  # type: ignore[attr-defined]
 
     assert p == pytest.approx(p_naive, abs=tolerance)
+
 
 def test_bradley_terry_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
     xs, ys, ws = food
@@ -142,7 +145,6 @@ def test_elo_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> No
 
     assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()
-
 
 
 def test_bradley_terry_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
