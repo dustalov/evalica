@@ -12,14 +12,14 @@ mod utils;
 #[pyclass]
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq)]
-pub enum Status {
-    Won,
-    Lost,
-    Tied,
-    Skipped,
+pub enum Winner {
+    X,
+    Y,
+    Draw,
+    Ignore,
 }
 
-unsafe impl Element for Status {
+unsafe impl Element for Winner {
     const IS_COPY: bool = true;
 
     fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
@@ -32,9 +32,9 @@ fn py_matrices<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    rs: PyArrayLike1<'py, Status>,
+    ws: PyArrayLike1<'py, Winner>,
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
-    let (wins, ties) = utils::matrices(&xs.as_array(), &ys.as_array(), &rs.as_array());
+    let (wins, ties) = utils::matrices(&xs.as_array(), &ys.as_array(), &ws.as_array());
 
     Ok((
         wins.into_pyarray_bound(py).unbind(),
@@ -81,12 +81,12 @@ fn py_elo<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    rs: PyArrayLike1<'py, Status>,
+    ws: PyArrayLike1<'py, Winner>,
     r: f64,
     k: u64,
     s: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    let pi = elo::elo(&xs.as_array(), &ys.as_array(), &rs.as_array(), r, k, s);
+    let pi = elo::elo(&xs.as_array(), &ys.as_array(), &ws.as_array(), r, k, s);
 
     Ok(pi.into_pyarray_bound(py).unbind())
 }
@@ -122,6 +122,6 @@ fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_newman, m)?)?;
     m.add_function(wrap_pyfunction!(py_elo, m)?)?;
     m.add_function(wrap_pyfunction!(py_eigen, m)?)?;
-    m.add_class::<Status>()?;
+    m.add_class::<Winner>()?;
     Ok(())
 }

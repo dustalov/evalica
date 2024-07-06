@@ -1,6 +1,6 @@
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
-use crate::Status;
+use crate::Winner;
 
 pub fn compute_ties_and_wins(m: &ArrayView2<i64>) -> (Array2<i64>, Array2<i64>) {
     let mut t = m.to_owned();
@@ -17,7 +17,7 @@ pub fn compute_ties_and_wins(m: &ArrayView2<i64>) -> (Array2<i64>, Array2<i64>) 
 pub fn matrices(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    rs: &ArrayView1<Status>,
+    ws: &ArrayView1<Winner>,
 ) -> (Array2<i64>, Array2<i64>) {
     assert_eq!(
         xs.len(),
@@ -29,10 +29,10 @@ pub fn matrices(
 
     assert_eq!(
         xs.len(),
-        rs.len(),
+        ws.len(),
         "first and status length mismatch: {} vs. {}",
         xs.len(),
-        rs.len()
+        ws.len()
     );
 
     assert!(!xs.is_empty(), "empty inputs");
@@ -43,14 +43,14 @@ pub fn matrices(
     let mut ties = Array2::zeros((n, n));
 
     for i in 0..xs.len() {
-        match rs[i] {
-            Status::Won => {
+        match ws[i] {
+            Winner::X => {
                 wins[[xs[i], ys[i]]] += 1;
             }
-            Status::Lost => {
+            Winner::Y => {
                 wins[[ys[i], xs[i]]] += 1;
             }
-            Status::Tied => {
+            Winner::Draw => {
                 ties[[xs[i], ys[i]]] += 1;
                 ties[[ys[i], xs[i]]] += 1;
             }
@@ -65,13 +65,13 @@ pub fn matrices(
 mod tests {
     use ndarray::array;
 
-    use super::{matrices, Status};
+    use super::{matrices, Winner};
 
     #[test]
     fn test_matrices() {
         let xs = array![0, 1, 2, 3];
         let ys = array![1, 2, 3, 4];
-        let rs = array![Status::Won, Status::Lost, Status::Tied, Status::Skipped];
+        let ws = array![Winner::X, Winner::Y, Winner::Draw, Winner::Ignore];
 
         let expected_wins = array![
             [0, 1, 0, 0, 0],
@@ -89,7 +89,7 @@ mod tests {
             [0, 0, 0, 0, 0],
         ];
 
-        let (wins, ties) = matrices(&xs.view(), &ys.view(), &rs.view());
+        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view());
 
         assert_eq!(wins, expected_wins);
 

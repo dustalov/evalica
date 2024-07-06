@@ -21,17 +21,17 @@ def test_exports() -> None:
 @given(
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
-    st.lists(st.sampled_from(evalica.STATUSES), min_size=2, max_size=2),
+    st.lists(st.sampled_from(evalica.WINNERS), min_size=2, max_size=2),
 )
 def test_matrices(
-        xs: list[int], ys: list[int], rs: list[evalica.Status],
+        xs: list[int], ys: list[int], ws: list[evalica.Winner],
 ) -> None:
     n = 1 + max(max(xs), max(ys))
 
-    win_count = sum(status in [evalica.Status.Won, evalica.Status.Lost] for status in rs)
-    tie_count = sum(status == evalica.Status.Tied for status in rs)
+    win_count = sum(status in [evalica.Winner.X, evalica.Winner.Y] for status in ws)
+    tie_count = sum(status == evalica.Winner.Draw for status in ws)
 
-    wins, ties = evalica.matrices(xs, ys, rs)
+    wins, ties = evalica.matrices(xs, ys, ws)
 
     assert wins.shape == (n, n)
     assert ties.shape == (n, n)
@@ -74,13 +74,13 @@ def test_newman(w: npt.NDArray[np.float64], t: npt.NDArray[np.float64], v_init: 
 @given(
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
     st.lists(st.integers(0, 2), min_size=2, max_size=2),
-    st.lists(st.sampled_from(evalica.STATUSES), min_size=2, max_size=2),
+    st.lists(st.sampled_from(evalica.WINNERS), min_size=2, max_size=2),
 )
 def test_elo(
-        xs: list[int], ys: list[int], rs: list[evalica.Status],
+        xs: list[int], ys: list[int], ws: list[evalica.Winner],
 ) -> None:
     n = 1 + max(max(xs), max(ys))
-    p = evalica.elo(xs, ys, rs, 1500, 30, 400)
+    p = evalica.elo(xs, ys, ws, 1500, 30, 400)
 
     assert n == len(p)
     assert np.isfinite(p).all()

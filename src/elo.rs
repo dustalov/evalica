@@ -1,11 +1,11 @@
 use ndarray::{Array1, ArrayView1};
 
-use crate::Status;
+use crate::Winner;
 
 pub fn elo(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    rs: &ArrayView1<Status>,
+    ws: &ArrayView1<Winner>,
     r: f64,
     k: u64,
     s: f64,
@@ -20,10 +20,10 @@ pub fn elo(
 
     assert_eq!(
         xs.len(),
-        rs.len(),
+        ws.len(),
         "first and status length mismatch: {} vs. {}",
         xs.len(),
-        rs.len()
+        ws.len()
     );
 
     assert!(!xs.is_empty(), "empty inputs");
@@ -39,16 +39,16 @@ pub fn elo(
         let expected_a = 1.0 / (1.0 + 10.0f64.powf((rating2 - rating1) / s));
         let expected_b = 1.0 / (1.0 + 10.0f64.powf((rating1 - rating2) / s));
 
-        match rs[i] {
-            Status::Won => {
+        match ws[i] {
+            Winner::X => {
                 scores[xs[i]] = rating1 + k as f64 * (1.0 - expected_a);
                 scores[ys[i]] = rating2 + k as f64 * (0.0 - expected_b);
             }
-            Status::Lost => {
+            Winner::Y => {
                 scores[xs[i]] = rating1 + k as f64 * (0.0 - expected_a);
                 scores[ys[i]] = rating2 + k as f64 * (1.0 - expected_b);
             }
-            Status::Tied => {
+            Winner::Draw => {
                 scores[xs[i]] = rating1 + k as f64 * (0.5 - expected_a);
                 scores[ys[i]] = rating2 + k as f64 * (0.5 - expected_b);
             }
@@ -69,14 +69,14 @@ mod tests {
     fn test_elo() {
         let xs = array![3, 2, 1, 0];
         let ys = array![0, 1, 2, 3];
-        let rs = array![Status::Won, Status::Tied, Status::Lost, Status::Won];
+        let ws = array![Winner::X, Winner::Draw, Winner::Y, Winner::X];
         let r: f64 = 1500.0;
         let k: u64 = 30;
         let s: f64 = 400.0;
 
         let expected = array![1501.0, 1485.0, 1515.0, 1498.0];
 
-        let actual = elo(&xs.view(), &ys.view(), &rs.view(), r, k, s);
+        let actual = elo(&xs.view(), &ys.view(), &ws.view(), r, k, s);
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);
