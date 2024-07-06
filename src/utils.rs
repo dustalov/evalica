@@ -54,7 +54,9 @@ pub fn matrices(
         ws.len()
     );
 
-    assert!(!xs.is_empty(), "empty inputs");
+    if xs.is_empty() {
+        return (Array2::zeros((0, 0)), Array2::zeros((0, 0)));
+    }
 
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
 
