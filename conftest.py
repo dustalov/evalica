@@ -44,11 +44,26 @@ def food() -> tuple[list[str], list[str], list[evalica.Winner]]:
     return xs.tolist(), ys.tolist(), ws.tolist()
 
 
+@pytest.fixture()
+def llmfao() -> tuple[list[str], list[str], list[evalica.Winner]]:
+    df_llmfao = pd.read_csv("https://github.com/dustalov/llmfao/raw/master/crowd-comparisons.csv", dtype=str)
+
+    xs = df_llmfao["left"]
+    ys = df_llmfao["right"]
+    ws = df_llmfao["winner"].map({
+        "left": evalica.Winner.X,
+        "right": evalica.Winner.Y,
+        "tie": evalica.Winner.Draw,
+    })
+
+    return xs.tolist(), ys.tolist(), ws.tolist()
+
+
 class Example(NamedTuple):
     """A tuple holding example data."""
 
-    xs: list[int]
-    ys: npt.NDArray[np.int64]
+    xs: list[int] | npt.NDArray[np.int64]
+    ys: list[int] | npt.NDArray[np.int64]
     ws: list[evalica.Winner]
 
 
@@ -60,6 +75,6 @@ def xs_ys_ws(draw: Callable[[SearchStrategy[Any]], Any]) -> Example:
 
     return Example(
         xs=draw(elements),
-        ys=np.array(draw(elements)),
+        ys=np.array(draw(elements), dtype=np.int64),
         ws=draw(winners),
     )

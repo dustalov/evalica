@@ -142,3 +142,35 @@ def test_elo_food(food: tuple[list[str], list[str], list[evalica.Winner]]) -> No
 
     assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()
+
+
+
+def test_bradley_terry_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+    xs, ys, ws = llmfao
+
+    result = evalica.bradley_terry(xs, ys, ws)
+
+    assert len(result.scores) == len(set(xs) | set(ys))
+    assert np.isfinite(result.scores).all()
+    assert result.iterations > 0
+
+
+def test_newman_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+    xs, ys, ws = llmfao
+
+    result = evalica.newman(xs, ys, ws)
+
+    assert len(result.scores) == len(set(xs) | set(ys))
+    assert np.isfinite(result.scores).all()
+    assert np.isfinite(result.v)
+    assert np.isfinite(result.v_init)
+    assert result.iterations > 0
+
+
+def test_elo_llmfao(llmfao: tuple[list[str], list[str], list[evalica.Winner]]) -> None:
+    xs, ys, ws = llmfao
+
+    result = evalica.elo(xs, ys, ws)
+
+    assert len(result.scores) == len(set(xs) | set(ys))
+    assert np.isfinite(result.scores).all()
