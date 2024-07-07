@@ -115,6 +115,7 @@ def counting(
 class BradleyTerryResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
+    index: "pd.Index[T]"  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
     iterations: int
@@ -144,6 +145,7 @@ def bradley_terry(
     return BradleyTerryResult(
         scores=pd.Series(scores, index=_matrices.index, name=bradley_terry.__name__),
         matrix=matrix,
+        index=_matrices.index,
         win_weight=win_weight,
         tie_weight=tie_weight,
         iterations=iterations,
@@ -155,6 +157,7 @@ class NewmanResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
     win_matrix: npt.NDArray[np.float64]
     tie_matrix: npt.NDArray[np.float64]
+    index: "pd.Index[T]"  # type: ignore[type-var]
     v: float
     v_init: float
     iterations: int
@@ -185,6 +188,7 @@ def newman(
         scores=pd.Series(scores, index=_matrices.index, name=newman.__name__),
         win_matrix=win_matrix,
         tie_matrix=tie_matrix,
+        index=_matrices.index,
         v=v,
         v_init=v_init,
         iterations=iterations,
@@ -226,6 +230,7 @@ def elo(
 class EigenResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
+    index: "pd.Index[T]"  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
 
@@ -247,6 +252,7 @@ def eigen(
     return EigenResult(
         scores=pd.Series(scores, index=_matrices.index, name=eigen.__name__),
         matrix=matrix,
+        index=_matrices.index,
         win_weight=win_weight,
         tie_weight=tie_weight,
     )
