@@ -7,6 +7,7 @@ use pyo3::types::IntoPyDict;
 mod bradley_terry;
 mod counting;
 mod elo;
+mod linalg;
 mod utils;
 
 #[pyclass]
@@ -128,6 +129,32 @@ fn eigen_pyo3<'py>(
     Ok(eigen.unbind())
 }
 
+#[pyfunction]
+fn pagerank_pyo3<'py>(
+    py: Python,
+    xs: PyArrayLike1<'py, usize>,
+    ys: PyArrayLike1<'py, usize>,
+    ws: PyArrayLike1<'py, Winner>,
+    damping: f64,
+    win_weight: f64,
+    tie_weight: f64,
+    tolerance: f64,
+    limit: usize,
+) -> PyResult<(Py<PyArray1<f64>>, usize)> {
+    let (scores, iterations) = linalg::pagerank(
+        &xs.as_array(),
+        &ys.as_array(),
+        &ws.as_array(),
+        damping,
+        win_weight,
+        tie_weight,
+        tolerance,
+        limit,
+    );
+
+    Ok((scores.into_pyarray_bound(py).unbind(), iterations))
+}
+
 #[pymodule]
 fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
@@ -137,6 +164,7 @@ fn evalica(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(newman_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(elo_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(eigen_pyo3, m)?)?;
+    m.add_function(wrap_pyfunction!(pagerank_pyo3, m)?)?;
     m.add_class::<Winner>()?;
     Ok(())
 }

@@ -17,6 +17,7 @@ from .evalica import (
     elo_pyo3,
     matrices_pyo3,
     newman_pyo3,
+    pagerank_pyo3
 )
 from .naive import bradley_terry as bradley_terry_naive  # noqa: F401
 from .naive import newman as newman_naive  # noqa: F401
@@ -226,6 +227,38 @@ def eigen(
     )
 
 
+@dataclass(frozen=True)
+class PageRankResult(Generic[T]):
+    scores: "pd.Series[T]"  # type: ignore[type-var]
+    damping: float
+    win_weight: float
+    tie_weight: float
+    iterations: int
+
+
+def pagerank(
+        xs: Iterable[T],
+        ys: Iterable[T],
+        ws: Iterable[Winner],
+        damping: float = .85,
+        win_weight: float = 1.,
+        tie_weight: float = .5,
+        tolerance: float = 1e-4,
+        limit: int = 100,
+) -> PageRankResult[T]:
+    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
+
+    scores, iterations = pagerank_pyo3(_xs, _ys, ws, damping, win_weight, tie_weight, tolerance, limit)
+
+    return PageRankResult(
+        scores=pd.Series(scores, index=index, name=pagerank.__name__),
+        damping=damping,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        iterations=iterations
+    )
+
+
 def _pairwise_ndarray(scores: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
 
@@ -246,5 +279,6 @@ __all__ = [
     "enumerate_elements",
     "matrices",
     "newman",
+    "pagerank",
     "pairwise",
 ]

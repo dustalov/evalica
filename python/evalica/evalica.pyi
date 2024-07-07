@@ -57,3 +57,15 @@ def elo_pyo3(
 def eigen_pyo3(
         matrix: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]: ...
+
+
+def pagerank_pyo3(
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Iterable[Winner],
+        damping: float,
+        win_weight: float,
+        tie_weight: float,
+        tolerance: float,
+        limit: int,
+) -> tuple[npt.NDArray[np.float64], int]: ...

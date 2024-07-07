@@ -99,6 +99,20 @@ def test_eigen(xs_ys_ws: Example) -> None:
     assert np.isfinite(result.scores).all()
 
 
+@given(xs_ys_ws=xs_ys_ws())
+def test_pagerank(xs_ys_ws: Example) -> None:
+    xs, ys, ws = xs_ys_ws
+
+    result = evalica.pagerank(xs, ys, ws)
+
+    assert len(result.scores) == len(set(xs) | set(ys))
+    assert np.isfinite(result.scores).all()
+    assert np.isfinite(result.damping)
+    assert np.isfinite(result.win_weight)
+    assert np.isfinite(result.tie_weight)
+    assert not xs or result.iterations > 0
+
+
 def test_bradley_terry_simple(simple: npt.NDArray[np.float64], tolerance: float = 1e-4) -> None:
     p_naive, _ = evalica.bradley_terry_naive(simple, tolerance)  # type: ignore[attr-defined]
     p, _ = evalica.bradley_terry_pyo3(simple, tolerance, 100)  # type: ignore[attr-defined]
