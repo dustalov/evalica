@@ -35,23 +35,24 @@ pub fn elo(
 
     let mut scores = Array1::<f64>::ones(n) * initial;
 
-    for i in 0..xs.len() {
-        let q_x = base.powf(scores[xs[i]] / scale);
-        let q_y = base.powf(scores[ys[i]] / scale);
+    for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
+        let q_x = base.powf(scores[*x] / scale);
+        let q_y = base.powf(scores[*y] / scale);
+
         let q = q_x + q_y;
 
         let expected_x = q_x / q;
         let expected_y = q_y / q;
 
-        let (scored_x, scored_y) = match ws[i] {
+        let (scored_x, scored_y) = match w {
             Winner::X => (1.0, 0.0),
             Winner::Y => (0.0, 1.0),
             Winner::Draw => (0.5, 0.5),
             _ => (0.0, 0.0),
         };
 
-        scores[xs[i]] += k * (scored_x - expected_x);
-        scores[ys[i]] += k * (scored_y - expected_y);
+        scores[*x] += k * (scored_x - expected_x);
+        scores[*y] += k * (scored_y - expected_y);
     }
 
     scores
