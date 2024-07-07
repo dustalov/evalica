@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 
-def bradley_terry(M: npt.NDArray[np.float64], tolerance: float = 1e-8) -> tuple[  # noqa: N803
+def bradley_terry(M: npt.NDArray[np.float64], tolerance: float = 1e-8, limit: int = 100) -> tuple[  # noqa: N803
     npt.NDArray[np.float64], int]:
     T = M.T + M  # noqa: N806
     active = T > 0
@@ -16,7 +16,7 @@ def bradley_terry(M: npt.NDArray[np.float64], tolerance: float = 1e-8) -> tuple[
 
     converged, iterations = False, 0
 
-    while not converged:
+    while not converged and iterations < limit:
         iterations += 1
 
         P = np.broadcast_to(scores, M.shape)  # noqa: N806
@@ -35,7 +35,7 @@ def bradley_terry(M: npt.NDArray[np.float64], tolerance: float = 1e-8) -> tuple[
 
 
 def newman(W: npt.NDArray[np.float64], T: npt.NDArray[np.float64], v: float = .5,  # noqa: N803
-           tolerance: float = 1e-6) -> tuple[npt.NDArray[np.float64], float, int]:
+           tolerance: float = 1e-6, limit: int = 100) -> tuple[npt.NDArray[np.float64], float, int]:
     scores = np.ones(W.shape[0])
     scores_new = scores.copy()
 
@@ -43,7 +43,7 @@ def newman(W: npt.NDArray[np.float64], T: npt.NDArray[np.float64], v: float = .5
 
     converged, iterations = False, 0
 
-    while not converged:
+    while not converged and iterations < limit:
         iterations += 1
 
         pi_numerator = np.sum(

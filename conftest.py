@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, NamedTuple
 
 import evalica
@@ -7,25 +8,6 @@ import numpy.typing as npt
 import pandas as pd
 import pytest
 from hypothesis import strategies as st
-
-
-@pytest.fixture()
-def simple() -> npt.NDArray[np.float64]:
-    return np.array([
-        [0, 1, 2, 0, 1],
-        [2, 0, 2, 1, 0],
-        [1, 2, 0, 0, 1],
-        [1, 2, 1, 0, 2],
-        [2, 0, 1, 3, 0],
-    ], dtype=np.float64)
-
-
-@pytest.fixture()
-def simple_win_tie(simple: npt.NDArray[np.float64]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    T = np.minimum(simple, simple.T).astype(np.float64)  # noqa: N806
-    W = simple - T  # noqa: N806
-
-    return W, T
 
 
 class Example(NamedTuple):
@@ -37,8 +19,67 @@ class Example(NamedTuple):
 
 
 @pytest.fixture()
-def food() -> Example:  # type: ignore[type-var]
-    df_food = pd.read_csv("food.csv", dtype=str)
+def simple() -> npt.NDArray[np.int64]:
+    return np.array([
+        [0, 1, 2, 0, 1],
+        [2, 0, 2, 1, 0],
+        [1, 2, 0, 0, 1],
+        [1, 2, 1, 0, 2],
+        [2, 0, 1, 3, 0],
+    ], dtype=np.int64)
+
+
+@pytest.fixture()
+def simple_tied(simple: npt.NDArray[np.int64]) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]:
+    tie_matrix = np.minimum(simple, simple.T).astype(np.int64)
+    win_matrix = simple - tie_matrix
+
+    return win_matrix, tie_matrix
+
+
+def matrix_to_elements(
+        matrix: npt.NDArray[np.int64],
+        winner_func: Callable[[int, int], evalica.Winner],
+) -> tuple[list[str], list[str], list[evalica.Winner]]:
+    xs, ys, ws = [], [], []
+
+    for x, y in zip(*np.nonzero(matrix), strict=False):
+        winner = winner_func(x, y)
+
+        for _ in range(matrix[x, y]):
+            xs.append(str(x))
+            ys.append(str(y))
+            ws.append(winner)
+
+    return xs, ys, ws
+
+
+@pytest.fixture()
+def simple_elements(simple: npt.NDArray[np.int64]) -> Example:  # type: ignore[type-var]
+    xs, ys, ws = matrix_to_elements(simple, lambda x, y: evalica.Winner.X if x > y else evalica.Winner.Y)
+    return Example(xs=xs, ys=ys, ws=ws)
+
+
+@pytest.fixture()
+def simple_tied_elements(simple_tied: tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]) -> Example:
+    win_matrix, tie_matrix = simple_tied
+
+    win_xs, win_ys, win_ws = matrix_to_elements(
+        win_matrix,
+        lambda x, y: evalica.Winner.X if x > y else evalica.Winner.Y,
+    )
+
+    tie_xs, tie_ys, tie_ws = matrix_to_elements(
+        np.triu(tie_matrix),
+        lambda _x, _y: evalica.Winner.Draw,
+    )
+
+    return Example(xs=win_xs + tie_xs, ys=win_ys + tie_ys, ws=win_ws + tie_ws)
+
+
+@pytest.fixture()
+def food() -> Example:
+    df_food = pd.read_csv(Path(__file__).resolve().parent / "food.csv", dtype=str)
 
     xs = df_food["left"]
     ys = df_food["right"]
@@ -67,14 +108,14 @@ def llmfao() -> Example:
 
 
 @st.composite
-def xs_ys_ws(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:
+def elements(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:
     length = draw(st.integers(0, 5))
 
-    elements = st.lists(st.text(max_size=length), min_size=length, max_size=length)
-    winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+    xys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
+    ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
 
     return Example(
-        xs=draw(elements),
-        ys=draw(elements),
-        ws=draw(winners),
+        xs=draw(xys),
+        ys=draw(xys),
+        ws=draw(ws),
     )

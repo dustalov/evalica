@@ -1,10 +1,9 @@
 import numpy as np
-import numpy.typing as npt
-import pytest
 from hypothesis import given
+from pandas._testing import assert_series_equal
 
 import evalica
-from conftest import Example, xs_ys_ws
+from conftest import Example, elements
 
 
 def test_version() -> None:
@@ -17,9 +16,9 @@ def test_exports() -> None:
         assert hasattr(evalica, attr), f"missing attribute: {attr}"
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_enumerate_elements(xs_ys_ws: Example) -> None:  # type: ignore[type-var]
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_enumerate_elements(example: Example) -> None:  # type: ignore[type-var]
+    xs, ys, ws = example
 
     index = evalica.enumerate_elements(xs, ys)
 
@@ -28,9 +27,9 @@ def test_enumerate_elements(xs_ys_ws: Example) -> None:  # type: ignore[type-var
     assert not xs or max(index.values()) == len(index) - 1
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_matrices(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_matrices(example: Example) -> None:
+    xs, ys, ws = example
 
     n = len(set(xs) | set(ys))
 
@@ -45,9 +44,9 @@ def test_matrices(xs_ys_ws: Example) -> None:
     assert result.tie_matrix.sum() == 2 * ties
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_counting(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_counting(example: Example) -> None:
+    xs, ys, ws = example
 
     result = evalica.counting(xs, ys, ws)
 
@@ -55,9 +54,9 @@ def test_counting(xs_ys_ws: Example) -> None:
     assert np.isfinite(result.scores).all()
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_bradley_terry(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_bradley_terry(example: Example) -> None:
+    xs, ys, ws = example
 
     result = evalica.bradley_terry(xs, ys, ws)
 
@@ -66,9 +65,9 @@ def test_bradley_terry(xs_ys_ws: Example) -> None:
     assert result.iterations > 0
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_newman(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_newman(example: Example) -> None:
+    xs, ys, ws = example
 
     result = evalica.newman(xs, ys, ws)
 
@@ -79,9 +78,9 @@ def test_newman(xs_ys_ws: Example) -> None:
     assert result.iterations > 0
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_elo(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_elo(example: Example) -> None:
+    xs, ys, ws = example
 
     result = evalica.elo(xs, ys, ws)
 
@@ -89,9 +88,9 @@ def test_elo(xs_ys_ws: Example) -> None:
     assert np.isfinite(result.scores).all()
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_eigen(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_eigen(example: Example) -> None:
+    xs, ys, ws = example
 
     result = evalica.eigen(xs, ys, ws)
 
@@ -99,9 +98,9 @@ def test_eigen(xs_ys_ws: Example) -> None:
     assert np.isfinite(result.scores).all()
 
 
-@given(xs_ys_ws=xs_ys_ws())
-def test_pagerank(xs_ys_ws: Example) -> None:
-    xs, ys, ws = xs_ys_ws
+@given(example=elements())
+def test_pagerank(example: Example) -> None:
+    xs, ys, ws = example
 
     result = evalica.pagerank(xs, ys, ws)
 
@@ -113,21 +112,22 @@ def test_pagerank(xs_ys_ws: Example) -> None:
     assert not xs or result.iterations > 0
 
 
-def test_bradley_terry_simple(simple: npt.NDArray[np.float64], tolerance: float = 1e-4) -> None:
-    p_naive, _ = evalica.bradley_terry_naive(simple, tolerance)  # type: ignore[attr-defined]
-    p, _ = evalica.bradley_terry_pyo3(simple, tolerance, 100)  # type: ignore[attr-defined]
+def test_bradley_terry_simple(simple_elements: Example, tolerance: float = 1e-4) -> None:
+    xs, ys, ws = simple_elements
 
-    assert p == pytest.approx(p_naive, abs=tolerance)
+    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3", tolerance=tolerance)
+    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive", tolerance=tolerance)
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
-def test_newman_simple(simple_win_tie: tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-                       tolerance: float = 1e-1) -> None:
-    w, t = simple_win_tie
+def test_newman_simple(simple_tied_elements: Example, tolerance: float = 1e-1) -> None:
+    xs, ys, ws = simple_tied_elements
 
-    p_naive, _, _ = evalica.newman_naive(w, t, .5, tolerance)  # type: ignore[attr-defined]
-    p, _, _ = evalica.newman_pyo3(w, t, .5, tolerance, 100)  # type: ignore[attr-defined]
+    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3", tolerance=tolerance)
+    result_naive = evalica.newman(xs, ys, ws, solver="naive", tolerance=tolerance)
 
-    assert p == pytest.approx(p_naive, abs=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
 def test_bradley_terry_food(food: Example) -> None:

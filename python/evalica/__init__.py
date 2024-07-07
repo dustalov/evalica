@@ -2,7 +2,7 @@ import dataclasses
 from collections import OrderedDict
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, Literal, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -17,10 +17,10 @@ from .evalica import (
     elo_pyo3,
     matrices_pyo3,
     newman_pyo3,
-    pagerank_pyo3
+    pagerank_pyo3,
 )
-from .naive import bradley_terry as bradley_terry_naive  # noqa: F401
-from .naive import newman as newman_naive  # noqa: F401
+from .naive import bradley_terry as bradley_terry_naive
+from .naive import newman as newman_naive
 
 WINNERS = [
     Winner.X,
@@ -117,6 +117,7 @@ def bradley_terry(
         ys: Iterable[T],
         ws: Iterable[Winner],
         tie_weight: float = .5,
+        solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-4,
         limit: int = 100,
 ) -> BradleyTerryResult[T]:
@@ -126,7 +127,10 @@ def bradley_terry(
 
     matrix = _matrices.win_matrix.astype(float) + tie_weight * _matrices.tie_matrix.astype(float)
 
-    scores, iterations = bradley_terry_pyo3(matrix, tolerance, limit)
+    if solver == "pyo3":
+        scores, iterations = bradley_terry_pyo3(matrix, tolerance, limit)
+    else:
+        scores, iterations = bradley_terry_naive(matrix, tolerance, limit)
 
     return BradleyTerryResult(
         scores=pd.Series(scores, index=_matrices.index, name=bradley_terry.__name__),
@@ -151,6 +155,7 @@ def newman(
         ys: Iterable[T],
         ws: Iterable[Winner],
         v_init: float = .5,
+        solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-4,
         limit: int = 100,
 ) -> NewmanResult[T]:
@@ -161,7 +166,10 @@ def newman(
     win_matrix = _matrices.win_matrix.astype(float)
     tie_matrix = _matrices.tie_matrix.astype(float)
 
-    scores, v, iterations = newman_pyo3(win_matrix, tie_matrix, v_init, tolerance, limit)
+    if solver == "pyo3":
+        scores, v, iterations = newman_pyo3(win_matrix, tie_matrix, v_init, tolerance, limit)
+    else:
+        scores, v, iterations = newman_naive(win_matrix, tie_matrix, v_init, tolerance, limit)
 
     return NewmanResult(
         scores=pd.Series(scores, index=_matrices.index, name=newman.__name__),
@@ -255,7 +263,7 @@ def pagerank(
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,
-        iterations=iterations
+        iterations=iterations,
     )
 
 
