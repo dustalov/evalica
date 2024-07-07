@@ -1,0 +1,355 @@
+algorithm,item,score
+bradley_terry,GPT 4,0.04104860014315888
+bradley_terry,Platypus-2 Instruct (70B),0.029227099850951947
+bradley_terry,command,0.028848289020818423
+bradley_terry,ReMM SLERP L2 13B,0.027150807240941256
+bradley_terry,LLaMA-2-Chat (70B),0.026390797559554195
+bradley_terry,Claude v1,0.026259838412322153
+bradley_terry,GPT 3.5 Turbo,0.02587252436089493
+bradley_terry,Jurassic 2 Mid,0.025850419980172547
+bradley_terry,Jurassic 2 Ultra,0.025312139377209036
+bradley_terry,command-nightly,0.025230155788111195
+bradley_terry,Mythalion 13B,0.024035214562952517
+bradley_terry,GPT 3.5 Turbo (16k),0.02398658189493495
+bradley_terry,Falcon Instruct (40B),0.023754965322296206
+bradley_terry,GPT-NeoXT-Chat-Base (20B),0.023271646483825806
+bradley_terry,Chronos Hermes (13B),0.023232635665088135
+bradley_terry,Claude v2,0.022929864161743255
+bradley_terry,Claude Instant v1,0.022813905523668097
+bradley_terry,MPT-Chat (7B),0.022217869853866607
+bradley_terry,LLaMA-2-Chat (7B),0.021366514804341954
+bradley_terry,LLaMA 2 SFT v10 (70B),0.020699463606947868
+bradley_terry,Claude v1.2,0.01984863898560181
+bradley_terry,Guanaco (65B),0.018090012632772358
+bradley_terry,Pythia-Chat-Base (7B),0.01783179754398227
+bradley_terry,MythoMax-L2 (13B),0.01750681546246339
+bradley_terry,PaLM 2 Bison (Code Chat),0.017399405879928567
+bradley_terry,LLaMA-2-Chat (13B),0.017353750843523863
+bradley_terry,Guanaco (13B),0.017323412880112913
+bradley_terry,Alpaca (7B),0.01657913181400528
+bradley_terry,Luminous Supreme Control,0.016545275568387745
+bradley_terry,Guanaco (33B),0.016507587625271363
+bradley_terry,Vicuna v1.5 (13B),0.016461685556060156
+bradley_terry,Jurassic 2 Light,0.015637863016292396
+bradley_terry,Luminous Base Control,0.015559776782608097
+bradley_terry,Qwen-Chat (7B),0.015491156802904122
+bradley_terry,MPT-Chat (30B),0.015335804113576441
+bradley_terry,Vicuna v1.3 (13B),0.015281723474040389
+bradley_terry,RedPajama-INCITE Chat (7B),0.014455627533089809
+bradley_terry,Falcon Instruct (7B),0.01365743030312935
+bradley_terry,command-light,0.013633492897776026
+bradley_terry,Luminous Extended Control,0.013158480322687174
+bradley_terry,Vicuna v1.3 (7B),0.011943396782130276
+bradley_terry,Weaver 12k,0.011846130967959743
+bradley_terry,PaLM 2 Bison,0.01122437533095092
+bradley_terry,Luminous Base,0.01040769433605218
+bradley_terry,RedPajama-INCITE Chat (3B),0.010150107206917945
+bradley_terry,Code Llama Instruct (34B),0.010098212788611378
+bradley_terry,Code Llama Instruct (13B),0.010001063722126002
+bradley_terry,Airoboros L2 70B,0.009755464481229817
+bradley_terry,Dolly v2 (12B),0.009162903109759927
+bradley_terry,StarCoderChat Alpha (16B),0.008509361157648417
+bradley_terry,Open-Assistant Pythia SFT-4 (12B),0.008372904772195142
+bradley_terry,Luminous Extended,0.008073500185897059
+bradley_terry,Luminous Supreme,0.00723814545426995
+bradley_terry,Code Llama Instruct (7B),0.0072311642522421
+bradley_terry,Open-Assistant StableLM SFT-7 (7B),0.006987111516413001
+bradley_terry,Koala (13B),0.006895619550023512
+bradley_terry,Dolly v2 (7B),0.006344399315205049
+bradley_terry,Vicuna-FastChat-T5 (3B),0.006304998637646073
+bradley_terry,Dolly v2 (3B),0.006295242780708025
+counting,Weaver 12k,1198.5
+counting,Dolly v2 (12B),378.0
+counting,command-light,261.5
+counting,Luminous Extended,254.0
+counting,GPT 3.5 Turbo (16k),244.0
+counting,GPT 3.5 Turbo,240.0
+counting,Luminous Base,227.0
+counting,command,220.0
+counting,Falcon Instruct (40B),216.0
+counting,StarCoderChat Alpha (16B),200.0
+counting,LLaMA-2-Chat (7B),199.0
+counting,Jurassic 2 Light,193.5
+counting,Guanaco (33B),189.0
+counting,Claude v1.2,170.5
+counting,Open-Assistant Pythia SFT-4 (12B),159.5
+counting,PaLM 2 Bison,145.0
+counting,Code Llama Instruct (13B),142.5
+counting,Airoboros L2 70B,136.0
+counting,Luminous Supreme,132.5
+counting,Open-Assistant StableLM SFT-7 (7B),132.0
+counting,GPT 4,124.0
+counting,Jurassic 2 Mid,120.5
+counting,Guanaco (65B),119.5
+counting,Code Llama Instruct (34B),119.0
+counting,command-nightly,117.5
+counting,LLaMA-2-Chat (70B),114.0
+counting,MPT-Chat (7B),112.0
+counting,Platypus-2 Instruct (70B),112.0
+counting,Jurassic 2 Ultra,111.0
+counting,Code Llama Instruct (7B),110.0
+counting,Claude v1,109.5
+counting,Claude v2,109.5
+counting,RedPajama-INCITE Chat (3B),109.5
+counting,Chronos Hermes (13B),107.5
+counting,LLaMA 2 SFT v10 (70B),107.5
+counting,ReMM SLERP L2 13B,107.5
+counting,Claude Instant v1,106.5
+counting,GPT-NeoXT-Chat-Base (20B),106.0
+counting,MythoMax-L2 (13B),103.0
+counting,Guanaco (13B),99.5
+counting,Mythalion 13B,97.5
+counting,Alpaca (7B),97.0
+counting,LLaMA-2-Chat (13B),97.0
+counting,Koala (13B),96.0
+counting,MPT-Chat (30B),94.5
+counting,PaLM 2 Bison (Code Chat),94.5
+counting,Vicuna v1.3 (13B),94.0
+counting,Vicuna v1.5 (13B),94.0
+counting,Qwen-Chat (7B),93.5
+counting,RedPajama-INCITE Chat (7B),91.0
+counting,Pythia-Chat-Base (7B),89.0
+counting,Vicuna-FastChat-T5 (3B),86.5
+counting,Luminous Supreme Control,85.5
+counting,Dolly v2 (3B),84.0
+counting,Falcon Instruct (7B),80.0
+counting,Vicuna v1.3 (7B),80.0
+counting,Dolly v2 (7B),76.5
+counting,Luminous Base Control,69.0
+counting,Luminous Extended Control,67.5
+eigen,Weaver 12k,0.578745386248264
+eigen,Dolly v2 (12B),0.26572197279613
+eigen,Luminous Extended,0.19461182466856541
+eigen,Open-Assistant StableLM SFT-7 (7B),0.16901689666851877
+eigen,StarCoderChat Alpha (16B),0.16875242774940347
+eigen,Open-Assistant Pythia SFT-4 (12B),0.16498337966247278
+eigen,Luminous Supreme,0.1555676191463372
+eigen,Luminous Base,0.15383938474783493
+eigen,command-light,0.15266890289720908
+eigen,Code Llama Instruct (7B),0.15219776710432406
+eigen,Vicuna-FastChat-T5 (3B),0.14563267914880595
+eigen,Dolly v2 (7B),0.14290582866187185
+eigen,Koala (13B),0.13982119336789212
+eigen,Dolly v2 (3B),0.1318277278259613
+eigen,Code Llama Instruct (13B),0.12869841581500618
+eigen,Airoboros L2 70B,0.12823597272216553
+eigen,Code Llama Instruct (34B),0.12518667369739586
+eigen,RedPajama-INCITE Chat (3B),0.11060703019539679
+eigen,Guanaco (33B),0.10676950543813787
+eigen,PaLM 2 Bison,0.10614416576919973
+eigen,Jurassic 2 Light,0.10595656417923732
+eigen,Falcon Instruct (40B),0.09584558101070315
+eigen,MythoMax-L2 (13B),0.092057735605264
+eigen,LLaMA-2-Chat (7B),0.08968260664485722
+eigen,GPT 3.5 Turbo (16k),0.08873740172976541
+eigen,Claude v1.2,0.08850087836238098
+eigen,MPT-Chat (30B),0.08733665476550316
+eigen,Vicuna v1.3 (7B),0.08452424632307097
+eigen,Falcon Instruct (7B),0.08434353613636182
+eigen,Alpaca (7B),0.08390544903984204
+eigen,RedPajama-INCITE Chat (7B),0.08304661671044113
+eigen,command,0.08111298535941015
+eigen,GPT 3.5 Turbo,0.08009679668455341
+eigen,Vicuna v1.5 (13B),0.07853613342880907
+eigen,Vicuna v1.3 (13B),0.0773257030011651
+eigen,LLaMA-2-Chat (13B),0.07723768521094275
+eigen,Luminous Supreme Control,0.07662783158984388
+eigen,Chronos Hermes (13B),0.07585173900972257
+eigen,MPT-Chat (7B),0.07364096555095061
+eigen,Guanaco (65B),0.07272840317528163
+eigen,Qwen-Chat (7B),0.07255838916422414
+eigen,Guanaco (13B),0.07094304772144437
+eigen,Claude v2,0.0697163965842054
+eigen,LLaMA 2 SFT v10 (70B),0.06866067398567728
+eigen,Luminous Extended Control,0.06851171802334513
+eigen,command-nightly,0.06816319831952203
+eigen,PaLM 2 Bison (Code Chat),0.06784458383291843
+eigen,Luminous Base Control,0.06639544459438285
+eigen,Jurassic 2 Mid,0.06548522567513446
+eigen,Pythia-Chat-Base (7B),0.0634170922627233
+eigen,GPT-NeoXT-Chat-Base (20B),0.06133172825213306
+eigen,Claude Instant v1,0.061099721296167996
+eigen,Claude v1,0.059226295323581306
+eigen,Jurassic 2 Ultra,0.0561637520055927
+eigen,LLaMA-2-Chat (70B),0.05605642671077557
+eigen,Mythalion 13B,0.054857935362840664
+eigen,Platypus-2 Instruct (70B),0.05172285270619515
+eigen,ReMM SLERP L2 13B,0.0484783914869525
+eigen,GPT 4,0.04534331970616604
+elo,GPT 4,1095.5935481722963
+elo,command,1094.5450516632357
+elo,GPT 3.5 Turbo,1079.2555221191303
+elo,GPT 3.5 Turbo (16k),1075.0964804456883
+elo,LLaMA-2-Chat (70B),1059.1993903390448
+elo,LLaMA-2-Chat (7B),1058.9785569582464
+elo,Chronos Hermes (13B),1057.7739714631168
+elo,Jurassic 2 Mid,1057.2497842413597
+elo,Platypus-2 Instruct (70B),1055.8191700469886
+elo,command-nightly,1053.0954087043215
+elo,Claude v1,1052.292645014149
+elo,ReMM SLERP L2 13B,1051.1598970584616
+elo,Jurassic 2 Ultra,1049.810487180826
+elo,GPT-NeoXT-Chat-Base (20B),1047.7027923544551
+elo,Claude Instant v1,1044.6866165577496
+elo,Falcon Instruct (40B),1044.613641110144
+elo,Mythalion 13B,1042.9316261117078
+elo,MPT-Chat (7B),1042.488109033873
+elo,Claude v2,1042.1104717857952
+elo,Claude v1.2,1037.9367077759975
+elo,LLaMA 2 SFT v10 (70B),1037.1389619314862
+elo,Guanaco (13B),1029.5320407000686
+elo,MythoMax-L2 (13B),1029.207265800286
+elo,Guanaco (65B),1028.437111167136
+elo,Alpaca (7B),1024.4266648330586
+elo,Guanaco (33B),1019.6211389922299
+elo,LLaMA-2-Chat (13B),1017.3785561742367
+elo,Jurassic 2 Light,1016.8872263539092
+elo,Vicuna v1.5 (13B),1013.0959459488287
+elo,Pythia-Chat-Base (7B),1012.6902621004051
+elo,Luminous Supreme Control,1010.8380865275797
+elo,MPT-Chat (30B),1010.3827480598355
+elo,PaLM 2 Bison (Code Chat),1009.2730449922806
+elo,Luminous Base Control,1009.0338537589191
+elo,command-light,1008.9260359343343
+elo,Qwen-Chat (7B),1001.365301445324
+elo,RedPajama-INCITE Chat (7B),1000.8344286753306
+elo,Vicuna v1.3 (13B),998.8967725446615
+elo,Falcon Instruct (7B),998.1530156724641
+elo,Luminous Extended Control,990.7271085632347
+elo,PaLM 2 Bison,990.3122847918787
+elo,Weaver 12k,977.5938037775101
+elo,Airoboros L2 70B,972.9383984050371
+elo,Vicuna v1.3 (7B),972.6676711917004
+elo,RedPajama-INCITE Chat (3B),964.5904775300052
+elo,Luminous Base,964.5487644602349
+elo,Code Llama Instruct (34B),959.273828762173
+elo,Code Llama Instruct (13B),935.3692610523219
+elo,Open-Assistant Pythia SFT-4 (12B),933.0971888210305
+elo,Koala (13B),929.5798794940162
+elo,StarCoderChat Alpha (16B),922.5800422078
+elo,Luminous Supreme,906.2522721680214
+elo,Code Llama Instruct (7B),900.0637887557957
+elo,Dolly v2 (7B),899.9129769584197
+elo,Vicuna-FastChat-T5 (3B),889.4912622548292
+elo,Dolly v2 (3B),887.596340348587
+elo,Open-Assistant StableLM SFT-7 (7B),874.6443204517221
+elo,Luminous Extended,862.0700432264198
+elo,Dolly v2 (12B),848.231947030311
+newman,GPT 4,3.1936268627523248
+newman,Platypus-2 Instruct (70B),2.177924563116173
+newman,LLaMA-2-Chat (70B),2.120064214220448
+newman,ReMM SLERP L2 13B,2.1016129890145745
+newman,command,2.10026105078997
+newman,Claude v1,1.981647346760016
+newman,command-nightly,1.9673741942877627
+newman,Jurassic 2 Mid,1.9597881131993409
+newman,Mythalion 13B,1.8848358240304717
+newman,Jurassic 2 Ultra,1.8815488062502885
+newman,GPT 3.5 Turbo,1.8373279834849838
+newman,Chronos Hermes (13B),1.7812230186301097
+newman,GPT-NeoXT-Chat-Base (20B),1.7447449490673044
+newman,GPT 3.5 Turbo (16k),1.7223258778141628
+newman,Claude v2,1.702350902411097
+newman,Falcon Instruct (40B),1.6977170282100547
+newman,Claude Instant v1,1.690783913380054
+newman,MPT-Chat (7B),1.6675534846694064
+newman,LLaMA 2 SFT v10 (70B),1.572835339167868
+newman,LLaMA-2-Chat (7B),1.5415222094962029
+newman,Claude v1.2,1.525334975974119
+newman,Guanaco (65B),1.4907824740314126
+newman,Guanaco (13B),1.3950657445552366
+newman,LLaMA-2-Chat (13B),1.3920846071142363
+newman,Pythia-Chat-Base (7B),1.3411200311192646
+newman,PaLM 2 Bison (Code Chat),1.3346894211932825
+newman,MythoMax-L2 (13B),1.331877875168564
+newman,Alpaca (7B),1.2681080319495268
+newman,Luminous Supreme Control,1.2482563646419982
+newman,Vicuna v1.5 (13B),1.243288519462595
+newman,Luminous Base Control,1.2153612054865286
+newman,MPT-Chat (30B),1.2059239734899527
+newman,Guanaco (33B),1.1996517280390293
+newman,Qwen-Chat (7B),1.186584396222818
+newman,Vicuna v1.3 (13B),1.1307796055907249
+newman,Jurassic 2 Light,1.1227591896469986
+newman,RedPajama-INCITE Chat (7B),1.1164415886273786
+newman,Falcon Instruct (7B),1.0236828602241814
+newman,Luminous Extended Control,1.0158565046047556
+newman,command-light,0.9594346072417512
+newman,Vicuna v1.3 (7B),0.894625339404566
+newman,Weaver 12k,0.8357216261034175
+newman,Code Llama Instruct (34B),0.7910371116043513
+newman,PaLM 2 Bison,0.7824946344546806
+newman,RedPajama-INCITE Chat (3B),0.7626248766485657
+newman,Luminous Base,0.7534069497292409
+newman,Code Llama Instruct (13B),0.7482853932056093
+newman,Airoboros L2 70B,0.7036035166424082
+newman,Dolly v2 (12B),0.6475602471926526
+newman,StarCoderChat Alpha (16B),0.6041378471994026
+newman,Open-Assistant Pythia SFT-4 (12B),0.6037568858800791
+newman,Luminous Extended,0.5670889156807105
+newman,Luminous Supreme,0.5363161048437394
+newman,Code Llama Instruct (7B),0.5318559904983685
+newman,Koala (13B),0.5191112217950838
+newman,Open-Assistant StableLM SFT-7 (7B),0.5054847056115025
+newman,Vicuna-FastChat-T5 (3B),0.4753066547971441
+newman,Dolly v2 (3B),0.47267512828103875
+newman,Dolly v2 (7B),0.4718901797635701
+pagerank,Weaver 12k,0.14014531145821327
+pagerank,Dolly v2 (12B),0.057307109743142265
+pagerank,Luminous Extended,0.043909874381376106
+pagerank,StarCoderChat Alpha (16B),0.03256864260301635
+pagerank,Luminous Base,0.032189300884687154
+pagerank,command-light,0.027853945782337283
+pagerank,Open-Assistant Pythia SFT-4 (12B),0.027322012212873167
+pagerank,Open-Assistant StableLM SFT-7 (7B),0.02667297368461049
+pagerank,Luminous Supreme,0.025533459676779988
+pagerank,Code Llama Instruct (7B),0.021063725168522333
+pagerank,Airoboros L2 70B,0.02033861109967687
+pagerank,Code Llama Instruct (13B),0.02031221989854794
+pagerank,Koala (13B),0.019978884126742584
+pagerank,Vicuna-FastChat-T5 (3B),0.019487499494347096
+pagerank,Dolly v2 (3B),0.01885400507061146
+pagerank,Jurassic 2 Light,0.01871771518112189
+pagerank,PaLM 2 Bison,0.018221909383483142
+pagerank,Code Llama Instruct (34B),0.017474374916700633
+pagerank,Guanaco (33B),0.01729795673873139
+pagerank,Dolly v2 (7B),0.017023050573221093
+pagerank,RedPajama-INCITE Chat (3B),0.016100845965607003
+pagerank,GPT 3.5 Turbo (16k),0.01524799114528604
+pagerank,Falcon Instruct (40B),0.015032249177333555
+pagerank,LLaMA-2-Chat (7B),0.014368079889046547
+pagerank,GPT 3.5 Turbo,0.014054182850176629
+pagerank,Claude v1.2,0.013674501352322944
+pagerank,command,0.012348761359513018
+pagerank,Guanaco (65B),0.010732040864176635
+pagerank,Vicuna v1.3 (7B),0.01063291388888128
+pagerank,MPT-Chat (30B),0.01020755595113233
+pagerank,Guanaco (13B),0.009752693814245322
+pagerank,Vicuna v1.3 (13B),0.009695077845417385
+pagerank,RedPajama-INCITE Chat (7B),0.009669877612052425
+pagerank,MythoMax-L2 (13B),0.009655642937056995
+pagerank,Alpaca (7B),0.009611276817494317
+pagerank,Qwen-Chat (7B),0.009604823399876797
+pagerank,Falcon Instruct (7B),0.009536708013232196
+pagerank,LLaMA-2-Chat (13B),0.009402871134893435
+pagerank,Vicuna v1.5 (13B),0.009366852201433297
+pagerank,PaLM 2 Bison (Code Chat),0.008993302639794318
+pagerank,Luminous Extended Control,0.00880888117581813
+pagerank,MPT-Chat (7B),0.008693027137659263
+pagerank,Luminous Supreme Control,0.008689236461016232
+pagerank,LLaMA 2 SFT v10 (70B),0.008404975150581345
+pagerank,Chronos Hermes (13B),0.008355395409616261
+pagerank,Pythia-Chat-Base (7B),0.008295471964288521
+pagerank,Luminous Base Control,0.008178737913879968
+pagerank,Claude v2,0.008029905933635732
+pagerank,Jurassic 2 Mid,0.00797977068601485
+pagerank,Claude Instant v1,0.007903134630092559
+pagerank,command-nightly,0.007897468285524577
+pagerank,GPT-NeoXT-Chat-Base (20B),0.007818868670070617
+pagerank,Jurassic 2 Ultra,0.007816011095443751
+pagerank,LLaMA-2-Chat (70B),0.007776484335264846
+pagerank,Claude v1,0.007578029263621283
+pagerank,Mythalion 13B,0.007448868146925849
+pagerank,ReMM SLERP L2 13B,0.007343322493873046
+pagerank,Platypus-2 Instruct (70B),0.0071089452193494156
+pagerank,GPT 4,0.005912635089608667
