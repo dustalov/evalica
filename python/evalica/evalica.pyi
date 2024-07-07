@@ -25,7 +25,9 @@ def counting_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Iterable[Winner],
-) -> npt.NDArray[np.int64]: ...
+        win_weight: float,
+        tie_weight: float,
+) -> npt.NDArray[np.float64]: ...
 
 
 def bradley_terry_pyo3(
@@ -48,9 +50,10 @@ def elo_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Iterable[Winner],
-        r: float,
-        k: int,
-        s: float,
+        initial: float,
+        base: float,
+        scale: float,
+        k: float,
 ) -> npt.NDArray[np.float64]: ...
 
 

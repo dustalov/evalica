@@ -6,7 +6,9 @@ pub fn counting(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
-) -> Array1<i64> {
+    win_weight: f64,
+    tie_weight: f64,
+) -> Array1<f64> {
     assert_eq!(
         xs.len(),
         ys.len(),
@@ -29,12 +31,16 @@ pub fn counting(
 
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
 
-    let mut scores = Array1::<i64>::ones(n);
+    let mut scores = Array1::ones(n);
 
     for i in 0..xs.len() {
         match ws[i] {
-            Winner::X => scores[xs[i]] += 1,
-            Winner::Y => scores[ys[i]] += 1,
+            Winner::X => scores[xs[i]] += win_weight,
+            Winner::Y => scores[ys[i]] += win_weight,
+            Winner::Draw => {
+                scores[xs[i]] += tie_weight;
+                scores[ys[i]] += tie_weight;
+            }
             _ => {}
         }
     }
@@ -56,9 +62,9 @@ mod tests {
         let ys = array![0, 1, 2, 3];
         let ws = array![Winner::X, Winner::Draw, Winner::Y, Winner::X];
 
-        let expected = array![2, 1, 2, 2];
+        let expected = array![2.0, 1.0, 2.0, 2.0];
 
-        let actual = counting(&xs.view(), &ys.view(), &ws.view());
+        let actual = counting(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.0);
 
         assert_eq!(expected, actual);
     }

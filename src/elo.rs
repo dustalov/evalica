@@ -6,9 +6,10 @@ pub fn elo(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
-    r: f64,
-    k: u64,
-    s: f64,
+    initial: f64,
+    base: f64,
+    scale: f64,
+    k: f64,
 ) -> Array1<f64> {
     assert_eq!(
         xs.len(),
@@ -32,30 +33,25 @@ pub fn elo(
 
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
 
-    let mut scores = Array1::<f64>::ones(n) * r;
+    let mut scores = Array1::<f64>::ones(n) * initial;
 
     for i in 0..xs.len() {
-        let rating1 = scores[xs[i]];
-        let rating2 = scores[ys[i]];
+        let q_x = base.powf(scores[xs[i]] / scale);
+        let q_y = base.powf(scores[ys[i]] / scale);
+        let q = q_x + q_y;
 
-        let expected_a = 1.0 / (1.0 + 10.0f64.powf((rating2 - rating1) / s));
-        let expected_b = 1.0 / (1.0 + 10.0f64.powf((rating1 - rating2) / s));
+        let expected_x = q_x / q;
+        let expected_y = q_y / q;
 
-        match ws[i] {
-            Winner::X => {
-                scores[xs[i]] = rating1 + k as f64 * (1.0 - expected_a);
-                scores[ys[i]] = rating2 + k as f64 * (0.0 - expected_b);
-            }
-            Winner::Y => {
-                scores[xs[i]] = rating1 + k as f64 * (0.0 - expected_a);
-                scores[ys[i]] = rating2 + k as f64 * (1.0 - expected_b);
-            }
-            Winner::Draw => {
-                scores[xs[i]] = rating1 + k as f64 * (0.5 - expected_a);
-                scores[ys[i]] = rating2 + k as f64 * (0.5 - expected_b);
-            }
-            _ => {}
-        }
+        let (scored_x, scored_y) = match ws[i] {
+            Winner::X => (1.0, 0.0),
+            Winner::Y => (0.0, 1.0),
+            Winner::Draw => (0.5, 0.5),
+            _ => (0.0, 0.0),
+        };
+
+        scores[xs[i]] += k * (scored_x - expected_x);
+        scores[ys[i]] += k * (scored_y - expected_y);
     }
 
     scores
@@ -72,13 +68,14 @@ mod tests {
         let xs = array![3, 2, 1, 0];
         let ys = array![0, 1, 2, 3];
         let ws = array![Winner::X, Winner::Draw, Winner::Y, Winner::X];
-        let r: f64 = 1500.0;
-        let k: u64 = 30;
-        let s: f64 = 400.0;
+        let initial: f64 = 1500.0;
+        let base: f64 = 10.0;
+        let scale: f64 = 400.0;
+        let k: f64 = 30.0;
 
         let expected = array![1501.0, 1485.0, 1515.0, 1498.0];
 
-        let actual = elo(&xs.view(), &ys.view(), &ws.view(), r, k, s);
+        let actual = elo(&xs.view(), &ys.view(), &ws.view(), initial, base, scale, k);
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);

@@ -49,8 +49,16 @@ fn counting_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
-) -> PyResult<Py<PyArray1<i64>>> {
-    let counts = counting::counting(&xs.as_array(), &ys.as_array(), &ws.as_array());
+    win_weight: f64,
+    tie_weight: f64,
+) -> PyResult<Py<PyArray1<f64>>> {
+    let counts = counting::counting(
+        &xs.as_array(),
+        &ys.as_array(),
+        &ws.as_array(),
+        win_weight,
+        tie_weight,
+    );
 
     Ok(counts.into_pyarray_bound(py).unbind())
 }
@@ -93,11 +101,20 @@ fn elo_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
-    r: f64,
-    k: u64,
-    s: f64,
+    initial: f64,
+    base: f64,
+    scale: f64,
+    k: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    let pi = elo::elo(&xs.as_array(), &ys.as_array(), &ws.as_array(), r, k, s);
+    let pi = elo::elo(
+        &xs.as_array(),
+        &ys.as_array(),
+        &ws.as_array(),
+        initial,
+        base,
+        scale,
+        k,
+    );
 
     Ok(pi.into_pyarray_bound(py).unbind())
 }

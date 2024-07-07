@@ -20,6 +20,7 @@ from .evalica import (
     pagerank_pyo3,
 )
 from .naive import bradley_terry as bradley_terry_naive
+from .naive import eigen as eigen_naive
 from .naive import newman as newman_naive
 
 WINNERS = [
@@ -88,19 +89,25 @@ def matrices(
 @dataclass(frozen=True)
 class CountingResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
+    win_weight: float
+    tie_weight: float
 
 
 def counting(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        win_weight: float = 1.,
+        tie_weight: float = .5,
 ) -> CountingResult[T]:
     index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
 
-    counts = counting_pyo3(_xs, _ys, ws)
+    counts = counting_pyo3(_xs, _ys, ws, win_weight, tie_weight)
 
     return CountingResult(
         scores=pd.Series(counts, index=index, name=counting.__name__),
+        win_weight=win_weight,
+        tie_weight=tie_weight,
     )
 
 
@@ -108,6 +115,7 @@ def counting(
 class BradleyTerryResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
+    win_weight: float
     tie_weight: float
     iterations: int
 
@@ -116,6 +124,7 @@ def bradley_terry(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-4,
@@ -125,7 +134,7 @@ def bradley_terry(
 
     _matrices = matrices(xs, ys, ws)
 
-    matrix = _matrices.win_matrix.astype(float) + tie_weight * _matrices.tie_matrix.astype(float)
+    matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
     if solver == "pyo3":
         scores, iterations = bradley_terry_pyo3(matrix, tolerance, limit)
@@ -135,6 +144,7 @@ def bradley_terry(
     return BradleyTerryResult(
         scores=pd.Series(scores, index=_matrices.index, name=bradley_terry.__name__),
         matrix=matrix,
+        win_weight=win_weight,
         tie_weight=tie_weight,
         iterations=iterations,
     )
@@ -184,28 +194,31 @@ def newman(
 @dataclass(frozen=True)
 class EloResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
-    r: float
-    k: int
-    s: float
+    initial: float
+    base: float
+    scale: float
+    k: float
 
 
 def elo(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
-        r: float = 1500,
-        k: int = 30,
-        s: float = 400,
+        initial: float = 1500.,
+        base: float = 10.,
+        scale: float = 400.,
+        k: float = 30.,
 ) -> EloResult[T]:
     index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
 
-    scores = elo_pyo3(_xs, _ys, ws, r, k, s)
+    scores = elo_pyo3(_xs, _ys, ws, initial, base, scale, k)
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__),
-        r=r,
+        initial=initial,
+        base=base,
+        scale=scale,
         k=k,
-        s=s,
     )
 
 
@@ -213,6 +226,7 @@ def elo(
 class EigenResult(Generic[T]):
     scores: "pd.Series[T]"  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
+    win_weight: float
     tie_weight: float
 
 
@@ -220,17 +234,20 @@ def eigen(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        win_weight: float = 1.,
         tie_weight: float = .5,
+        solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> EigenResult[T]:
     _matrices = matrices(xs, ys, ws)
 
-    matrix = _matrices.win_matrix.astype(float) + tie_weight * _matrices.tie_matrix.astype(float)
+    matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
-    scores = eigen_pyo3(matrix)
+    scores = eigen_pyo3(matrix) if solver == "pyo3" else eigen_naive(matrix)[0]
 
     return EigenResult(
         scores=pd.Series(scores, index=_matrices.index, name=eigen.__name__),
         matrix=matrix,
+        win_weight=win_weight,
         tie_weight=tie_weight,
     )
 

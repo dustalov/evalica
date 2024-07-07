@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 import evalica
 import numpy as np
@@ -16,6 +16,20 @@ class Example(NamedTuple):
     xs: "list[str] | pd.Series[str]"
     ys: "list[str] | pd.Series[str]"
     ws: "list[evalica.Winner] | pd.Series[evalica.Winner]"  # type: ignore[type-var]
+
+
+@st.composite
+def elements(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:  # type: ignore[type-var]
+    length = draw(st.integers(0, 5))
+
+    xys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
+    ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+
+    return Example(
+        xs=draw(xys),
+        ys=draw(xys),
+        ws=draw(ws),
+    )
 
 
 @pytest.fixture()
@@ -55,7 +69,7 @@ def matrix_to_elements(
 
 
 @pytest.fixture()
-def simple_elements(simple: npt.NDArray[np.int64]) -> Example:  # type: ignore[type-var]
+def simple_elements(simple: npt.NDArray[np.int64]) -> Example:
     xs, ys, ws = matrix_to_elements(simple, lambda x, y: evalica.Winner.X if x > y else evalica.Winner.Y)
     return Example(xs=xs, ys=ys, ws=ws)
 
@@ -77,6 +91,17 @@ def simple_tied_elements(simple_tied: tuple[npt.NDArray[np.int64], npt.NDArray[n
     return Example(xs=win_xs + tie_xs, ys=win_ys + tie_ys, ws=win_ws + tie_ws)
 
 
+def extract_golden_series(food_golden: pd.DataFrame, algorithm: str) -> "pd.Series[str]":
+    df_slice = food_golden[food_golden["algorithm"] == algorithm][["item", "score"]].set_index("item")
+    series = cast("pd.Series[str]", df_slice.squeeze())
+    series.index.name = None
+    series.name = algorithm
+    return series
+
+
+DATASETS = ["food", "llmfao"]
+
+
 @pytest.fixture()
 def food() -> Example:
     df_food = pd.read_csv(Path(__file__).resolve().parent / "food.csv", dtype=str)
@@ -90,6 +115,45 @@ def food() -> Example:
     })
 
     return Example(xs=xs, ys=ys, ws=ws)
+
+
+@pytest.fixture()
+def food_golden() -> pd.DataFrame:
+    df_golden = pd.read_csv(Path(__file__).resolve().parent / "food-golden.csv", dtype=str)
+
+    df_golden["score"] = df_golden["score"].astype(float)
+
+    return df_golden
+
+
+@pytest.fixture()
+def food_counting_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(food_golden, "counting")
+
+
+@pytest.fixture()
+def food_bradley_terry_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(food_golden, "bradley_terry")
+
+
+@pytest.fixture()
+def food_newman_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(food_golden, "newman")
+
+
+@pytest.fixture()
+def food_elo_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(food_golden, "elo")
+
+
+@pytest.fixture()
+def food_eigen_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(food_golden, "eigen")
+
+
+@pytest.fixture()
+def food_pagerank_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(food_golden, "pagerank")
 
 
 @pytest.fixture()
@@ -107,15 +171,40 @@ def llmfao() -> Example:
     return Example(xs=xs, ys=ys, ws=ws)
 
 
-@st.composite
-def elements(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:
-    length = draw(st.integers(0, 5))
+@pytest.fixture()
+def llmfao_golden() -> pd.DataFrame:
+    df_golden = pd.read_csv(Path(__file__).resolve().parent / "llmfao-golden.csv", dtype=str)
 
-    xys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
-    ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+    df_golden["score"] = df_golden["score"].astype(float)
 
-    return Example(
-        xs=draw(xys),
-        ys=draw(xys),
-        ws=draw(ws),
-    )
+    return df_golden
+
+
+@pytest.fixture()
+def llmfao_counting_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(llmfao_golden, "counting")
+
+
+@pytest.fixture()
+def llmfao_bradley_terry_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(llmfao_golden, "bradley_terry")
+
+
+@pytest.fixture()
+def llmfao_newman_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(llmfao_golden, "newman")
+
+
+@pytest.fixture()
+def llmfao_elo_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(llmfao_golden, "elo")
+
+
+@pytest.fixture()
+def llmfao_eigen_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(llmfao_golden, "eigen")
+
+
+@pytest.fixture()
+def llmfao_pagerank_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
+    return extract_golden_series(llmfao_golden, "pagerank")
