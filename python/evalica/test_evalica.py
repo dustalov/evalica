@@ -118,22 +118,22 @@ def test_pagerank(example: Example) -> None:
     assert not xs or result.iterations > 0
 
 
-def test_bradley_terry_simple(simple_elements: Example, tolerance: float = 1e-4) -> None:
+def test_bradley_terry_simple(simple_elements: Example) -> None:
     xs, ys, ws = simple_elements
 
-    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3", tolerance=tolerance)
-    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive", tolerance=tolerance)
+    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=1e-4)
 
 
-def test_newman_simple(simple_tied_elements: Example, tolerance: float = 1e-1) -> None:
+def test_newman_simple(simple_tied_elements: Example) -> None:
     xs, ys, ws = simple_tied_elements
 
-    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3", tolerance=tolerance)
-    result_naive = evalica.newman(xs, ys, ws, solver="naive", tolerance=tolerance)
+    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=1e-4)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
@@ -170,8 +170,8 @@ def test_bradley_terry_dataset(example: Example, example_golden: "pd.Series[str]
 def test_newman_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
     xs, ys, ws = example
 
-    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.newman(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3", tolerance=1e-8)
+    result_naive = evalica.newman(xs, ys, ws, solver="naive", tolerance=1e-8)
 
     assert_series_equal(result_naive.scores, example_golden, atol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, example_golden, atol=1e-4, check_like=True)

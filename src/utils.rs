@@ -1,21 +1,11 @@
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::ops::AddAssign;
 
-use ndarray::{Array2, ArrayView1, ArrayView2};
+use ndarray::{Array2, ArrayView1};
+use num_traits::Num;
 
 use crate::Winner;
-
-pub fn compute_ties_and_wins(matrix: &ArrayView2<f64>) -> (Array2<f64>, Array2<f64>) {
-    let mut t = matrix.to_owned();
-
-    for ((i, j), t) in t.indexed_iter_mut() {
-        *t = f64::min(matrix[[i, j]], matrix[[j, i]]);
-    }
-
-    let w = matrix - &t;
-
-    (t, w)
-}
 
 pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
     let mut index: HashMap<I, usize> = HashMap::new();
@@ -33,11 +23,13 @@ pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> Ha
     index
 }
 
-pub fn matrices(
+pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
-) -> (Array2<i64>, Array2<i64>) {
+    win_weight: A,
+    tie_weight: B,
+) -> (Array2<A>, Array2<B>) {
     assert_eq!(
         xs.len(),
         ys.len(),
@@ -66,20 +58,46 @@ pub fn matrices(
     for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
         match w {
             Winner::X => {
-                wins[[*x, *y]] += 1;
+                wins[[*x, *y]] += win_weight;
             }
             Winner::Y => {
-                wins[[*y, *x]] += 1;
+                wins[[*y, *x]] += win_weight;
             }
             Winner::Draw => {
-                ties[[*x, *y]] += 1;
-                ties[[*y, *x]] += 1;
+                ties[[*x, *y]] += tie_weight;
+                ties[[*y, *x]] += tie_weight;
             }
             _ => {}
         }
     }
 
     (wins, ties)
+}
+
+#[cfg(test)]
+pub mod fixtures {
+    use crate::Winner;
+
+    pub(crate) static XS: [usize; 16] = [0, 0, 0, 0, 1, 1, 1, 1, 2, 3, 3, 3, 3, 3, 4, 4];
+    pub(crate) static YS: [usize; 16] = [1, 2, 2, 4, 0, 2, 2, 3, 4, 0, 1, 2, 4, 4, 0, 3];
+    pub(crate) static WS: [Winner; 16] = [
+        Winner::Draw,
+        Winner::Y,
+        Winner::Draw,
+        Winner::Draw,
+        Winner::X,
+        Winner::Draw,
+        Winner::Draw,
+        Winner::Draw,
+        Winner::Draw,
+        Winner::X,
+        Winner::X,
+        Winner::X,
+        Winner::Draw,
+        Winner::Draw,
+        Winner::X,
+        Winner::X,
+    ];
 }
 
 #[cfg(test)]
@@ -125,10 +143,9 @@ mod tests {
             [0, 0, 0, 0, 0],
         ];
 
-        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view());
+        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view(), 1, 1);
 
         assert_eq!(wins, expected_wins);
-
         assert_eq!(ties, expected_ties);
     }
 }

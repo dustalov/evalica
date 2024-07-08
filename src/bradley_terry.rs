@@ -30,7 +30,7 @@ pub fn bradley_terry(
 
         for ((i, j), &active_val) in active.indexed_iter() {
             if active_val {
-                z[[i, j]] = totals[[i, j]] as f64 / (scores[i] + scores[j]);
+                z[[i, j]] = totals[[i, j]] / (scores[i] + scores[j]);
             }
         }
 
@@ -46,13 +46,16 @@ pub fn bradley_terry(
 
         let p_sum = scores_new.sum();
 
-        if p_sum == 0.0 {
-            scores_new.assign(&scores)
-        } else {
-            scores_new /= p_sum;
-        }
+        scores_new /= p_sum;
+
+        scores_new.iter_mut().for_each(|x| {
+            if x.is_nan() {
+                *x = tolerance;
+            }
+        });
 
         let difference = &scores_new - &scores;
+
         converged = difference.dot(&difference).sqrt() < tolerance;
 
         scores.assign(&scores_new);
@@ -71,46 +74,60 @@ pub fn newman(
     assert!(v_init.is_normal());
     assert!(v_init > 0.0);
 
+    let win_tie_half = win_matrix + &(tie_matrix * 0.5);
     let mut scores = Array1::ones(win_matrix.shape()[0]);
-    let mut scores_new = scores.clone();
-
-    let w_t_half = win_matrix + &(tie_matrix / 2.0);
-
-    let mut converged = false;
+    let mut v = v_init;
     let mut iterations = 0;
 
-    let mut v = v_init;
-
-    while !converged && iterations < limit {
+    loop {
         iterations += 1;
 
-        let sqrt_scores = scores.mapv(f64::sqrt);
-        let w_denom = &scores + &scores.t() + 2.0 * v * &sqrt_scores;
-        let w_scores = &w_t_half * (&scores + v * &sqrt_scores) / &w_denom;
+        let scores_broadcast = scores.broadcast((scores.len(), scores.len())).unwrap();
+        let scores_outer_sqrt =
+            (scores_broadcast.to_owned() * scores_broadcast.t()).mapv_into(f64::sqrt);
 
-        let pi_numerator = w_scores.sum_axis(Axis(1));
-        let pi_denominator = w_scores.sum_axis(Axis(0));
+        let term = &scores_broadcast + &scores_broadcast.t() + &(2.0 * v * &scores_outer_sqrt);
 
-        let t_denom = &scores + &scores.t() + 2.0 * v * &sqrt_scores;
-        let v_numerator = (*&tie_matrix * (&scores + &scores.t()) / t_denom).sum() / 2.0;
+        let v_numerator = tie_matrix * &(&scores_broadcast + &scores_broadcast.t()) / &term;
+        let v_numerator_sum = v_numerator.sum() / 2.0;
 
-        let v_denom = (2.0 * win_matrix * &sqrt_scores / &w_denom).sum();
+        let v_denominator = win_matrix * &(2.0 * &scores_outer_sqrt) / &term;
+        let v_denominator_sum = v_denominator.sum();
 
-        v = v_numerator / v_denom;
+        v = v_numerator_sum / v_denominator_sum;
 
-        if !v.is_finite() {
-            v = 0.0;
+        if v.is_nan() {
+            v = tolerance;
         }
 
-        let result = &pi_numerator / &pi_denominator;
+        let scores_old = scores.clone();
 
-        if result.iter().all(|x| x.is_finite()) {
-            scores_new.assign(&result)
+        let pi_numerator = &win_tie_half * &(&scores_broadcast + &(v * &scores_outer_sqrt)) / &term;
+        let pi_numerator_sum = pi_numerator.sum_axis(Axis(1));
+
+        let pi_denominator = &win_tie_half * &(1.0 + v * &scores_outer_sqrt) / &term;
+        let pi_denominator_sum = pi_denominator.sum_axis(Axis(0));
+
+        scores = &pi_numerator_sum / &pi_denominator_sum;
+
+        scores.iter_mut().for_each(|x| {
+            if x.is_nan() {
+                *x = tolerance
+            }
+        });
+
+        let scores_normalized = &scores / (&scores + 1.0);
+        let scores_old_normalized = &scores_old / (&scores_old + 1.0);
+
+        let converged = scores_normalized
+            .iter()
+            .zip(scores_old_normalized.iter())
+            .all(|(a, b)| (a - b).abs() <= tolerance * f64::max(a.abs(), b.abs()) + tolerance)
+            || iterations >= limit;
+
+        if converged {
+            break;
         }
-
-        let difference = &scores_new - &scores;
-        converged = difference.dot(&difference).sqrt() < tolerance;
-        scores.assign(&scores_new);
     }
 
     (scores, v, iterations)
@@ -118,55 +135,90 @@ pub fn newman(
 
 #[cfg(test)]
 mod tests {
-    use ndarray::{array, Array2};
+    use approx::assert_abs_diff_eq;
+    use ndarray::{array, ArrayView1};
 
     use crate::utils;
+    use crate::utils::matrices;
 
     use super::{bradley_terry, newman};
 
-    fn matrix() -> Array2<f64> {
-        return array![
-            [0.0, 1.0, 2.0, 0.0, 1.0],
-            [2.0, 0.0, 2.0, 1.0, 0.0],
-            [1.0, 2.0, 0.0, 0.0, 1.0],
-            [1.0, 2.0, 1.0, 0.0, 2.0],
-            [2.0, 0.0, 1.0, 3.0, 0.0]
-        ];
-    }
-
     #[test]
     fn test_bradley_terry() {
-        let matrix = matrix();
         let tolerance = 1e-8;
-        let limit = 100;
 
-        let expected = array![0.12151104, 0.15699947, 0.11594851, 0.31022851, 0.29531247];
+        let xs = ArrayView1::from(&utils::fixtures::XS);
+        let ys = ArrayView1::from(&utils::fixtures::YS);
+        let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (actual, iterations) = bradley_terry(&matrix.view(), tolerance, limit);
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0);
+
+        let matrix = win_matrix + &tie_matrix / 2.0;
+
+        let expected = array![
+            0.050799672530389396,
+            0.1311506914535368,
+            0.13168568070110523,
+            0.33688868041573855,
+            0.34947527489923,
+        ];
+
+        let (actual, iterations) = bradley_terry(&matrix.view(), tolerance, 100);
+
+        println!("{:?}", actual);
 
         assert_eq!(actual.len(), matrix.shape()[0]);
         assert_ne!(iterations, 0);
 
-        for (a, b) in actual.iter().zip(expected.iter()) {
-            assert!((a - b).abs() < tolerance);
+        for (left, right) in actual.iter().zip(expected.iter()) {
+            assert_abs_diff_eq!(left, right, epsilon = tolerance * 1e1);
         }
     }
 
     #[test]
     fn test_newman() {
-        let matrix = matrix();
         let tolerance = 1e-8;
-        let limit = 100;
 
-        let (win_matrix, tie_matrix) = utils::compute_ties_and_wins(&matrix.view());
+        let xs = ArrayView1::from(&utils::fixtures::XS);
+        let ys = ArrayView1::from(&utils::fixtures::YS);
+        let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let w64 = win_matrix.map(|x| *x as f64);
-        let t64 = tie_matrix.map(|x| *x as f64);
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0);
 
-        let (actual, v, iterations) = newman(&w64.view(), &t64.view(), 0.5, tolerance, limit);
+        let expected_v = 1.483370503346757;
+        let v_init = 0.5;
 
-        assert_eq!(actual.len(), matrix.shape()[0]);
-        assert!(v.is_finite());
+        let expected = array![
+            0.29236875388822886,
+            0.8129264752163917,
+            1.6686265317109035,
+            1.919540868932138,
+            0.8230632211243398,
+        ];
+
+        let (actual, v, iterations) = newman(
+            &win_matrix.view(),
+            &tie_matrix.view(),
+            v_init,
+            tolerance,
+            100,
+        );
+
+        println!("{:?}", win_matrix);
+        println!();
+        println!("{:?}", tie_matrix);
+        println!();
+        println!("{:?}", actual);
+
+        assert_eq!(actual.len(), win_matrix.shape()[0]);
+        assert_eq!(actual.len(), tie_matrix.shape()[0]);
         assert_ne!(iterations, 0);
+
+        assert_ne!(v, v_init);
+        assert_abs_diff_eq!(v, expected_v, epsilon = tolerance * 1e1);
+
+        for (left, right) in actual.iter().zip(expected.iter()) {
+            assert_abs_diff_eq!(left, right, epsilon = tolerance * 1e1);
+        }
     }
 }

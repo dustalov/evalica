@@ -35,7 +35,7 @@ fn matrices_pyo3<'py>(
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
-    let (wins, ties) = utils::matrices(&xs.as_array(), &ys.as_array(), &ws.as_array());
+    let (wins, ties) = utils::matrices(&xs.as_array(), &ys.as_array(), &ws.as_array(), 1, 1);
 
     Ok((
         wins.into_pyarray_bound(py).unbind(),

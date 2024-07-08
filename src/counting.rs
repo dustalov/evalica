@@ -1,14 +1,17 @@
+use std::ops::AddAssign;
+
 use ndarray::{Array1, ArrayView1};
+use num_traits::Num;
 
 use crate::Winner;
 
-pub fn counting(
+pub fn counting<A: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
-    win_weight: f64,
-    tie_weight: f64,
-) -> Array1<f64> {
+    win_weight: A,
+    tie_weight: A,
+) -> Array1<A> {
     assert_eq!(
         xs.len(),
         ys.len(),
@@ -50,22 +53,22 @@ pub fn counting(
 
 #[cfg(test)]
 mod tests {
-    use ndarray::array;
+    use ndarray::{array, ArrayView1};
 
-    use crate::Winner;
+    use crate::utils;
 
     use super::counting;
 
     #[test]
     fn test_counting() {
-        let xs = array![3, 2, 1, 0];
-        let ys = array![0, 1, 2, 3];
-        let ws = array![Winner::X, Winner::Draw, Winner::Y, Winner::X];
+        let xs = ArrayView1::from(&utils::fixtures::XS);
+        let ys = ArrayView1::from(&utils::fixtures::YS);
+        let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let expected = array![1.0, 0.5, 1.5, 1.0];
+        let expected = array![1.5, 3.0, 3.0, 4.5, 4.0];
 
         let actual = counting(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5);
 
-        assert_eq!(expected, actual);
+        assert_eq!(actual, expected);
     }
 }

@@ -29,6 +29,7 @@ def bradley_terry(
         scores_new[:] = w
         scores_new /= norm_matrix.sum(axis=0)
         scores_new /= scores_new.sum()
+        scores_new = np.nan_to_num(scores_new, nan=tolerance)
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
@@ -53,14 +54,18 @@ def newman(
     while not converged:
         iterations += 1
 
+        scores_broadcast = scores[:, np.newaxis]
+
+        scores_outer_sqrt = np.sqrt(np.outer(scores, scores))
+
         v_numerator = np.sum(
-            tie_matrix * (scores[:, np.newaxis] + scores) /
-            (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
+            tie_matrix * (scores_broadcast + scores) /
+            (scores_broadcast + scores + 2 * v * scores_outer_sqrt),
         ) / 2
 
         v_denominator = np.sum(
-            win_matrix * 2 * np.sqrt(scores[:, np.newaxis] * scores) /
-            (scores[:, np.newaxis] + scores + 2 * v * np.sqrt(scores[:, np.newaxis] * scores)),
+            win_matrix * 2 * scores_outer_sqrt /
+            (scores_broadcast + scores + 2 * v * scores_outer_sqrt),
         )
 
         v = v_numerator / v_denominator
@@ -69,14 +74,14 @@ def newman(
         scores_old = scores.copy()
 
         pi_numerator = np.sum(
-            win_tie_half * (scores + v * np.sqrt(scores[:, np.newaxis] * scores)) /
-            (scores[:, np.newaxis] + scores + 2 + v * np.sqrt(scores[:, np.newaxis] * scores)),
+            win_tie_half * (scores + v * scores_outer_sqrt) /
+            (scores_broadcast + scores + 2 + v * scores_outer_sqrt),
             axis=1,
         )
 
         pi_denominator = np.sum(
-            win_tie_half * (1 + v * np.sqrt(scores[:, np.newaxis] * scores)) /
-            (scores[:, np.newaxis] + scores + 2 + v * np.sqrt(scores[:, np.newaxis] * scores)),
+            win_tie_half * (1 + v * scores_outer_sqrt) /
+            (scores_broadcast + scores + 2 + v * scores_outer_sqrt),
             axis=0,
         )
 

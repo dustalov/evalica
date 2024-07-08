@@ -160,6 +160,7 @@ pub fn pagerank(
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
     use ndarray::array;
 
     use super::*;
@@ -186,8 +187,8 @@ mod tests {
 
         assert!(iterations > 0);
 
-        for (a, &b) in actual.iter().zip(expected.iter()) {
-            assert!((a - b).abs() < tolerance);
+        for (left, right) in actual.iter().zip(expected.iter()) {
+            assert_relative_eq!(left, right, epsilon = tolerance);
         }
     }
 }
