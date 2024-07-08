@@ -128,7 +128,7 @@ def bradley_terry(
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
-        tolerance: float = 1e-4,
+        tolerance: float = 1e-6,
         limit: int = 100,
 ) -> BradleyTerryResult[T]:
     assert np.isfinite(tie_weight), "tie_weight must be finite"
@@ -169,7 +169,7 @@ def newman(
         ws: Iterable[Winner],
         v_init: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
-        tolerance: float = 1e-4,
+        tolerance: float = 1e-6,
         limit: int = 100,
 ) -> NewmanResult[T]:
     assert np.isfinite(v_init), "v_init must be finite"
@@ -274,7 +274,7 @@ def pagerank(
         damping: float = .85,
         win_weight: float = 1.,
         tie_weight: float = .5,
-        tolerance: float = 1e-4,
+        tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
     index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))

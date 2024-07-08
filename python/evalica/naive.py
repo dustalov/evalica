@@ -4,15 +4,15 @@ import numpy.typing as npt
 
 def bradley_terry(
         matrix: npt.NDArray[np.float64],
-        tolerance: float = 1e-8,
+        tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
-    T = matrix.T + matrix  # noqa: N806
-    active = T > 0
+    sum_matrix = matrix.T + matrix
+    active = sum_matrix > 0
 
     w = matrix.sum(axis=1)
 
-    Z = np.zeros_like(matrix, dtype=float)  # noqa: N806
+    norm_matrix = np.zeros_like(matrix, dtype=float)
 
     scores = np.ones(matrix.shape[0])
     scores_new = scores.copy()
@@ -22,12 +22,12 @@ def bradley_terry(
     while not converged and iterations < limit:
         iterations += 1
 
-        P = np.broadcast_to(scores, matrix.shape)  # noqa: N806
+        broadcast_scores = np.broadcast_to(scores, matrix.shape)
 
-        Z[active] = T[active] / (P[active] + P.T[active])
+        norm_matrix[active] = sum_matrix[active] / (broadcast_scores[active] + broadcast_scores.T[active])
 
         scores_new[:] = w
-        scores_new /= Z.sum(axis=0)
+        scores_new /= norm_matrix.sum(axis=0)
         scores_new /= scores_new.sum()
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
