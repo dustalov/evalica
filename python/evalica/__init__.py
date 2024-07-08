@@ -118,6 +118,8 @@ class BradleyTerryResult(Generic[T]):
     index: "pd.Index[T]"  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
+    solver: str
+    tolerance: float
     iterations: int
 
 
@@ -148,6 +150,8 @@ def bradley_terry(
         index=_matrices.index,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver=solver,
+        tolerance=tolerance,
         iterations=iterations,
     )
 
@@ -160,6 +164,8 @@ class NewmanResult(Generic[T]):
     index: "pd.Index[T]"  # type: ignore[type-var]
     v: float
     v_init: float
+    solver: str
+    tolerance: float
     iterations: int
 
 
@@ -191,6 +197,8 @@ def newman(
         index=_matrices.index,
         v=v,
         v_init=v_init,
+        solver=solver,
+        tolerance=tolerance,
         iterations=iterations,
     )
 
@@ -233,6 +241,8 @@ class EigenResult(Generic[T]):
     index: "pd.Index[T]"  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
+    solver: str
+    tolerance: float
 
 
 def eigen(
@@ -242,12 +252,14 @@ def eigen(
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
+        tolerance: float = 1e-6,
+        limit: int = 100,
 ) -> EigenResult[T]:
     _matrices = matrices(xs, ys, ws)
 
     matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
-    scores = eigen_pyo3(matrix) if solver == "pyo3" else eigen_naive(matrix)[0]
+    scores = eigen_pyo3(matrix) if solver == "pyo3" else eigen_naive(matrix, tolerance, limit)[0]
 
     return EigenResult(
         scores=pd.Series(scores, index=_matrices.index, name=eigen.__name__),
@@ -255,6 +267,8 @@ def eigen(
         index=_matrices.index,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver=solver,
+        tolerance=tolerance,
     )
 
 
@@ -264,6 +278,7 @@ class PageRankResult(Generic[T]):
     damping: float
     win_weight: float
     tie_weight: float
+    tolerance: float
     iterations: int
 
 
@@ -286,6 +301,7 @@ def pagerank(
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        tolerance=tolerance,
         iterations=iterations,
     )
 
