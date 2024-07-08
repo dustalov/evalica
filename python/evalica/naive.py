@@ -33,7 +33,7 @@ def bradley_terry(
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
-        scores[:] = scores_new
+        scores[:] = np.nan_to_num(scores_new, nan=tolerance)
 
     return scores, iterations
 
@@ -49,47 +49,38 @@ def newman(
 
     scores = np.ones(win_matrix.shape[0])
 
+    scores_new = scores.copy()
+    v_new = v
+
     converged, iterations = False, 0
 
-    while not converged:
+    while not converged and iterations < limit:
         iterations += 1
 
-        scores_broadcast = scores[:, np.newaxis]
+        v = np.nan_to_num(v_new, nan=tolerance)
 
-        scores_outer_sqrt = np.sqrt(np.outer(scores, scores))
+        broadcast_scores_t = scores[:, None].T
+        sqrt_scores_outer = np.sqrt(np.outer(scores, scores))
+        sum_scores = np.add.outer(scores, scores)
+        sqrt_div_scores_t = np.sqrt(np.divide.outer(scores, scores)).T
 
-        v_numerator = np.sum(
-            tie_matrix * (scores_broadcast + scores) /
-            (scores_broadcast + scores + 2 * v * scores_outer_sqrt),
-        ) / 2
-
-        v_denominator = np.sum(
-            win_matrix * 2 * scores_outer_sqrt /
-            (scores_broadcast + scores + 2 * v * scores_outer_sqrt),
-        )
-
-        v = v_numerator / v_denominator
-        v = np.nan_to_num(v, nan=tolerance)
-
-        scores_old = scores.copy()
-
-        pi_numerator = np.sum(
-            win_tie_half * (scores + v * scores_outer_sqrt) /
-            (scores_broadcast + scores + 2 + v * scores_outer_sqrt),
+        scores_numerator = np.sum(
+            win_tie_half * (broadcast_scores_t + v * sqrt_scores_outer) / (sum_scores + 2 * v * sqrt_scores_outer),
             axis=1,
         )
-
-        pi_denominator = np.sum(
-            win_tie_half * (1 + v * scores_outer_sqrt) /
-            (scores_broadcast + scores + 2 + v * scores_outer_sqrt),
-            axis=0,
+        scores_denominator = np.sum(
+            win_tie_half.T * (1 + v * sqrt_div_scores_t) / (sum_scores + 2 * v * sqrt_scores_outer),
+            axis=1,
         )
+        scores_new[:] = scores_numerator / scores_denominator
 
-        scores = pi_numerator / pi_denominator
-        scores = np.nan_to_num(scores, nan=tolerance)
+        v_numerator = np.sum(tie_matrix * sum_scores / (sum_scores + 2 * v * sqrt_scores_outer)) / 2
+        v_denominator = np.sum(win_matrix * sqrt_scores_outer / (sum_scores + 2 * v * sqrt_scores_outer)) * 2
+        v_new = v_numerator / v_denominator
 
-        converged = np.allclose(scores / (scores + 1), scores_old / (scores_old + 1),
-                                rtol=tolerance, atol=tolerance) or (iterations >= limit)
+        converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
+
+        scores[:] = np.nan_to_num(scores_new, nan=tolerance)
 
     return scores, v, iterations
 

@@ -34,8 +34,6 @@ pub fn bradley_terry(
             }
         }
 
-        scores_new.fill(0.0);
-
         for i in 0..matrix.shape()[0] {
             let d = z.column(i).sum();
 
@@ -55,7 +53,6 @@ pub fn bradley_terry(
         });
 
         let difference = &scores_new - &scores;
-
         converged = difference.dot(&difference).sqrt() < tolerance;
 
         scores.assign(&scores_new);
@@ -71,63 +68,90 @@ pub fn newman(
     tolerance: f64,
     limit: usize,
 ) -> (Array1<f64>, f64, usize) {
+    assert_eq!(
+        win_matrix.shape(),
+        tie_matrix.shape(),
+        "The matrices must be have the same shape"
+    );
+
+    assert_eq!(
+        win_matrix.shape()[0],
+        win_matrix.shape()[1],
+        "The win matrix must be square"
+    );
+
+    assert_eq!(
+        tie_matrix.shape()[0],
+        tie_matrix.shape()[1],
+        "The tie matrix must be square"
+    );
+
     assert!(v_init.is_normal());
     assert!(v_init > 0.0);
 
-    let win_tie_half = win_matrix + &(tie_matrix * 0.5);
-    let mut scores = Array1::ones(win_matrix.shape()[0]);
+    let win_tie_half = win_matrix + &(tie_matrix / 2.0);
+
+    let mut scores = Array1::<f64>::ones(win_matrix.shape()[0]);
+    let mut scores_new = scores.clone();
     let mut v = v_init;
+    let mut v_new = v;
+
+    let mut converged = false;
     let mut iterations = 0;
 
-    loop {
+    while !converged && iterations < limit {
         iterations += 1;
 
-        let scores_broadcast = scores.broadcast((scores.len(), scores.len())).unwrap();
-        let scores_outer_sqrt =
-            (scores_broadcast.to_owned() * scores_broadcast.t()).mapv_into(f64::sqrt);
+        v = if v_new.is_nan() { tolerance } else { v_new };
 
-        let term = &scores_broadcast + &scores_broadcast.t() + &(2.0 * v * &scores_outer_sqrt);
+        for i in 0..win_matrix.shape()[0] {
+            let mut i_numerator = 0.0;
+            let mut i_denominator = 0.0;
 
-        let v_numerator = tie_matrix * &(&scores_broadcast + &scores_broadcast.t()) / &term;
-        let v_numerator_sum = v_numerator.sum() / 2.0;
+            for j in 0..win_matrix.shape()[1] {
+                let sqrt_scores_ij = (scores[i] * scores[j]).sqrt();
+                let ij_numerator = scores[j] + v * sqrt_scores_ij;
+                let ij_denominator = scores[i] + scores[j] + 2.0 * v * sqrt_scores_ij;
 
-        let v_denominator = win_matrix * &(2.0 * &scores_outer_sqrt) / &term;
-        let v_denominator_sum = v_denominator.sum();
+                i_numerator += win_tie_half[[i, j]] * ij_numerator / ij_denominator;
+            }
 
-        v = v_numerator_sum / v_denominator_sum;
+            for j in 0..win_matrix.shape()[1] {
+                let sqrt_scores_ij = (scores[i] * scores[j]).sqrt();
+                let ij_num = 1.0 + v * (scores[j] / scores[i]).sqrt();
+                let ij_den = scores[i] + scores[j] + 2.0 * v * sqrt_scores_ij;
 
-        if v.is_nan() {
-            v = tolerance;
+                i_denominator += win_tie_half[[j, i]] * ij_num / ij_den;
+            }
+
+            scores_new[i] = i_numerator / i_denominator;
         }
 
-        let scores_old = scores.clone();
-
-        let pi_numerator = &win_tie_half * &(&scores_broadcast + &(v * &scores_outer_sqrt)) / &term;
-        let pi_numerator_sum = pi_numerator.sum_axis(Axis(1));
-
-        let pi_denominator = &win_tie_half * &(1.0 + v * &scores_outer_sqrt) / &term;
-        let pi_denominator_sum = pi_denominator.sum_axis(Axis(0));
-
-        scores = &pi_numerator_sum / &pi_denominator_sum;
-
-        scores.iter_mut().for_each(|x| {
+        scores_new.iter_mut().for_each(|x| {
             if x.is_nan() {
-                *x = tolerance
+                *x = tolerance;
             }
         });
 
-        let scores_normalized = &scores / (&scores + 1.0);
-        let scores_old_normalized = &scores_old / (&scores_old + 1.0);
+        let mut v_numerator = 0.0;
+        let mut v_denominator = 0.0;
 
-        let converged = scores_normalized
-            .iter()
-            .zip(scores_old_normalized.iter())
-            .all(|(a, b)| (a - b).abs() <= tolerance * f64::max(a.abs(), b.abs()) + tolerance)
-            || iterations >= limit;
-
-        if converged {
-            break;
+        for i in 0..win_matrix.shape()[0] {
+            for j in 0..win_matrix.shape()[1] {
+                let sqrt_scores_ij = (scores[i] * scores[j]).sqrt();
+                v_numerator += tie_matrix[[i, j]] / 2.0 * (scores[i] + scores[j])
+                    / (scores[i] + scores[j] + 2.0 * v * sqrt_scores_ij);
+                v_denominator += win_matrix[[i, j]] * (2.0 * sqrt_scores_ij)
+                    / (scores[i] + scores[j] + 2.0 * v * sqrt_scores_ij);
+            }
         }
+
+        v_new = v_numerator / v_denominator;
+
+        let difference = &scores_new - &scores;
+        converged = difference.dot(&difference).sqrt() < tolerance;
+
+        scores = scores_new.clone();
     }
 
     (scores, v, iterations)
@@ -165,8 +189,6 @@ mod tests {
 
         let (actual, iterations) = bradley_terry(&matrix.view(), tolerance, 100);
 
-        println!("{:?}", actual);
-
         assert_eq!(actual.len(), matrix.shape()[0]);
         assert_ne!(iterations, 0);
 
@@ -185,15 +207,15 @@ mod tests {
 
         let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0);
 
-        let expected_v = 1.483370503346757;
+        let expected_v = 3.4609664512240546;
         let v_init = 0.5;
 
         let expected = array![
-            0.29236875388822886,
-            0.8129264752163917,
-            1.6686265317109035,
-            1.919540868932138,
-            0.8230632211243398,
+            0.01797396524323986,
+            0.48024292914742794,
+            0.4814219179584765,
+            12.805581189559241,
+            13.036548812823787,
         ];
 
         let (actual, v, iterations) = newman(
@@ -204,18 +226,13 @@ mod tests {
             100,
         );
 
-        println!("{:?}", win_matrix);
-        println!();
-        println!("{:?}", tie_matrix);
-        println!();
-        println!("{:?}", actual);
-
         assert_eq!(actual.len(), win_matrix.shape()[0]);
         assert_eq!(actual.len(), tie_matrix.shape()[0]);
         assert_ne!(iterations, 0);
 
         assert_ne!(v, v_init);
-        assert_abs_diff_eq!(v, expected_v, epsilon = tolerance * 1e1);
+        assert!(v.is_normal());
+        assert_abs_diff_eq!(v, expected_v, epsilon = tolerance * 1e3);
 
         for (left, right) in actual.iter().zip(expected.iter()) {
             assert_abs_diff_eq!(left, right, epsilon = tolerance * 1e1);
