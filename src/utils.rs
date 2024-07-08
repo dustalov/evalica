@@ -63,17 +63,17 @@ pub fn matrices(
     let mut wins = Array2::zeros((n, n));
     let mut ties = Array2::zeros((n, n));
 
-    for i in 0..xs.len() {
-        match ws[i] {
+    for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
+        match w {
             Winner::X => {
-                wins[[xs[i], ys[i]]] += 1;
+                wins[[*x, *y]] += 1;
             }
             Winner::Y => {
-                wins[[ys[i], xs[i]]] += 1;
+                wins[[*y, *x]] += 1;
             }
             Winner::Draw => {
-                ties[[xs[i], ys[i]]] += 1;
-                ties[[ys[i], xs[i]]] += 1;
+                ties[[*x, *y]] += 1;
+                ties[[*y, *x]] += 1;
             }
             _ => {}
         }
