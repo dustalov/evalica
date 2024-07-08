@@ -1,11 +1,15 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
-from _pytest.fixtures import TopRequest
 from hypothesis import given
 from pandas._testing import assert_series_equal
 
 import evalica
-from conftest import DATASETS, Example, elements
+from conftest import Example, elements
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def test_version() -> None:
@@ -132,76 +136,82 @@ def test_newman_simple(simple_tied_elements: Example, tolerance: float = 1e-1) -
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
-@pytest.mark.parametrize("dataset", DATASETS)
-def test_counting_dataset(request: TopRequest, dataset: str) -> None:
-    xs, ys, ws = request.getfixturevalue(dataset)
-
-    golden = request.getfixturevalue(f"{dataset}_counting_golden")
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("counting", "food"),
+    ("counting", "llmfao"),
+])
+def test_counting_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+    xs, ys, ws = example
 
     result = evalica.counting(xs, ys, ws)
 
-    assert_series_equal(result.scores, golden, atol=1e-4, check_like=True)
+    assert_series_equal(result.scores, example_golden, atol=1e-4, check_like=True)
 
 
-@pytest.mark.parametrize("dataset", DATASETS)
-def test_bradley_terry_dataset(request: TopRequest, dataset: str) -> None:
-    xs, ys, ws = request.getfixturevalue(dataset)
-
-    golden = request.getfixturevalue(f"{dataset}_bradley_terry_golden")
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("bradley_terry", "food"),
+    ("bradley_terry", "llmfao"),
+])
+def test_bradley_terry_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+    xs, ys, ws = example
 
     result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
     result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, golden, atol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, golden, atol=1e-4, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, atol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, atol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=1e-4, check_like=True)
 
 
-@pytest.mark.parametrize("dataset", DATASETS)
-def test_newman_dataset(request: TopRequest, dataset: str) -> None:
-    xs, ys, ws = request.getfixturevalue(dataset)
-
-    golden = request.getfixturevalue(f"{dataset}_newman_golden")
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("newman", "food"),
+    ("newman", "llmfao"),
+])
+def test_newman_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+    xs, ys, ws = example
 
     result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
     result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, golden, atol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, golden, atol=1e-4, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, atol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, atol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=1e-4, check_like=True)
 
 
-@pytest.mark.parametrize("dataset", DATASETS)
-def test_elo_dataset(request: TopRequest, dataset: str) -> None:
-    xs, ys, ws = request.getfixturevalue(dataset)
-
-    golden = request.getfixturevalue(f"{dataset}_elo_golden")
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("elo", "food"),
+    ("elo", "llmfao"),
+])
+def test_elo_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+    xs, ys, ws = example
 
     result = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400)
 
-    assert_series_equal(result.scores, golden, atol=1e-4, check_like=True)
+    assert_series_equal(result.scores, example_golden, atol=1e-4, check_like=True)
 
 
-@pytest.mark.parametrize("dataset", DATASETS)
-def test_eigen_dataset(request: TopRequest, dataset: str) -> None:
-    xs, ys, ws = request.getfixturevalue(dataset)
-
-    golden = request.getfixturevalue(f"{dataset}_eigen_golden")
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("eigen", "food"),
+    ("eigen", "llmfao"),
+])
+def test_eigen_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+    xs, ys, ws = example
 
     result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
     result_naive = evalica.eigen(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, golden, atol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, golden, atol=1e-4, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, atol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, atol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=1e-4, check_like=True)
 
 
-@pytest.mark.parametrize("dataset", DATASETS)
-def test_pagerank_dataset(request: TopRequest, dataset: str) -> None:
-    xs, ys, ws = request.getfixturevalue(dataset)
-
-    golden = request.getfixturevalue(f"{dataset}_pagerank_golden")
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("pagerank", "food"),
+    ("pagerank", "llmfao"),
+])
+def test_pagerank_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+    xs, ys, ws = example
 
     result = evalica.pagerank(xs, ys, ws)
 
-    assert_series_equal(result.scores, golden, atol=1e-4, check_names=False, check_like=True)
+    assert_series_equal(result.scores, example_golden, atol=1e-4, check_like=True)

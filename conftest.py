@@ -7,6 +7,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
+from _pytest.fixtures import TopRequest
 from hypothesis import strategies as st
 
 
@@ -91,17 +92,6 @@ def simple_tied_elements(simple_tied: tuple[npt.NDArray[np.int64], npt.NDArray[n
     return Example(xs=win_xs + tie_xs, ys=win_ys + tie_ys, ws=win_ws + tie_ws)
 
 
-def extract_golden_series(food_golden: pd.DataFrame, algorithm: str) -> "pd.Series[str]":
-    df_slice = food_golden[food_golden["algorithm"] == algorithm][["item", "score"]].set_index("item")
-    series = cast("pd.Series[str]", df_slice.squeeze())
-    series.index.name = None
-    series.name = algorithm
-    return series
-
-
-DATASETS = ["food", "llmfao"]
-
-
 @pytest.fixture()
 def food() -> Example:
     df_food = pd.read_csv(Path(__file__).resolve().parent / "food.csv", dtype=str)
@@ -124,36 +114,6 @@ def food_golden() -> pd.DataFrame:
     df_golden["score"] = df_golden["score"].astype(float)
 
     return df_golden
-
-
-@pytest.fixture()
-def food_counting_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(food_golden, "counting")
-
-
-@pytest.fixture()
-def food_bradley_terry_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(food_golden, "bradley_terry")
-
-
-@pytest.fixture()
-def food_newman_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(food_golden, "newman")
-
-
-@pytest.fixture()
-def food_elo_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(food_golden, "elo")
-
-
-@pytest.fixture()
-def food_eigen_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(food_golden, "eigen")
-
-
-@pytest.fixture()
-def food_pagerank_golden(food_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(food_golden, "pagerank")
 
 
 @pytest.fixture()
@@ -180,31 +140,26 @@ def llmfao_golden() -> pd.DataFrame:
     return df_golden
 
 
-@pytest.fixture()
-def llmfao_counting_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(llmfao_golden, "counting")
+DATASETS = frozenset(("food", "llmfao"))
 
 
 @pytest.fixture()
-def llmfao_bradley_terry_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(llmfao_golden, "bradley_terry")
+def example(request: TopRequest, dataset: str) -> Example:
+    assert dataset in DATASETS, f"unknown dataset: {dataset}"
+
+    return cast(Example, request.getfixturevalue(dataset))
 
 
 @pytest.fixture()
-def llmfao_newman_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(llmfao_golden, "newman")
+def example_golden(request: TopRequest, dataset: str, algorithm: str) -> "pd.Series[str]":
+    assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
+    df_golden = cast(pd.DataFrame, request.getfixturevalue(f"{dataset}_golden"))
 
-@pytest.fixture()
-def llmfao_elo_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(llmfao_golden, "elo")
+    df_slice = df_golden[df_golden["algorithm"] == algorithm][["item", "score"]].set_index("item")
 
+    series = cast("pd.Series[str]", df_slice.squeeze())
+    series.index.name = None
+    series.name = algorithm
 
-@pytest.fixture()
-def llmfao_eigen_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(llmfao_golden, "eigen")
-
-
-@pytest.fixture()
-def llmfao_pagerank_golden(llmfao_golden: pd.DataFrame) -> "pd.Series[str]":
-    return extract_golden_series(llmfao_golden, "pagerank")
+    return series
