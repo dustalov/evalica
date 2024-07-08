@@ -62,14 +62,14 @@ def newman(
         broadcast_scores_t = scores[:, None].T
         sqrt_scores_outer = np.sqrt(np.outer(scores, scores))
         sum_scores = np.add.outer(scores, scores)
-        sqrt_div_scores_t = np.sqrt(np.divide.outer(scores, scores)).T
+        sqrt_div_scores_outer_t = np.sqrt(np.divide.outer(scores, scores)).T
 
         scores_numerator = np.sum(
             win_tie_half * (broadcast_scores_t + v * sqrt_scores_outer) / (sum_scores + 2 * v * sqrt_scores_outer),
             axis=1,
         )
         scores_denominator = np.sum(
-            win_tie_half.T * (1 + v * sqrt_div_scores_t) / (sum_scores + 2 * v * sqrt_scores_outer),
+            win_tie_half.T * (1 + v * sqrt_div_scores_outer_t) / (sum_scores + 2 * v * sqrt_scores_outer),
             axis=1,
         )
         scores_new[:] = scores_numerator / scores_denominator
