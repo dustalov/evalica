@@ -319,13 +319,12 @@ def pagerank(
     )
 
 
-def _pairwise_ndarray(scores: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def pairwise_scores(scores: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
 
 
-def pairwise(scores: pd.Series[T]) -> npt.NDArray[np.float64]:  # type: ignore[type-var]
-    scores = scores.sort_values(ascending=False)
-    return _pairwise_ndarray(scores.to_numpy())
+def pairwise_frame(scores: pd.Series[T]) -> pd.DataFrame:  # type: ignore[type-var]
+    return pd.DataFrame(pairwise_scores(scores.to_numpy()), index=scores.index, columns=scores.index)
 
 
 __all__ = [
@@ -340,5 +339,6 @@ __all__ = [
     "matrices",
     "newman",
     "pagerank",
-    "pairwise",
+    "pairwise_scores",
+    "pairwise_frame",
 ]
