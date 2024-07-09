@@ -130,7 +130,9 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+    - build-sdist
+    - build
     steps:
     - name: Download packages
       uses: actions/download-artifact@v4
@@ -148,7 +150,9 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+    - build-sdist
+    - build
     steps:
     - name: Download packages
       uses: actions/download-artifact@v4
