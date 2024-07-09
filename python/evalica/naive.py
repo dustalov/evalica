@@ -49,7 +49,6 @@ def newman(
     win_tie_half = win_matrix + tie_matrix / 2
 
     scores = np.ones(win_matrix.shape[0])
-
     scores_new = scores.copy()
     v_new = v
 
@@ -99,18 +98,19 @@ def eigen(
     n = matrix.shape[0]
 
     scores = np.ones(n) / n
+    scores_new = scores.copy()
 
     converged, iterations = False, 0
 
-    while not converged:
+    while not converged and iterations < limit:
         iterations += 1
 
-        scores_old = scores.copy()
+        scores_new[:] = matrix.T @ scores
+        scores_new /= np.linalg.norm(scores_new) or 1
+        scores_new[:] = np.nan_to_num(scores_new, nan=tolerance)
 
-        scores = matrix.T @ scores_old
-        scores /= np.linalg.norm(scores) or 1
+        converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
-        converged = np.allclose(scores / (scores + 1), scores_old / (scores_old + 1),
-                                rtol=tolerance, atol=tolerance) or (iterations >= limit)
+        scores[:] = scores_new
 
     return scores, iterations

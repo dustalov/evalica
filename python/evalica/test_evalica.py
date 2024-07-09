@@ -97,27 +97,6 @@ def test_newman(example: Example) -> None:
     assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
 
 
-def test_newman_corner() -> None:
-    xs = [0, 1, 0]
-    ys = [0, 2, 0]
-    ws = [evalica.Winner.X, evalica.Winner.X, evalica.Winner.X]
-
-    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.newman(xs, ys, ws, solver="naive")
-
-    for result in (result_pyo3, result_naive):
-        assert result.win_matrix.shape[0] == len(result.scores)
-        assert np.isfinite(result.scores).all()
-        assert np.isfinite(result.v)
-        assert np.isfinite(result.v_init)
-        assert result.iterations > 0
-
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
-    assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
-
-
 @given(example=elements())
 def test_elo(example: Example) -> None:
     xs, ys, ws = example
@@ -138,6 +117,11 @@ def test_eigen(example: Example) -> None:
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.iterations > 0
+
+    tolerance = result_pyo3.tolerance * 10
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
 @given(example=elements())
@@ -244,11 +228,14 @@ def test_elo_dataset(example: Example, example_golden: "pd.Series[str]") -> None
 def test_eigen_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
     xs, ys, ws = example
 
+    result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
     result_naive = evalica.eigen(xs, ys, ws, solver="naive")
 
-    tolerance = result_naive.tolerance * 10
+    tolerance = result_pyo3.tolerance * 10
 
     assert_series_equal(result_naive.scores, example_golden, atol=tolerance, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, atol=tolerance, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [

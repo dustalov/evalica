@@ -142,9 +142,9 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0);
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5);
 
-        let matrix = win_matrix + &tie_matrix / 2.0;
+        let matrix = win_matrix + &tie_matrix;
 
         let expected = array![
             0.050799672530389396,

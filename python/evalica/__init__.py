@@ -243,6 +243,7 @@ class EigenResult(Generic[T]):
     tie_weight: float
     solver: str
     tolerance: float
+    iterations: int
 
 
 def eigen(
@@ -259,7 +260,10 @@ def eigen(
 
     matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
-    scores = eigen_pyo3(matrix) if solver == "pyo3" else eigen_naive(matrix, tolerance, limit)[0]
+    if solver == "pyo3":
+        scores, iterations = eigen_pyo3(matrix, tolerance, limit)
+    else:
+        scores, iterations = eigen_naive(matrix, tolerance, limit)
 
     return EigenResult(
         scores=pd.Series(scores, index=_matrices.index, name=eigen.__name__),
@@ -269,6 +273,7 @@ def eigen(
         tie_weight=tie_weight,
         solver=solver,
         tolerance=tolerance,
+        iterations=iterations,
     )
 
 
