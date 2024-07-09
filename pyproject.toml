@@ -47,6 +47,8 @@ content-type = "text/markdown"
 
 [project.urls]
 Homepage = "https://github.com/dustalov/evalica"
+Documentation = "https://dustalov.github.io/evalica/"
+Download = "https://pypi.org/project/evalica/#files"
 
 [tool.maturin]
 python-source = "python"
