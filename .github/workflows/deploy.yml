@@ -1,6 +1,10 @@
-name: Build
+name: Deploy
 
 on:
+  push:
+    branches: [ "master" ]
+  release:
+    types: [ "published" ]
   workflow_dispatch:
 
 env:
@@ -119,9 +123,27 @@ jobs:
         name: package_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
         path: dist
   pypi:
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'release'
     environment:
       name: pypi
+      url: https://pypi.org/p/evalica
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download packages
+      uses: actions/download-artifact@v4
+      with:
+        pattern: package_*
+        merge-multiple: true
+        path: dist
+    - run: ls -lh dist/
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+  testpypi:
+    environment:
+      name: testpypi
       url: https://test.pypi.org/p/evalica
     permissions:
       id-token: write
@@ -135,4 +157,8 @@ jobs:
         merge-multiple: true
         path: dist
     - run: ls -lh dist/
-    # Deploy to TestPyPI with gh-action-pypi-publish when ready
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
