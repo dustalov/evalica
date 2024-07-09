@@ -2,16 +2,19 @@
 name = "evalica"
 version = "0.0.1"
 edition = "2021"
+description = "Evalica, your favourite evaluation toolkit."
+repository = "https://github.com/dustalov/evalica"
 license = "Apache-2.0"
+exclude = ["*.csv", "*.ipynb", "*.svg", ".github"]
+publish = []
 
 [lib]
 name = "evalica"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "^0.21.1", features = ["extension-module"] }
+approx = "^0.5.1"
 ndarray = "^0.15.6"
 num-traits = "^0.2.19"
-approx = "^0.5.1"
-rand = "^0.8.5"
 numpy = "^0.21.0"
+pyo3 = { version = "^0.21.1", features = ["extension-module"] }
