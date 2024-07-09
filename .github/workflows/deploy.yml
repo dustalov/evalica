@@ -123,7 +123,7 @@ jobs:
         name: package_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
         path: dist
   pypi:
-    if: github.ref == 'refs/heads/master' && github.event_name == 'release'
+    if: github.event_name == 'release'
     environment:
       name: pypi
       url: https://pypi.org/p/evalica
