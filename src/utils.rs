@@ -8,6 +8,7 @@ use num_traits::{Float, Num};
 
 use crate::Winner;
 
+#[warn(dead_code)]
 pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
     let mut index: HashMap<I, usize> = HashMap::new();
 
