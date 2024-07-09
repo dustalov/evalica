@@ -103,34 +103,23 @@ pub fn newman(
 
         v = if v_new.is_nan() { tolerance } else { v_new };
 
-        let broadcast_scores = scores.broadcast((scores.len(), scores.len())).unwrap();
-        let sqrt_scores_outer = (&broadcast_scores * &broadcast_scores.t()).mapv_into(f64::sqrt);
-        let sum_scores = &broadcast_scores + &broadcast_scores.t();
-        let sqrt_div_scores_outer =
-            (&broadcast_scores / &broadcast_scores.t()).mapv_into(f64::sqrt);
+        let broadcast_scores_t = scores.clone().into_shape((1, scores.len())).unwrap();
+        let sqrt_scores_outer =
+            (&broadcast_scores_t * &broadcast_scores_t.t()).mapv_into(f64::sqrt);
+        let sum_scores = &broadcast_scores_t + &broadcast_scores_t.t();
+        let sqrt_div_scores_outer_t =
+            (&broadcast_scores_t / &broadcast_scores_t.t()).mapv_into(f64::sqrt);
+        let common_denominator = &sum_scores + 2.0 * v * &sqrt_scores_outer;
 
-        let mut scores_new = scores.clone();
+        let scores_numerator = (&win_tie_half * (&broadcast_scores_t + v * &sqrt_scores_outer)
+            / &common_denominator)
+            .sum_axis(Axis(1));
 
-        for i in 0..win_matrix.shape()[0] {
-            let mut i_numerator = 0.0;
-            let mut i_denominator = 0.0;
+        let scores_denominator = (&win_tie_half.t() * (1.0 + v * &sqrt_div_scores_outer_t)
+            / &common_denominator)
+            .sum_axis(Axis(1));
 
-            for j in 0..win_matrix.shape()[1] {
-                let ij_numerator = scores[j] + v * sqrt_scores_outer[[i, j]];
-                let ij_denominator = sum_scores[[i, j]] + 2.0 * v * sqrt_scores_outer[[i, j]];
-
-                i_numerator += win_tie_half[[i, j]] * ij_numerator / ij_denominator;
-            }
-
-            for j in 0..win_matrix.shape()[1] {
-                let ij_num = 1.0 + v * sqrt_div_scores_outer[[i, j]];
-                let ij_den = sum_scores[[i, j]] + 2.0 * v * sqrt_scores_outer[[i, j]];
-
-                i_denominator += win_tie_half[[j, i]] * ij_num / ij_den;
-            }
-
-            scores_new[i] = i_numerator / i_denominator;
-        }
+        let mut scores_new = scores_numerator / scores_denominator;
 
         scores_new.iter_mut().for_each(|x| {
             if x.is_nan() {
@@ -138,13 +127,8 @@ pub fn newman(
             }
         });
 
-        let v_numerator =
-            (tie_matrix * &sum_scores / (&sum_scores + 2.0 * v * &sqrt_scores_outer)).sum() / 2.0;
-
-        let v_denominator =
-            (win_matrix * &sqrt_scores_outer / (&sum_scores + 2.0 * v * &sqrt_scores_outer)).sum()
-                * 2.0;
-
+        let v_numerator = (tie_matrix * &sum_scores / &common_denominator).sum() / 2.0;
+        let v_denominator = (win_matrix * &sqrt_scores_outer / &common_denominator).sum() * 2.0;
         v_new = v_numerator / v_denominator;
 
         let difference = &scores_new - &scores;
@@ -229,12 +213,12 @@ mod tests {
         assert_eq!(actual.len(), tie_matrix.shape()[0]);
         assert_ne!(iterations, 0);
 
-        assert_ne!(v, v_init);
-        assert!(v.is_normal());
-        assert_abs_diff_eq!(v, expected_v, epsilon = tolerance * 1e3);
-
         for (left, right) in actual.iter().zip(expected.iter()) {
             assert_abs_diff_eq!(left, right, epsilon = tolerance * 1e1);
         }
+
+        assert_ne!(v, v_init);
+        assert!(v.is_normal());
+        assert_abs_diff_eq!(v, expected_v, epsilon = tolerance * 1e3);
     }
 }
