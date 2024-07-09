@@ -1,22 +1,27 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import evalica
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
-from _pytest.fixtures import TopRequest
 from hypothesis import strategies as st
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from _pytest.fixtures import TopRequest
 
 
 class Example(NamedTuple):
     """A tuple holding example data."""
 
-    xs: "list[str] | pd.Series[str]"
-    ys: "list[str] | pd.Series[str]"
-    ws: "list[evalica.Winner] | pd.Series[evalica.Winner]"  # type: ignore[type-var]
+    xs: list[str] | pd.Series[str]
+    ys: list[str] | pd.Series[str]
+    ws: list[evalica.Winner] | pd.Series[evalica.Winner]  # type: ignore[type-var]
 
 
 @st.composite
@@ -151,7 +156,7 @@ def example(request: TopRequest, dataset: str) -> Example:
 
 
 @pytest.fixture()
-def example_golden(request: TopRequest, dataset: str, algorithm: str) -> "pd.Series[str]":
+def example_golden(request: TopRequest, dataset: str, algorithm: str) -> pd.Series[str]:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
     df_golden = cast(pd.DataFrame, request.getfixturevalue(f"{dataset}_golden"))

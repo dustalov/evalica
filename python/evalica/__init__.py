@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from collections import OrderedDict
 from collections.abc import Hashable, Iterable
@@ -45,7 +47,7 @@ def enumerate_elements(xs: Iterable[T], *yss: Iterable[T]) -> dict[T, int]:
 
 @dataclass
 class IndexedElements(Generic[T]):
-    index: "pd.Index[T]"  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     xs: list[int]
     ys: list[int]
 
@@ -67,7 +69,7 @@ def index_elements(xs: Iterable[T], ys: Iterable[T]) -> IndexedElements[T]:
 class MatricesResult(Generic[T]):
     win_matrix: npt.NDArray[np.int64]
     tie_matrix: npt.NDArray[np.int64]
-    index: "pd.Index[T]"  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
 
 
 def matrices(
@@ -88,7 +90,7 @@ def matrices(
 
 @dataclass(frozen=True)
 class CountingResult(Generic[T]):
-    scores: "pd.Series[T]"  # type: ignore[type-var]
+    scores: pd.Series[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
 
@@ -113,9 +115,9 @@ def counting(
 
 @dataclass(frozen=True)
 class BradleyTerryResult(Generic[T]):
-    scores: "pd.Series[T]"  # type: ignore[type-var]
+    scores: pd.Series[T]  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
-    index: "pd.Index[T]"  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
     solver: str
@@ -158,10 +160,10 @@ def bradley_terry(
 
 @dataclass(frozen=True)
 class NewmanResult(Generic[T]):
-    scores: "pd.Series[T]"  # type: ignore[type-var]
+    scores: pd.Series[T]  # type: ignore[type-var]
     win_matrix: npt.NDArray[np.float64]
     tie_matrix: npt.NDArray[np.float64]
-    index: "pd.Index[T]"  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     v: float
     v_init: float
     solver: str
@@ -205,7 +207,7 @@ def newman(
 
 @dataclass(frozen=True)
 class EloResult(Generic[T]):
-    scores: "pd.Series[T]"  # type: ignore[type-var]
+    scores: pd.Series[T]  # type: ignore[type-var]
     initial: float
     base: float
     scale: float
@@ -236,9 +238,9 @@ def elo(
 
 @dataclass(frozen=True)
 class EigenResult(Generic[T]):
-    scores: "pd.Series[T]"  # type: ignore[type-var]
+    scores: pd.Series[T]  # type: ignore[type-var]
     matrix: npt.NDArray[np.float64]
-    index: "pd.Index[T]"  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
     solver: str
@@ -279,7 +281,7 @@ def eigen(
 
 @dataclass(frozen=True)
 class PageRankResult(Generic[T]):
-    scores: "pd.Series[T]"  # type: ignore[type-var]
+    scores: pd.Series[T]  # type: ignore[type-var]
     damping: float
     win_weight: float
     tie_weight: float
@@ -315,7 +317,7 @@ def _pairwise_ndarray(scores: npt.NDArray[np.float64]) -> npt.NDArray[np.float64
     return scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
 
 
-def pairwise(scores: "pd.Series[T]") -> npt.NDArray[np.float64]:  # type: ignore[type-var]
+def pairwise(scores: pd.Series[T]) -> npt.NDArray[np.float64]:  # type: ignore[type-var]
     scores = scores.sort_values(ascending=False)
     return _pairwise_ndarray(scores.to_numpy())
 
