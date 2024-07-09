@@ -56,16 +56,29 @@ jobs:
     - name: Lint Jupyter with Ruff
       run: nbqa ruff *.ipynb
     - name: Run Jupyter
-      run: jupyter nbconvert --to html --output Tutorial.html --execute Tutorial.ipynb
+      run: |
+        mkdir jupyter
+        jupyter nbconvert --to html --output jupyter/index.html --execute Tutorial.ipynb
     - name: Build with Maturin
       run: maturin build --release --out=dist/
     - name: Check with Twine
       run: twine check --strict dist/*
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+    - name: Upload Jupyter
+      uses: actions/upload-pages-artifact@v3
       with:
-        name: jupyter
-        path: |
-          *.html
-        if-no-files-found: error
-        retention-days: 5
+        path: "./jupyter"
+  pages:
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      actions: read
+      id-token: write
+      pages: write
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
