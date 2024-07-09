@@ -7,4 +7,6 @@
 
 Evalica, your favourite evaluation toolkit.
 
+- [Tutorial.ipynb](Tutorial.ipynb)
+
 ![Evalica](Evalica.svg)
