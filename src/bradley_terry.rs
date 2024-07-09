@@ -12,15 +12,13 @@ pub fn bradley_terry(
     );
 
     let totals = &matrix.t().clone() + matrix;
-
     let active = totals.mapv(|x| x > 0.0);
 
-    let w: Array1<f64> = matrix.sum_axis(Axis(1));
+    let wins: Array1<f64> = matrix.sum_axis(Axis(1));
 
-    let mut z: Array2<f64> = Array2::zeros(matrix.raw_dim());
+    let mut norm_matrix: Array2<f64> = Array2::zeros(matrix.raw_dim());
 
     let mut scores: Array1<f64> = Array1::ones(matrix.shape()[0]);
-    let mut scores_new: Array1<f64> = scores.clone();
 
     let mut converged = false;
     let mut iterations = 0;
@@ -28,23 +26,17 @@ pub fn bradley_terry(
     while !converged && iterations < limit {
         iterations += 1;
 
+        let broadcast_scores = &scores.broadcast((scores.len(), scores.len())).unwrap();
+        let sum_scores = broadcast_scores + &broadcast_scores.t();
+
         for ((i, j), &active_val) in active.indexed_iter() {
             if active_val {
-                z[[i, j]] = totals[[i, j]] / (scores[i] + scores[j]);
+                norm_matrix[[i, j]] = totals[[i, j]] / sum_scores[[i, j]];
             }
         }
 
-        for i in 0..matrix.shape()[0] {
-            let d = z.column(i).sum();
-
-            if d != 0.0 {
-                scores_new[i] = w[i] / d;
-            }
-        }
-
-        let p_sum = scores_new.sum();
-
-        scores_new /= p_sum;
+        let mut scores_new = &wins / &norm_matrix.sum_axis(Axis(1));
+        scores_new /= scores_new.sum();
 
         scores_new.iter_mut().for_each(|x| {
             if x.is_nan() {

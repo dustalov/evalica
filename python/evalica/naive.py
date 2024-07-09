@@ -7,10 +7,10 @@ def bradley_terry(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
-    sum_matrix = matrix.T + matrix
-    active = sum_matrix > 0
+    totals = matrix.T + matrix
+    active = totals > 0
 
-    w = matrix.sum(axis=1)
+    wins = matrix.sum(axis=1)
 
     norm_matrix = np.zeros_like(matrix, dtype=float)
 
@@ -24,9 +24,9 @@ def bradley_terry(
 
         broadcast_scores = np.broadcast_to(scores, matrix.shape)
 
-        norm_matrix[active] = sum_matrix[active] / (broadcast_scores[active] + broadcast_scores.T[active])
+        norm_matrix[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
 
-        scores_new[:] = w
+        scores_new[:] = wins
         scores_new /= norm_matrix.sum(axis=0)
         scores_new /= scores_new.sum()
         scores_new = np.nan_to_num(scores_new, nan=tolerance)
