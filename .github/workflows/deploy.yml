@@ -36,9 +36,9 @@ jobs:
       matrix:
         os: [ "linux", "macos", "windows" ]
         target: [ "x86_64", "aarch64" ]
-        manylinux: [ auto ]
+        manylinux: [ "auto" ]
         include:
-        # manylinux for various platforms, plus x86_64 pypy
+        # manylinux
         - os: linux
           manylinux: auto
           target: i686
@@ -47,20 +47,7 @@ jobs:
           target: aarch64
         - os: linux
           manylinux: auto
-          target: armv7
-          interpreter: 3.8 3.9 3.10 3.11 3.12
-        - os: linux
-          manylinux: auto
-          target: ppc64le
-          interpreter: 3.8 3.9 3.10 3.11 3.12
-        - os: linux
-          manylinux: auto
-          target: s390x
-          interpreter: 3.8 3.9 3.10 3.11 3.12
-        - os: linux
-          manylinux: auto
           target: x86_64
-          interpreter: pypy3.9 pypy3.10
 
         # musllinux
         - os: linux
@@ -70,18 +57,13 @@ jobs:
           manylinux: musllinux_1_1
           target: aarch64
 
-        # macos;
-        # all versions x86_64
-        # arm pypy and older pythons which can't be run on the arm hardware for PGO
+        # macos
         - os: macos
           target: x86_64
         - os: macos
           target: aarch64
 
-        # windows;
-        # x86_64 pypy builds are not PGO optimized
-        # i686 not supported by pypy
-        # aarch64 only 3.11 and up, also not PGO optimized
+        # windows
         - os: windows
           target: x86_64
           interpreter: 3.8 3.9 3.10 3.11 3.12
@@ -90,7 +72,6 @@ jobs:
           python-architecture: x86
           interpreter: 3.8 3.9 3.10 3.11 3.12
         exclude:
-        # See above; disabled for now.
         - os: windows
           target: aarch64
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
