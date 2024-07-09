@@ -91,6 +91,7 @@ def matrices(
 @dataclass(frozen=True)
 class CountingResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
 
@@ -108,6 +109,7 @@ def counting(
 
     return CountingResult(
         scores=pd.Series(counts, index=index, name=counting.__name__),
+        index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
     )
@@ -208,6 +210,7 @@ def newman(
 @dataclass(frozen=True)
 class EloResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     initial: float
     base: float
     scale: float
@@ -229,6 +232,7 @@ def elo(
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__),
+        index=index,
         initial=initial,
         base=base,
         scale=scale,
@@ -282,6 +286,7 @@ def eigen(
 @dataclass(frozen=True)
 class PageRankResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
     damping: float
     win_weight: float
     tie_weight: float
@@ -305,6 +310,7 @@ def pagerank(
 
     return PageRankResult(
         scores=pd.Series(scores, index=index, name=pagerank.__name__),
+        index=index,
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,
