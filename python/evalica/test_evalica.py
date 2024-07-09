@@ -64,24 +64,58 @@ def test_counting(example: Example) -> None:
 def test_bradley_terry(example: Example) -> None:
     xs, ys, ws = example
 
-    result = evalica.bradley_terry(xs, ys, ws)
+    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
 
-    assert result.matrix.shape[0] == len(result.scores)
-    assert np.isfinite(result.scores).all()
-    assert result.iterations > 0
+    for result in (result_pyo3, result_naive):
+        assert result.matrix.shape[0] == len(result.scores)
+        assert np.isfinite(result.scores).all()
+        assert result.iterations > 0
+
+    tolerance = result_pyo3.tolerance * 10
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
 @given(example=elements())
 def test_newman(example: Example) -> None:
     xs, ys, ws = example
 
-    result = evalica.newman(xs, ys, ws)
+    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    assert result.win_matrix.shape[0] == len(result.scores)
-    assert np.isfinite(result.scores).all()
-    assert np.isfinite(result.v)
-    assert np.isfinite(result.v_init)
-    assert result.iterations > 0
+    for result in (result_pyo3, result_naive):
+        assert result.win_matrix.shape[0] == len(result.scores)
+        assert np.isfinite(result.scores).all()
+        assert np.isfinite(result.v)
+        assert np.isfinite(result.v_init)
+        assert result.iterations > 0
+
+    tolerance = result_pyo3.tolerance * 10
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
+
+
+def test_newman_corner() -> None:
+    xs = [0, 1, 0]
+    ys = [0, 2, 0]
+    ws = [evalica.Winner.X, evalica.Winner.X, evalica.Winner.X]
+
+    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.newman(xs, ys, ws, solver="naive")
+
+    for result in (result_pyo3, result_naive):
+        assert result.win_matrix.shape[0] == len(result.scores)
+        assert np.isfinite(result.scores).all()
+        assert np.isfinite(result.v)
+        assert np.isfinite(result.v_init)
+        assert result.iterations > 0
+
+    tolerance = result_pyo3.tolerance * 10
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
 
 
 @given(example=elements())
@@ -98,10 +132,12 @@ def test_elo(example: Example) -> None:
 def test_eigen(example: Example) -> None:
     xs, ys, ws = example
 
-    result = evalica.eigen(xs, ys, ws)
+    result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.eigen(xs, ys, ws, solver="naive")
 
-    assert len(result.scores) == len(set(xs) | set(ys))
-    assert np.isfinite(result.scores).all()
+    for result in (result_pyo3, result_naive):
+        assert len(result.scores) == len(set(xs) | set(ys))
+        assert np.isfinite(result.scores).all()
 
 
 @given(example=elements())

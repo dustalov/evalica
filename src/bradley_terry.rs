@@ -1,5 +1,7 @@
 use ndarray::{Array1, Array2, ArrayView2, Axis};
 
+use crate::utils::{nan_to_num, one_nan_to_num};
+
 pub fn bradley_terry(
     matrix: &ArrayView2<f64>,
     tolerance: f64,
@@ -37,12 +39,7 @@ pub fn bradley_terry(
 
         let mut scores_new = &wins / &norm_matrix.sum_axis(Axis(1));
         scores_new /= scores_new.sum();
-
-        scores_new.iter_mut().for_each(|x| {
-            if x.is_nan() {
-                *x = tolerance;
-            }
-        });
+        nan_to_num(&mut scores_new, tolerance);
 
         let difference = &scores_new - &scores;
         converged = difference.dot(&difference).sqrt() < tolerance;
@@ -93,7 +90,7 @@ pub fn newman(
     while !converged && iterations < limit {
         iterations += 1;
 
-        v = if v_new.is_nan() { tolerance } else { v_new };
+        v = one_nan_to_num(v_new, tolerance);
 
         let broadcast_scores_t = scores.clone().into_shape((1, scores.len())).unwrap();
         let sqrt_scores_outer =
@@ -111,13 +108,8 @@ pub fn newman(
             / &common_denominator)
             .sum_axis(Axis(1));
 
-        let mut scores_new = scores_numerator / scores_denominator;
-
-        scores_new.iter_mut().for_each(|x| {
-            if x.is_nan() {
-                *x = tolerance;
-            }
-        });
+        let mut scores_new = &scores_numerator / &scores_denominator;
+        nan_to_num(&mut scores_new, tolerance);
 
         let v_numerator = (tie_matrix * &sum_scores / &common_denominator).sum() / 2.0;
         let v_denominator = (win_matrix * &sqrt_scores_outer / &common_denominator).sum() * 2.0;

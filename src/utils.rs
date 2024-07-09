@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::num::FpCategory;
 use std::ops::AddAssign;
 
-use ndarray::{Array2, ArrayView1};
-use num_traits::Num;
+use ndarray::{Array1, Array2, ArrayView1};
+use num_traits::{Float, Num};
 
 use crate::Winner;
 
@@ -21,6 +22,26 @@ pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> Ha
     }
 
     index
+}
+
+pub fn one_nan_to_num<A: Float>(x: A, nan: A) -> A {
+    match x.classify() {
+        FpCategory::Nan => nan,
+        FpCategory::Infinite => {
+            if x.is_sign_positive() {
+                A::max_value()
+            } else {
+                A::min_value()
+            }
+        }
+        FpCategory::Zero => x,
+        FpCategory::Subnormal => x,
+        FpCategory::Normal => x,
+    }
+}
+
+pub fn nan_to_num<A: Float>(xs: &mut Array1<A>, nan: A) {
+    xs.map_inplace(|x| *x = one_nan_to_num(*x, nan));
 }
 
 pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(

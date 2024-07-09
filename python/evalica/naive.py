@@ -27,8 +27,9 @@ def bradley_terry(
         norm_matrix[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
 
         scores_new[:] = wins
-        scores_new /= norm_matrix.sum(axis=0)
-        scores_new /= scores_new.sum()
+        with np.errstate(invalid="ignore"):
+            scores_new /= norm_matrix.sum(axis=0)
+            scores_new /= scores_new.sum()
         scores_new = np.nan_to_num(scores_new, nan=tolerance)
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
@@ -57,31 +58,35 @@ def newman(
     while not converged and iterations < limit:
         iterations += 1
 
-        v = np.nan_to_num(v_new, nan=tolerance)
+        v = v_new
 
         broadcast_scores_t = scores[:, None].T
-        sqrt_scores_outer = np.sqrt(np.outer(scores, scores))
-        sum_scores = np.add.outer(scores, scores)
-        sqrt_div_scores_outer_t = np.sqrt(np.divide.outer(scores, scores)).T
-        common_denominator = sum_scores + 2 * v * sqrt_scores_outer
 
-        scores_numerator = np.sum(
-            win_tie_half * (broadcast_scores_t + v * sqrt_scores_outer) / common_denominator,
-            axis=1,
-        )
-        scores_denominator = np.sum(
-            win_tie_half.T * (1 + v * sqrt_div_scores_outer_t) / common_denominator,
-            axis=1,
-        )
-        scores_new[:] = scores_numerator / scores_denominator
+        with np.errstate(all="ignore"):
+            sqrt_scores_outer = np.sqrt(np.outer(scores, scores))
+            sum_scores = np.add.outer(scores, scores)
+            sqrt_div_scores_outer_t = np.sqrt(np.divide.outer(scores, scores)).T
+            common_denominator = sum_scores + 2 * v * sqrt_scores_outer
 
-        v_numerator = np.sum(tie_matrix * sum_scores / common_denominator) / 2
-        v_denominator = np.sum(win_matrix * sqrt_scores_outer / common_denominator) * 2
-        v_new = v_numerator / v_denominator
+        with np.errstate(all="ignore"):
+            scores_numerator = np.sum(
+                win_tie_half * (broadcast_scores_t + v * sqrt_scores_outer) / common_denominator,
+                axis=1,
+            )
+            scores_denominator = np.sum(
+                win_tie_half.T * (1 + v * sqrt_div_scores_outer_t) / common_denominator,
+                axis=1,
+            )
+            scores_new[:] = np.nan_to_num(scores_numerator / scores_denominator, nan=tolerance)
+
+        with np.errstate(all="ignore"):
+            v_numerator = np.sum(tie_matrix * sum_scores / common_denominator) / 2
+            v_denominator = np.sum(win_matrix * sqrt_scores_outer / common_denominator) * 2
+            v_new = np.nan_to_num(v_numerator / v_denominator, nan=tolerance)
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
-        scores[:] = np.nan_to_num(scores_new, nan=tolerance)
+        scores[:] = scores_new
 
     return scores, v, iterations
 
