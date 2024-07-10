@@ -7,8 +7,7 @@ __license__ = "Apache-2.0"
 
 import argparse
 import sys
-from functools import partial
-from typing import IO
+from typing import IO, cast
 
 import pandas as pd
 
@@ -45,37 +44,17 @@ def write_csv(f: IO[str], scores: pd.Series[str]) -> pd.DataFrame:
     return df_output
 
 
-def counting(args: argparse.Namespace) -> pd.Series[str]:
-    return evalica.counting(*read_csv(args.input)).scores
-
-
-def bradley_terry(args: argparse.Namespace) -> pd.Series[str]:
-    return evalica.bradley_terry(*read_csv(args.input)).scores
-
-
-def elo(args: argparse.Namespace) -> pd.Series[str]:
-    return evalica.elo(*read_csv(args.input)).scores
-
-
-def eigen(args: argparse.Namespace) -> pd.Series[str]:
-    return evalica.eigen(*read_csv(args.input)).scores
-
-
-def pagerank(args: argparse.Namespace) -> pd.Series[str]:
-    return evalica.pagerank(*read_csv(args.input)).scores
-
-
-def newman(args: argparse.Namespace) -> pd.Series[str]:
-    return evalica.newman(*read_csv(args.input)).scores
+def invoke(args: argparse.Namespace) -> pd.Series[str]:
+    return cast("pd.Series[str]", args.algorithm(*read_csv(args.input)).scores)
 
 
 ALGORITHMS = {
-    "counting": counting,
-    "bradley-terry": bradley_terry,
-    "elo": elo,
-    "eigen": eigen,
-    "pagerank": pagerank,
-    "newman": newman,
+    "counting": evalica.counting,
+    "bradley-terry": evalica.bradley_terry,
+    "elo": evalica.elo,
+    "eigen": evalica.eigen,
+    "pagerank": evalica.pagerank,
+    "newman": evalica.newman,
 }
 
 
@@ -92,7 +71,7 @@ def main() -> None:
 
     for name, algorithm in ALGORITHMS.items():
         subparser = subparsers.add_parser(name)
-        subparser.set_defaults(func=partial(algorithm))
+        subparser.set_defaults(func=invoke, algorithm=algorithm)
 
     args = parser.parse_args()
     scores = args.func(args)
