@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-from collections import OrderedDict
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
 from typing import Generic, Literal, TypeVar
@@ -35,16 +34,6 @@ WINNERS = [
 T = TypeVar("T", bound=Hashable)
 
 
-def enumerate_elements(xs: Iterable[T], *yss: Iterable[T]) -> dict[T, int]:
-    index: dict[T, int] = OrderedDict()
-
-    for ys in (xs, *yss):
-        for y in ys:
-            index[y] = index.get(y, len(index))
-
-    return index
-
-
 @dataclass
 class IndexedElements(Generic[T]):
     index: pd.Index[T]  # type: ignore[type-var]
@@ -53,10 +42,16 @@ class IndexedElements(Generic[T]):
 
 
 def index_elements(xs: Iterable[T], ys: Iterable[T]) -> IndexedElements[T]:
-    xy_index = enumerate_elements(xs, ys)
+    xy_index: dict[T, int] = {}
 
-    xs_indexed = [xy_index[x] for x in xs]
-    ys_indexed = [xy_index[y] for y in ys]
+    def get_index(x: T) -> int:
+        if (index := xy_index.get(x)) is None:
+            index = xy_index[x] = len(xy_index)
+
+        return index
+
+    xs_indexed = [get_index(x) for x in xs]
+    ys_indexed = [get_index(y) for y in ys]
 
     return IndexedElements(
         index=pd.Index(xy_index),
@@ -335,7 +330,7 @@ __all__ = [
     "counting",
     "eigen",
     "elo",
-    "enumerate_elements",
+    "index_elements",
     "matrices",
     "newman",
     "pagerank",

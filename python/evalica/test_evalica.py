@@ -1,15 +1,11 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
+import pandas as pd
 import pytest
 from hypothesis import given
 from pandas._testing import assert_series_equal
 
 import evalica
 from conftest import Example, elements
-
-if TYPE_CHECKING:
-    import pandas as pd
 
 
 def test_version() -> None:
@@ -23,14 +19,16 @@ def test_exports() -> None:
 
 
 @given(example=elements())
-def test_enumerate_elements(example: Example) -> None:  # type: ignore[type-var]
+def test_index_elements(example: Example) -> None:  # type: ignore[type-var]
     xs, ys, ws = example
 
-    index = evalica.enumerate_elements(xs, ys)
+    indexed = evalica.index_elements(xs, ys)
 
-    assert isinstance(index, dict)
-    assert len(index) == len(set(xs) | set(ys))
-    assert not xs or max(index.values()) == len(index) - 1
+    assert len(indexed.xs) == len(xs)
+    assert len(indexed.ys) == len(ys)
+    assert isinstance(indexed.index, pd.Index)
+    assert len(indexed.index) == len(set(xs) | set(ys))
+    assert set(indexed.index.values) == (set(xs) | set(ys))
 
 
 @given(example=elements())
