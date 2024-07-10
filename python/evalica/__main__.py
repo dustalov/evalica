@@ -59,7 +59,7 @@ ALGORITHMS = {
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evalica")
+    parser = argparse.ArgumentParser(description="Evalica v" + evalica.__version__)
     parser.add_argument("-i", "--input", help="input.csv", required=True,
                         type=argparse.FileType("r", encoding="UTF-8"))
     parser.add_argument("-o", "--output", help="output.csv", default=sys.stdout,
