@@ -51,6 +51,10 @@ jobs:
       run: ruff check
     - name: Run tests (Python)
       run: pytest
+    - name: Run Module
+      run: python3 -m evalica --input=food.csv counting
+    - name: Run CLI
+      run: evalica --input=food.csv counting
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb
     - name: Lint Jupyter with Ruff

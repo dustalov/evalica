@@ -45,6 +45,9 @@ dev = [
 file = "README.md"
 content-type = "text/markdown"
 
+[project.scripts]
+evalica = "evalica.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/dustalov/evalica"
 Documentation = "https://dustalov.github.io/evalica/"
