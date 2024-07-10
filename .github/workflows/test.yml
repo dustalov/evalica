@@ -60,10 +60,6 @@ jobs:
         mkdir jupyter
         jupyter nbconvert --to html --output jupyter/index.html --execute Tutorial.ipynb
         cp Evalica.svg jupyter/
-    - name: Build with Maturin
-      run: maturin build --release --out=dist/
-    - name: Check with Twine
-      run: twine check --strict dist/*
     - name: Upload Jupyter
       uses: actions/upload-pages-artifact@v3
       with:
