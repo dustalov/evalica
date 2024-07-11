@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
-from typing import Generic, Literal, TypeVar
+from typing import Generic, Literal, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -41,20 +41,34 @@ class IndexedElements(Generic[T]):
     ys: list[int]
 
 
-def index_elements(xs: Iterable[T], ys: Iterable[T]) -> IndexedElements[T]:
+def index_elements(
+    xs: Iterable[T],
+    ys: Iterable[T],
+    index: pd.Index[T] | None = None,  # type: ignore[type-var]
+) -> IndexedElements[T]:
     xy_index: dict[T, int] = {}
 
-    def get_index(x: T) -> int:
-        if (index := xy_index.get(x)) is None:
-            index = xy_index[x] = len(xy_index)
+    def get_dict_index(x: T) -> int:
+        if (idx := xy_index.get(x)) is None:
+            idx = xy_index[x] = len(xy_index)
 
-        return index
+        return idx
+
+    def get_pandas_index(x: T) -> int:
+        return cast(int, cast("pd.Index[T]", index).get_loc(x))  # type: ignore[type-var]
+
+    get_index = get_dict_index if index is None else get_pandas_index
 
     xs_indexed = [get_index(x) for x in xs]
     ys_indexed = [get_index(y) for y in ys]
 
+    if index is None:
+        index = pd.Index(xy_index)
+
+    assert index is not None, "index is None"
+
     return IndexedElements(
-        index=pd.Index(xy_index),
+        index=index,
         xs=xs_indexed,
         ys=ys_indexed,
     )
@@ -71,8 +85,11 @@ def matrices(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
 ) -> MatricesResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
+    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+
+    assert index is not None, "index is None"
 
     win_matrix, tie_matrix = matrices_pyo3(_xs, _ys, ws)
 
@@ -95,10 +112,13 @@ def counting(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
 ) -> CountingResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
+    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+
+    assert index is not None, "index is None"
 
     counts = counting_pyo3(_xs, _ys, ws, win_weight, tie_weight)
 
@@ -126,6 +146,7 @@ def bradley_terry(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -134,7 +155,7 @@ def bradley_terry(
 ) -> BradleyTerryResult[T]:
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    _matrices = matrices(xs, ys, ws)
+    _matrices = matrices(xs, ys, ws, index)
 
     matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
@@ -172,6 +193,7 @@ def newman(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
         v_init: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
@@ -179,7 +201,7 @@ def newman(
 ) -> NewmanResult[T]:
     assert np.isfinite(v_init), "v_init must be finite"
 
-    _matrices = matrices(xs, ys, ws)
+    _matrices = matrices(xs, ys, ws, index)
 
     win_matrix = _matrices.win_matrix.astype(float)
     tie_matrix = _matrices.tie_matrix.astype(float)
@@ -216,12 +238,15 @@ def elo(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
         initial: float = 1500.,
         base: float = 10.,
         scale: float = 400.,
         k: float = 30.,
 ) -> EloResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
+    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+
+    assert index is not None, "index is None"
 
     scores = elo_pyo3(_xs, _ys, ws, initial, base, scale, k)
 
@@ -251,13 +276,14 @@ def eigen(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> EigenResult[T]:
-    _matrices = matrices(xs, ys, ws)
+    _matrices = matrices(xs, ys, ws, index)
 
     matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
@@ -293,13 +319,16 @@ def pagerank(
         xs: Iterable[T],
         ys: Iterable[T],
         ws: Iterable[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
         damping: float = .85,
         win_weight: float = 1.,
         tie_weight: float = .5,
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys))
+    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+
+    assert index is not None, "index is None"
 
     scores, iterations = pagerank_pyo3(_xs, _ys, ws, damping, win_weight, tie_weight, tolerance, limit)
 

@@ -32,6 +32,18 @@ def test_index_elements(example: Example) -> None:  # type: ignore[type-var]
 
 
 @given(example=elements())
+def test_index_elements_reuse(example: Example) -> None:
+    xs, ys, ws = example
+
+    initial = evalica.index_elements(xs, ys)
+    indexed = evalica.index_elements(xs, ys, initial.index)
+
+    assert indexed.xs == initial.xs
+    assert indexed.ys == initial.ys
+    assert indexed.index is initial.index
+
+
+@given(example=elements())
 def test_matrices(example: Example) -> None:
     xs, ys, ws = example
 
