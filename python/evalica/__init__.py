@@ -352,6 +352,12 @@ def pairwise_frame(scores: pd.Series[T]) -> pd.DataFrame:  # type: ignore[type-v
 
 
 __all__ = [
+    "BradleyTerryResult",
+    "CountingResult",
+    "EigenResult",
+    "EloResult",
+    "NewmanResult",
+    "PageRankResult",
     "WINNERS",
     "Winner",
     "__version__",
@@ -363,6 +369,6 @@ __all__ = [
     "matrices",
     "newman",
     "pagerank",
-    "pairwise_scores",
     "pairwise_frame",
+    "pairwise_scores",
 ]
