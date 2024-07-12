@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import dataclasses
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
-from typing import Generic, Literal, TypeVar, cast
+from typing import Generic, Literal, NamedTuple, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -34,9 +33,8 @@ WINNERS = [
 T = TypeVar("T", bound=Hashable)
 
 
-@dataclass
-class IndexedElements(Generic[T]):
-    index: pd.Index[T]  # type: ignore[type-var]
+class IndexedElements(Generic[T], NamedTuple):
+    index: pd.Index[T]  # type: ignore[assignment,type-var]
     xs: list[int]
     ys: list[int]
 
@@ -45,7 +43,7 @@ def index_elements(
     xs: Iterable[T],
     ys: Iterable[T],
     index: pd.Index[T] | None = None,  # type: ignore[type-var]
-) -> IndexedElements[T]:
+) -> IndexedElements[T]:  # type: ignore[type-var]
     xy_index: dict[T, int] = {}
 
     def get_dict_index(x: T) -> int:
@@ -87,7 +85,7 @@ def matrices(
         ws: Iterable[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
 ) -> MatricesResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+    index, _xs, _ys = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -116,7 +114,7 @@ def counting(
         win_weight: float = 1.,
         tie_weight: float = .5,
 ) -> CountingResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+    index, _xs, _ys = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -244,7 +242,7 @@ def elo(
         scale: float = 400.,
         k: float = 30.,
 ) -> EloResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+    index, _xs, _ys = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -326,7 +324,7 @@ def pagerank(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
-    index, _xs, _ys = dataclasses.astuple(index_elements(xs, ys, index))
+    index, _xs, _ys = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
