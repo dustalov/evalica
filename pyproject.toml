@@ -37,6 +37,7 @@ dev = [
     "pandas-stubs",
     "plotly",
     "pytest",
+    "pytest-cov",
     "ruff",
     "twine",
 ]

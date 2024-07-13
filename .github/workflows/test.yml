@@ -50,7 +50,11 @@ jobs:
     - name: Lint with Ruff
       run: ruff check
     - name: Run tests (Python)
-      run: pytest
+      run: pytest --cov
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Run Module
       run: python3 -m evalica --input=food.csv counting
     - name: Run CLI

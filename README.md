@@ -2,12 +2,16 @@
 
 ![Evalica](Evalica.svg)
 
-[![Tests][github_tests_badge]][github_tests_link] [![PyPI Version][pypi_badge]][pypi_link]
+[![Tests][github_tests_badge]][github_tests_link]
+[![PyPI Version][pypi_badge]][pypi_link]
+[![Codecov][codecov_badge]][codecov_link]
 
 [github_tests_badge]: https://github.com/dustalov/evalica/actions/workflows/test.yml/badge.svg?branch=master
 [github_tests_link]: https://github.com/dustalov/evalica/actions/workflows/test.yml
 [pypi_badge]: https://badge.fury.io/py/evalica.svg
 [pypi_link]: https://pypi.python.org/pypi/evalica
+[codecov_badge]: https://codecov.io/gh/dustalov/evalica/branch/master/graph/badge.svg
+[codecov_link]: https://codecov.io/gh/dustalov/evalica
 
 - [Tutorial](https://dustalov.github.io/evalica/) (and [Tutorial.ipynb](Tutorial.ipynb))
 - [Pair2Rank](https://huggingface.co/spaces/dustalov/pair2rank)
