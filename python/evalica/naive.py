@@ -33,12 +33,13 @@ def bradley_terry(
 
         broadcast_scores = np.broadcast_to(scores, matrix.shape)
 
-        norm_matrix[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
+        with np.errstate(all="ignore"):
+            norm_matrix[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
 
-        scores_new[:] = wins
-        with np.errstate(invalid="ignore"):
+            scores_new[:] = wins
             scores_new /= norm_matrix.sum(axis=0)
             scores_new /= scores_new.sum()
+
         scores_new = np.nan_to_num(scores_new, nan=tolerance)
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
@@ -66,7 +67,7 @@ def newman(
     while not converged and iterations < limit:
         iterations += 1
 
-        v = v_new
+        v = np.nan_to_num(v_new, nan=tolerance)
 
         broadcast_scores_t = scores[:, None].T
 
@@ -90,7 +91,7 @@ def newman(
         with np.errstate(all="ignore"):
             v_numerator = np.sum(tie_matrix * sum_scores / common_denominator) / 2
             v_denominator = np.sum(win_matrix * sqrt_scores_outer / common_denominator) * 2
-            v_new = np.nan_to_num(v_numerator / v_denominator, nan=tolerance)
+            v_new = v_numerator / v_denominator
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
@@ -108,7 +109,7 @@ def elo(
         scale: float = 400.,
         k: float = 30.,
 ) -> npt.NDArray[np.float64]:
-    if len(xs) != len(ys) or len(xs) != len(ws) or len(xs) != len(ws) or not xs:
+    if not xs:
         return np.zeros(0, dtype=np.float64)
 
     n = 1 + max(*xs, *ys)
@@ -116,11 +117,14 @@ def elo(
     scores = np.ones(n) * initial
 
     for x, y, w in zip(xs, ys, ws):
-        q_x = np.power(base, scores[x] / scale)
-        q_y = np.power(base, scores[y] / scale)
-        q = q_x + q_y
+        with np.errstate(all="ignore"):
+            q_x = np.nan_to_num(np.power(base, scores[x] / scale))
+            q_y = np.nan_to_num(np.power(base, scores[y] / scale))
 
-        expected_x, expected_y = q_x / q, q_y / q
+            q = np.nan_to_num(q_x + q_y)
+
+            expected_x = np.nan_to_num(q_x / q)
+            expected_y = np.nan_to_num(q_y / q)
 
         scored_x, scored_y = 0., 0.
 
@@ -130,6 +134,8 @@ def elo(
             scored_x, scored_y = 0., 1.
         elif w == Winner.Draw:
             scored_x, scored_y = .5, .5
+        else:
+            continue
 
         scores[x] += k * (scored_x - expected_x)
         scores[y] += k * (scored_y - expected_y)

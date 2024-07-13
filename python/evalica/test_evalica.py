@@ -1,3 +1,4 @@
+import hypothesis.strategies as st
 import numpy as np
 import pandas as pd
 import pytest
@@ -60,22 +61,37 @@ def test_matrices(example: Example) -> None:
     assert result.tie_matrix.sum() == 2 * ties
 
 
-@given(example=elements())
-def test_counting(example: Example) -> None:
+@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_counting(example: Example, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
-    result = evalica.counting(xs, ys, ws)
+    result = evalica.counting(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+    )
 
     assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()
 
 
-@given(example=elements())
-def test_bradley_terry(example: Example) -> None:
+@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
-    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.bradley_terry(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver="pyo3",
+    )
+
+    result_naive = evalica.bradley_terry(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver="naive",
+    )
 
     for result in (result_pyo3, result_naive):
         assert result.matrix.shape[0] == len(result.scores)
@@ -87,18 +103,21 @@ def test_bradley_terry(example: Example) -> None:
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
-@given(example=elements())
-def test_newman(example: Example) -> None:
+@given(example=elements(), v_init=st.floats())
+def test_newman(example: Example, v_init: float) -> None:
     xs, ys, ws = example
 
-    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.newman(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.newman(xs, ys, ws, v_init=v_init, solver="pyo3")
+    result_naive = evalica.newman(xs, ys, ws, v_init=v_init, solver="naive")
 
     for result in (result_pyo3, result_naive):
         assert result.win_matrix.shape[0] == len(result.scores)
         assert np.isfinite(result.scores).all()
         assert np.isfinite(result.v)
-        assert np.isfinite(result.v_init)
+        if np.isfinite(v_init):
+            assert result.v_init == v_init
+        else:
+            assert result.v_init is v_init
         assert result.iterations > 0
 
     tolerance = result_pyo3.tolerance * 10
@@ -107,12 +126,39 @@ def test_newman(example: Example) -> None:
     assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
 
 
-@given(example=elements())
-def test_elo(example: Example) -> None:
+@given(
+    example=elements(),
+    initial=st.floats(0, 1000),
+    base=st.floats(0, 1000),
+    scale=st.floats(0, 1000),
+    k=st.floats(0, 1000),
+)
+def test_elo(
+    example: Example,
+    initial: float,
+    base: float,
+    scale: float,
+    k: float,
+) -> None:
     xs, ys, ws = example
 
-    result_pyo3 = evalica.elo(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.elo(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.elo(
+        xs, ys, ws,
+        initial=initial,
+        base=base,
+        scale=scale,
+        k=k,
+        solver="pyo3",
+    )
+
+    result_naive = evalica.elo(
+        xs, ys, ws,
+        initial=initial,
+        base=base,
+        scale=scale,
+        k=k,
+        solver="naive",
+    )
 
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
@@ -121,12 +167,23 @@ def test_elo(example: Example) -> None:
     assert_series_equal(result_pyo3.scores, result_naive.scores)
 
 
-@given(example=elements())
-def test_eigen(example: Example) -> None:
+@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
-    result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.eigen(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.eigen(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver="pyo3",
+    )
+
+    result_naive = evalica.eigen(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver="naive",
+    )
 
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
@@ -138,11 +195,21 @@ def test_eigen(example: Example) -> None:
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
-@given(example=elements())
-def test_pagerank(example: Example) -> None:
+@given(
+    example=elements(),
+    damping=st.floats(0, 1),
+    win_weight=st.floats(0., 10., exclude_min=True),
+    tie_weight=st.floats(0., 10.),
+)
+def test_pagerank(example: Example, damping: float, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
-    result = evalica.pagerank(xs, ys, ws)
+    result = evalica.pagerank(
+        xs, ys, ws,
+        damping=damping,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+    )
 
     assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()

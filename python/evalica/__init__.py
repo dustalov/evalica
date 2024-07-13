@@ -153,6 +153,7 @@ def bradley_terry(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> BradleyTerryResult[T]:
+    assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
     _matrices = matrices(xs, ys, ws, index)
@@ -199,8 +200,6 @@ def newman(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> NewmanResult[T]:
-    assert np.isfinite(v_init), "v_init must be finite"
-
     _matrices = matrices(xs, ys, ws, index)
 
     win_matrix = _matrices.win_matrix.astype(float)
@@ -289,6 +288,9 @@ def eigen(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> EigenResult[T]:
+    assert np.isfinite(win_weight), "win_weight must be finite"
+    assert np.isfinite(tie_weight), "tie_weight must be finite"
+
     _matrices = matrices(xs, ys, ws, index)
 
     matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
