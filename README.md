@@ -82,12 +82,12 @@ Users of the [Crowd-Kit](https://github.com/Toloka/crowd-kit) library can easily
 >>> import pandas as pd
 >>> from crowdkit.aggregation import BradleyTerry
 >>> df = pd.DataFrame(
->>>     [
->>>         ['item1', 'item2', 'item1'],
->>>         ['item3', 'item2', 'item2']
->>>     ],
->>>     columns=['left', 'right', 'label']
->>> )
+...     [
+...         ['item1', 'item2', 'item1'],
+...         ['item3', 'item2', 'item2']
+...     ],
+...     columns=['left', 'right', 'label']
+... )
 >>> agg_bt = BradleyTerry(n_iter=100).fit_predict(df)
 ```
 
@@ -97,12 +97,12 @@ Evalica is not bound to the specific column names, reducing the potentially expe
 >>> import pandas as pd
 >>> from evalica import bradley_terry, Winner
 >>> df = pd.DataFrame(
->>>     [
->>>         ['item1', 'item2', Winner.X],
->>>         ['item2', 'item3', Winner.Y]
->>>     ],
->>>     columns=['left', 'right', 'label']
->>> )
+...     [
+...         ['item1', 'item2', Winner.X],
+...         ['item2', 'item3', Winner.Y]
+...     ],
+...     columns=['left', 'right', 'label']
+... )
 >>> scores = bradley_terry(df['left'], df['right'], df['item'], limit=100)
 ```
 
