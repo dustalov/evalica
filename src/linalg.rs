@@ -155,7 +155,6 @@ pub fn pagerank(
     let mut iterations = 0;
 
     while !converged && iterations < limit {
-        converged = true;
         iterations += 1;
 
         let mut scores_new = scores.clone();
@@ -173,12 +172,14 @@ pub fn pagerank(
                         let weight = e.weight / edge_weights[&q];
                         r + damping * scores[q] * weight
                     });
-
-            let difference = &scores_new - &scores;
-            converged = difference.dot(&difference).sqrt() < tolerance;
         }
 
-        scores = scores_new;
+        nan_to_num(&mut scores_new, tolerance);
+
+        let difference = &scores_new - &scores;
+        converged = difference.dot(&difference).sqrt() < tolerance;
+
+        scores.assign(&scores_new);
     }
 
     Ok((scores, iterations))
