@@ -50,7 +50,7 @@ sushi     1014.380742
 Name: elo, dtype: float64
 ```
 
-As a result, we obtain scores of our items. In this example, `pizza` is the most favoured item, `sushi` is the runner-up, and `burger` is the least preferred item.
+As a result, we obtain [Elo scores](https://en.wikipedia.org/wiki/Elo_rating_system) of our items. In this example, `pizza` was the most favoured item, `sushi` was the runner-up, and `burger` was the least preferred item.
 
 | **Item**| **Score** |
 |---|---:|
