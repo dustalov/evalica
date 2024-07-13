@@ -60,14 +60,6 @@ def test_matrices(example: Example) -> None:
     assert result.tie_matrix.sum() == 2 * ties
 
 
-@given(example=elements(shape="bad"))
-def test_matrices_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
-    with pytest.raises(evalica.LengthMismatchError):
-        evalica.matrices(xs, ys, ws)
-
-
 @given(example=elements())
 def test_counting(example: Example) -> None:
     xs, ys, ws = example
@@ -76,14 +68,6 @@ def test_counting(example: Example) -> None:
 
     assert len(result.scores) == len(set(xs) | set(ys))
     assert np.isfinite(result.scores).all()
-
-
-@given(example=elements(shape="bad"))
-def test_counting_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
-    with pytest.raises(evalica.LengthMismatchError):
-        evalica.counting(xs, ys, ws)
 
 
 @given(example=elements())
@@ -101,14 +85,6 @@ def test_bradley_terry(example: Example) -> None:
     tolerance = result_pyo3.tolerance * 10
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
-
-
-@given(example=elements(shape="bad"))
-def test_bradley_terry_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
-    with pytest.raises(evalica.LengthMismatchError):
-        evalica.bradley_terry(xs, ys, ws)
 
 
 @given(example=elements())
@@ -131,14 +107,6 @@ def test_newman(example: Example) -> None:
     assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
 
 
-@given(example=elements(shape="bad"))
-def test_newman_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
-    with pytest.raises(evalica.LengthMismatchError):
-        evalica.newman(xs, ys, ws)
-
-
 @given(example=elements())
 def test_elo(example: Example) -> None:
     xs, ys, ws = example
@@ -151,14 +119,6 @@ def test_elo(example: Example) -> None:
         assert np.isfinite(result.scores).all()
 
     assert_series_equal(result_pyo3.scores, result_naive.scores)
-
-
-@given(example=elements(shape="bad"))
-def test_elo_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
-    with pytest.raises(evalica.LengthMismatchError):
-        evalica.elo(xs, ys, ws)
 
 
 @given(example=elements())
@@ -178,14 +138,6 @@ def test_eigen(example: Example) -> None:
     assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
 
 
-@given(example=elements(shape="bad"))
-def test_eigen_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
-    with pytest.raises(evalica.LengthMismatchError):
-        evalica.eigen(xs, ys, ws)
-
-
 @given(example=elements())
 def test_pagerank(example: Example) -> None:
     xs, ys, ws = example
@@ -201,11 +153,17 @@ def test_pagerank(example: Example) -> None:
 
 
 @given(example=elements(shape="bad"))
-def test_pagerank_misshaped(example: Example) -> None:
-    xs, ys, ws = example
-
+@pytest.mark.parametrize("algorithm", [
+    "counting",
+    "bradley_terry",
+    "newman",
+    "elo",
+    "eigen",
+    "pagerank",
+])
+def test_misshaped(example: Example, algorithm: str) -> None:
     with pytest.raises(evalica.LengthMismatchError):
-        evalica.pagerank(xs, ys, ws)
+        getattr(evalica, algorithm)(*example)
 
 
 def test_bradley_terry_simple(simple_elements: Example) -> None:
