@@ -1,8 +1,10 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: [ "Tests" ]
     branches: [ "master" ]
+    types: [ "completed" ]
   release:
     types: [ "published" ]
   workflow_dispatch:
