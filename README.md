@@ -13,6 +13,8 @@
 [codecov_badge]: https://codecov.io/gh/dustalov/evalica/branch/master/graph/badge.svg
 [codecov_link]: https://codecov.io/gh/dustalov/evalica
 
+**Evalica** is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
+
 - [Tutorial](https://dustalov.github.io/evalica/) (and [Tutorial.ipynb](Tutorial.ipynb))
 - [Pair2Rank](https://huggingface.co/spaces/dustalov/pair2rank)
 
@@ -24,7 +26,7 @@ The logo has been created using [Recraft](https://www.recraft.ai/).
 
 ## Usage
 
-Evalica transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them.
+Imagine that we would like to rank the different meals and have the following dataset of three comparisons produced by food experts.
 
 | **Item X**| **Item Y** | **Winner** |
 |:---:|:---:|:---:|
@@ -71,6 +73,38 @@ Pizza,0.0989799795360731,5
 ```
 
 Refer to the [food.csv](food.csv) file as an input example.
+
+## Crowd-Kit
+
+Users of the [Crowd-Kit](https://github.com/Toloka/crowd-kit) library can easily switch to Evalica by replacing their `label` item references with the corresponding `Winner` values.
+
+```python
+>>> import pandas as pd
+>>> from crowdkit.aggregation import BradleyTerry
+>>> df = pd.DataFrame(
+>>>     [
+>>>         ['item1', 'item2', 'item1'],
+>>>         ['item3', 'item2', 'item2']
+>>>     ],
+>>>     columns=['left', 'right', 'label']
+>>> )
+>>> agg_bt = BradleyTerry(n_iter=100).fit_predict(df)
+```
+
+Evalica is not bound to the specific column names, reducing the potentially expensive operation to build a data frame, while remaining fully compatible with NumPy and pandas.
+
+```python
+>>> import pandas as pd
+>>> from evalica import bradley_terry, Winner
+>>> df = pd.DataFrame(
+>>>     [
+>>>         ['item1', 'item2', Winner.X],
+>>>         ['item2', 'item3', Winner.Y]
+>>>     ],
+>>>     columns=['left', 'right', 'label']
+>>> )
+>>> scores = bradley_terry(df['left'], df['right'], df['item'], limit=100)
+```
 
 ## Implemented Methods
 
