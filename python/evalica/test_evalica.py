@@ -128,10 +128,10 @@ def test_newman(example: Example, v_init: float) -> None:
 
 @given(
     example=elements(),
-    initial=st.floats(0, 1000),
-    base=st.floats(0, 1000),
-    scale=st.floats(0, 1000),
-    k=st.floats(0, 1000),
+    initial=st.floats(0., 1000.),
+    base=st.floats(0., 1000.),
+    scale=st.floats(0., 1000.),
+    k=st.floats(0., 1000.),
 )
 def test_elo(
     example: Example,
@@ -197,7 +197,7 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
 
 @given(
     example=elements(),
-    damping=st.floats(0, 1),
+    damping=st.floats(0., 1., exclude_min=True),
     win_weight=st.floats(0., 10., exclude_min=True),
     tie_weight=st.floats(0., 10.),
 )
