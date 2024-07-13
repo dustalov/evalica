@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, ArrayView2, Axis};
+use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ShapeError};
 
 use crate::utils::{nan_to_num, one_nan_to_num};
 
@@ -6,12 +6,10 @@ pub fn bradley_terry(
     matrix: &ArrayView2<f64>,
     tolerance: f64,
     limit: usize,
-) -> (Array1<f64>, usize) {
-    assert_eq!(
-        matrix.shape()[0],
-        matrix.shape()[1],
-        "The matrix must be square"
-    );
+) -> Result<(Array1<f64>, usize), ShapeError> {
+    if !matrix.is_square() {
+        return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+    }
 
     let totals = &matrix.t().clone() + matrix;
     let active = totals.mapv(|x| x > 0.0);
@@ -47,7 +45,7 @@ pub fn bradley_terry(
         scores.assign(&scores_new);
     }
 
-    (scores, iterations)
+    Ok((scores, iterations))
 }
 
 pub fn newman(
@@ -56,27 +54,10 @@ pub fn newman(
     v_init: f64,
     tolerance: f64,
     limit: usize,
-) -> (Array1<f64>, f64, usize) {
-    assert_eq!(
-        win_matrix.shape(),
-        tie_matrix.shape(),
-        "The matrices must be have the same shape"
-    );
-
-    assert_eq!(
-        win_matrix.shape()[0],
-        win_matrix.shape()[1],
-        "The win matrix must be square"
-    );
-
-    assert_eq!(
-        tie_matrix.shape()[0],
-        tie_matrix.shape()[1],
-        "The tie matrix must be square"
-    );
-
-    assert!(v_init.is_normal());
-    assert!(v_init > 0.0);
+) -> Result<(Array1<f64>, f64, usize), ShapeError> {
+    if win_matrix.shape() != tie_matrix.shape() || !win_matrix.is_square() {
+        return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+    }
 
     let win_tie_half = win_matrix + &(tie_matrix / 2.0);
 
@@ -121,7 +102,7 @@ pub fn newman(
         scores.assign(&scores_new);
     }
 
-    (scores, v, iterations)
+    Ok((scores, v, iterations))
 }
 
 #[cfg(test)]
@@ -142,7 +123,7 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5);
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5).unwrap();
 
         let matrix = win_matrix + &tie_matrix;
 
@@ -154,7 +135,7 @@ mod tests {
             0.34947527489923,
         ];
 
-        let (actual, iterations) = bradley_terry(&matrix.view(), tolerance, 100);
+        let (actual, iterations) = bradley_terry(&matrix.view(), tolerance, 100).unwrap();
 
         assert_eq!(actual.len(), matrix.shape()[0]);
         assert_ne!(iterations, 0);
@@ -172,7 +153,7 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0);
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0).unwrap();
 
         let expected_v = 3.4609664512240546;
         let v_init = 0.5;
@@ -191,7 +172,8 @@ mod tests {
             v_init,
             tolerance,
             100,
-        );
+        )
+        .unwrap();
 
         assert_eq!(actual.len(), win_matrix.shape()[0]);
         assert_eq!(actual.len(), tie_matrix.shape()[0]);

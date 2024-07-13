@@ -3,10 +3,19 @@ use std::hash::Hash;
 use std::num::FpCategory;
 use std::ops::AddAssign;
 
-use ndarray::{Array1, Array2, ArrayView1};
+use ndarray::{Array1, Array2, ArrayView1, ErrorKind, ShapeError};
 use num_traits::{Float, Num};
 
 use crate::Winner;
+
+#[macro_export]
+macro_rules! match_lengths {
+    ($xs:expr, $ys:expr, $ws:expr) => {
+        if $xs != $ys || $xs != $ws || $ys != $ws {
+            return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+        }
+    };
+}
 
 #[allow(dead_code)]
 pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
@@ -51,25 +60,11 @@ pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
     ws: &ArrayView1<Winner>,
     win_weight: A,
     tie_weight: B,
-) -> (Array2<A>, Array2<B>) {
-    assert_eq!(
-        xs.len(),
-        ys.len(),
-        "first and second length mismatch: {} vs. {}",
-        xs.len(),
-        ys.len()
-    );
-
-    assert_eq!(
-        xs.len(),
-        ws.len(),
-        "first and status length mismatch: {} vs. {}",
-        xs.len(),
-        ws.len()
-    );
+) -> Result<(Array2<A>, Array2<B>), ShapeError> {
+    match_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
-        return (Array2::zeros((0, 0)), Array2::zeros((0, 0)));
+        return Ok((Array2::zeros((0, 0)), Array2::zeros((0, 0))));
     }
 
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
@@ -93,7 +88,7 @@ pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
         }
     }
 
-    (wins, ties)
+    Ok((wins, ties))
 }
 
 #[cfg(test)]
@@ -165,7 +160,7 @@ mod tests {
             [0, 0, 0, 0, 0],
         ];
 
-        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view(), 1, 1);
+        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view(), 1, 1).unwrap();
 
         assert_eq!(wins, expected_wins);
         assert_eq!(ties, expected_ties);

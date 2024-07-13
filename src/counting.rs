@@ -1,9 +1,9 @@
 use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView1};
+use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
 use num_traits::Num;
 
-use crate::Winner;
+use crate::{match_lengths, Winner};
 
 pub fn counting<A: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
@@ -11,25 +11,11 @@ pub fn counting<A: Num + Copy + AddAssign>(
     ws: &ArrayView1<Winner>,
     win_weight: A,
     tie_weight: A,
-) -> Array1<A> {
-    assert_eq!(
-        xs.len(),
-        ys.len(),
-        "first and second length mismatch: {} vs. {}",
-        xs.len(),
-        ys.len()
-    );
-
-    assert_eq!(
-        xs.len(),
-        ws.len(),
-        "first and status length mismatch: {} vs. {}",
-        xs.len(),
-        ws.len()
-    );
+) -> Result<Array1<A>, ShapeError> {
+    match_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
-        return Array1::zeros(0);
+        return Ok(Array1::zeros(0));
     }
 
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
@@ -48,7 +34,7 @@ pub fn counting<A: Num + Copy + AddAssign>(
         }
     }
 
-    scores
+    Ok(scores)
 }
 
 #[cfg(test)]
@@ -67,7 +53,7 @@ mod tests {
 
         let expected = array![1.5, 3.0, 3.0, 4.5, 4.0];
 
-        let actual = counting(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5);
+        let actual = counting(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5).unwrap();
 
         assert_eq!(actual, expected);
     }

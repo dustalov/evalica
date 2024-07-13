@@ -14,6 +14,10 @@ class Winner(Enum):
     Ignore = ...
 
 
+class LengthMismatchError(Exception):
+    ...
+
+
 def matrices_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,

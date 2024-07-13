@@ -1,12 +1,20 @@
 use std::collections::HashMap;
 
-use ndarray::{Array1, ArrayView1, ArrayView2};
+use ndarray::{Array1, ArrayView1, ArrayView2, ErrorKind, ShapeError};
 use num_traits::Zero;
 
+use crate::{match_lengths, Winner};
 use crate::utils::nan_to_num;
-use crate::Winner;
 
-pub fn eigen(matrix: &ArrayView2<f64>, tolerance: f64, limit: usize) -> (Array1<f64>, usize) {
+pub fn eigen(
+    matrix: &ArrayView2<f64>,
+    tolerance: f64,
+    limit: usize,
+) -> Result<(Array1<f64>, usize), ShapeError> {
+    if !matrix.is_square() {
+        return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+    }
+
     let n = matrix.shape()[0];
 
     let mut scores = Array1::ones(n) / n as f64;
@@ -34,7 +42,7 @@ pub fn eigen(matrix: &ArrayView2<f64>, tolerance: f64, limit: usize) -> (Array1<
         scores.assign(&scores_new);
     }
 
-    (scores, limit)
+    Ok((scores, limit))
 }
 
 #[derive(Clone, Debug)]
@@ -128,25 +136,11 @@ pub fn pagerank(
     tie_weight: f64,
     tolerance: f64,
     limit: usize,
-) -> (Array1<f64>, usize) {
-    assert_eq!(
-        xs.len(),
-        ys.len(),
-        "first and second length mismatch: {} vs. {}",
-        xs.len(),
-        ys.len()
-    );
-
-    assert_eq!(
-        xs.len(),
-        ws.len(),
-        "first and status length mismatch: {} vs. {}",
-        xs.len(),
-        ws.len()
-    );
+) -> Result<(Array1<f64>, usize), ShapeError> {
+    match_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
-        return (Array1::zeros(0), 0);
+        return Ok((Array1::zeros(0), 0));
     }
 
     let (out_edges_map, in_edges_map) = compute_edges(xs, ys, ws, win_weight, tie_weight);
@@ -187,7 +181,7 @@ pub fn pagerank(
         scores = scores_new;
     }
 
-    (scores, iterations)
+    Ok((scores, iterations))
 }
 
 #[cfg(test)]
@@ -208,7 +202,7 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5);
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5).unwrap();
 
         let matrix = win_matrix + &tie_matrix;
 
@@ -220,7 +214,7 @@ mod tests {
             0.2946746755941242,
         ];
 
-        let (actual, iterations) = eigen(&matrix.view(), tolerance, 100);
+        let (actual, iterations) = eigen(&matrix.view(), tolerance, 100).unwrap();
 
         assert_eq!(actual.len(), matrix.shape()[0]);
         assert!(iterations > 0);
@@ -255,7 +249,8 @@ mod tests {
             0.5,
             tolerance,
             100,
-        );
+        )
+        .unwrap();
 
         assert!(iterations > 0);
 

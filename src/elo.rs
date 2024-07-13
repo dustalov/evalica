@@ -1,6 +1,6 @@
-use ndarray::{Array1, ArrayView1};
+use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
 
-use crate::Winner;
+use crate::{match_lengths, Winner};
 
 pub fn elo(
     xs: &ArrayView1<usize>,
@@ -10,25 +10,11 @@ pub fn elo(
     base: f64,
     scale: f64,
     k: f64,
-) -> Array1<f64> {
-    assert_eq!(
-        xs.len(),
-        ys.len(),
-        "first and second length mismatch: {} vs. {}",
-        xs.len(),
-        ys.len()
-    );
-
-    assert_eq!(
-        xs.len(),
-        ws.len(),
-        "first and status length mismatch: {} vs. {}",
-        xs.len(),
-        ws.len()
-    );
+) -> Result<Array1<f64>, ShapeError> {
+    match_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
-        return Array1::zeros(0);
+        return Ok(Array1::zeros(0));
     }
 
     let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
@@ -55,7 +41,7 @@ pub fn elo(
         scores[*y] += k * (scored_y - expected_y);
     }
 
-    scores
+    Ok(scores)
 }
 
 #[cfg(test)]
@@ -76,7 +62,7 @@ mod tests {
 
         let expected = array![1501.0, 1485.0, 1515.0, 1498.0];
 
-        let actual = elo(&xs.view(), &ys.view(), &ws.view(), initial, base, scale, k);
+        let actual = elo(&xs.view(), &ys.view(), &ws.view(), initial, base, scale, k).unwrap();
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);

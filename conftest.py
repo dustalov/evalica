@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Literal, NamedTuple, cast
 
 import evalica
 import numpy as np
@@ -9,11 +10,13 @@ import numpy.typing as npt
 import pandas as pd
 import pytest
 from hypothesis import strategies as st
+from hypothesis.strategies import composite
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from _pytest.fixtures import TopRequest
+    from hypothesis.strategies import DrawFn
 
 
 class Example(NamedTuple):
@@ -24,18 +27,31 @@ class Example(NamedTuple):
     ws: list[evalica.Winner] | pd.Series[evalica.Winner]  # type: ignore[type-var]
 
 
-@st.composite
-def elements(draw: Callable[[st.SearchStrategy[Any]], Any]) -> Example:  # type: ignore[type-var]
+def enumerate_sizes(n: int) -> list[tuple[int, ...]]:
+    return [xs for xs in product([0, 1], repeat=n) if 0 < sum(xs) < n]
+
+
+@composite
+def elements(
+        draw: DrawFn,
+        shape: Literal["good", "bad"] = "good",
+) -> Example:  # type: ignore[type-var]
     length = draw(st.integers(0, 5))
 
-    xys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
-    ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+    if shape == "good":
+        xs = st.lists(st.text(max_size=length), min_size=length, max_size=length)
+        ys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
+        ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+    else:
+        min_x, min_y, min_z = draw(st.sampled_from(enumerate_sizes(3)))
 
-    return Example(
-        xs=draw(xys),
-        ys=draw(xys),
-        ws=draw(ws),
-    )
+        length_x, length_y, length_z = (1 + length) * min_x, (1 + length) * min_y, (1 + length) * min_z
+
+        xs = st.lists(st.text(max_size=length_x), min_size=length_x, max_size=length_x)
+        ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
+        ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length_z, max_size=length_z)
+
+    return Example(xs=draw(xs), ys=draw(ys), ws=draw(ws))
 
 
 @pytest.fixture()

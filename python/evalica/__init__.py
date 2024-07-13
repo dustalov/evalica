@@ -9,6 +9,7 @@ import numpy.typing as npt
 import pandas as pd
 
 from .evalica import (
+    LengthMismatchError,
     Winner,
     __version__,
     bradley_terry_pyo3,
@@ -41,9 +42,9 @@ class IndexedElements(Generic[T], NamedTuple):
 
 
 def index_elements(
-    xs: Iterable[T],
-    ys: Iterable[T],
-    index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        xs: Iterable[T],
+        ys: Iterable[T],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
 ) -> IndexedElements[T]:  # type: ignore[type-var]
     xy_index: dict[T, int] = {}
 
@@ -361,6 +362,7 @@ __all__ = [
     "CountingResult",
     "EigenResult",
     "EloResult",
+    "LengthMismatchError",
     "NewmanResult",
     "PageRankResult",
     "WINNERS",
