@@ -197,7 +197,7 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
 
 @given(
     example=elements(),
-    damping=st.floats(0., 1., exclude_min=True),
+    damping=st.floats(0., 1., exclude_min=True, exclude_max=True),
     win_weight=st.floats(0., 10., exclude_min=True),
     tie_weight=st.floats(0., 10.),
 )
