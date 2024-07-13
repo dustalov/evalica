@@ -79,7 +79,7 @@ def matrix_to_elements(
 ) -> tuple[list[str], list[str], list[evalica.Winner]]:
     xs, ys, ws = [], [], []
 
-    for x, y in zip(*np.nonzero(matrix), strict=False):
+    for x, y in zip(*np.nonzero(matrix)):
         winner = winner_func(x, y)
 
         for _ in range(matrix[x, y]):
