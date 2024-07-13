@@ -21,14 +21,9 @@ macro_rules! match_lengths {
 pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
     let mut index: HashMap<I, usize> = HashMap::new();
 
-    for x in xs.iter() {
+    for x in xs.iter().chain(ys.iter()) {
         let len = index.len();
         index.entry(x.clone()).or_insert(len);
-    }
-
-    for y in ys.iter() {
-        let len = index.len();
-        index.entry(y.clone()).or_insert(len);
     }
 
     index
