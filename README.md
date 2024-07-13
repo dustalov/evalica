@@ -91,7 +91,7 @@ Users of the [Crowd-Kit](https://github.com/Toloka/crowd-kit) library can easily
 >>> agg_bt = BradleyTerry(n_iter=100).fit_predict(df)
 ```
 
-Evalica is not bound to the specific column names, reducing the potentially expensive operation to build a data frame, while remaining fully compatible with NumPy and pandas.
+Evalica is not bound to the specific column names, reducing the potentially expensive operation of building a data frame, while remaining fully compatible with NumPy and pandas.
 
 ```python
 >>> import pandas as pd
