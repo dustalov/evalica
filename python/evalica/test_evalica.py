@@ -1,8 +1,14 @@
+from typing import Any
+
 import hypothesis.strategies as st
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pytest
 from hypothesis import given
+from hypothesis.extra._array_helpers import array_shapes
+from hypothesis.extra.numpy import arrays
+from hypothesis.extra.pandas import series
 from pandas._testing import assert_series_equal
 
 import evalica
@@ -114,11 +120,12 @@ def test_newman(example: Example, v_init: float) -> None:
         assert result.win_matrix.shape[0] == len(result.scores)
         assert np.isfinite(result.scores).all()
         assert np.isfinite(result.v)
+        assert result.iterations > 0
+
         if np.isfinite(v_init):
             assert result.v_init == v_init
         else:
             assert result.v_init is v_init
-        assert result.iterations > 0
 
     tolerance = result_pyo3.tolerance * 10
 
@@ -134,11 +141,11 @@ def test_newman(example: Example, v_init: float) -> None:
     k=st.floats(0., 1000.),
 )
 def test_elo(
-    example: Example,
-    initial: float,
-    base: float,
-    scale: float,
-    k: float,
+        example: Example,
+        initial: float,
+        base: float,
+        scale: float,
+        k: float,
 ) -> None:
     xs, ys, ws = example
 
@@ -348,3 +355,33 @@ def test_pagerank_dataset(example: Example, example_golden: "pd.Series[str]") ->
     tolerance = result.tolerance * 10
 
     assert_series_equal(result.scores, example_golden, atol=tolerance, check_like=True)
+
+
+@given(arrays(dtype=np.float64, shape=array_shapes(max_dims=1, min_side=0)))
+def test_pairwise_scores(scores: npt.NDArray[np.float64]) -> None:
+    with np.errstate(all="ignore"):
+        pairwise = evalica.pairwise_scores(scores)
+
+    assert pairwise.dtype == scores.dtype
+    assert pairwise.shape == (len(scores), len(scores))
+
+    if np.isfinite(scores).all():
+        assert np.isfinite(pairwise).all()
+    else:
+        assert not np.isfinite(pairwise).all()
+
+
+def test_pairwise_scores_empty() -> None:
+    pairwise = evalica.pairwise_scores(np.zeros(0, dtype=np.float64))
+    assert pairwise.dtype == np.float64
+    assert pairwise.shape == (0, 0)
+
+
+@given(series(dtype=np.float64))
+def test_pairwise_frame(scores: "pd.Series[Any]") -> None:
+    with np.errstate(all="ignore"):
+        df_pairwise = evalica.pairwise_frame(scores)
+
+    assert df_pairwise.shape == (len(scores), len(scores))
+    assert df_pairwise.index is scores.index
+    assert df_pairwise.columns is scores.index

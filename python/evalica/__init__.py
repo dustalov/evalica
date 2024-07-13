@@ -351,8 +351,16 @@ def pagerank(
     )
 
 
-def pairwise_scores(scores: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    return scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
+def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[np.float64]:
+    if len(scores) < 1:
+        return np.zeros((0, 0), dtype=np.float64)
+
+    pairwise = scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
+
+    if np.isfinite(scores).all():
+        pairwise = np.nan_to_num(pairwise)
+
+    return pairwise
 
 
 def pairwise_frame(scores: pd.Series[T]) -> pd.DataFrame:  # type: ignore[type-var]
