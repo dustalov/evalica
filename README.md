@@ -1,6 +1,6 @@
 # Evalica, your favourite evaluation toolkit
 
-![Evalica](Evalica.svg)
+[![Evalica](Evalica.svg)](https://github.com/dustalov/evalica)
 
 [![Tests][github_tests_badge]][github_tests_link]
 [![PyPI Version][pypi_badge]][pypi_link]
