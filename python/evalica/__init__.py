@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Iterable
+from collections.abc import Collection, Hashable, Iterable
 from dataclasses import dataclass
 from typing import Generic, Literal, NamedTuple, TypeVar, cast
 
@@ -21,6 +21,7 @@ from .evalica import (
 )
 from .naive import bradley_terry as bradley_terry_naive
 from .naive import eigen as eigen_naive
+from .naive import elo as elo_naive
 from .naive import newman as newman_naive
 
 WINNERS = [
@@ -230,23 +231,28 @@ class EloResult(Generic[T]):
     base: float
     scale: float
     k: float
+    solver: str
 
 
 def elo(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
-        initial: float = 1500.,
+        initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
         k: float = 30.,
+        solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> EloResult[T]:
     index, _xs, _ys = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
-    scores = elo_pyo3(_xs, _ys, ws, initial, base, scale, k)
+    if solver == "pyo3":
+        scores = elo_pyo3(_xs, _ys, ws, initial, base, scale, k)
+    else:
+        scores = elo_naive(_xs, _ys, ws, initial, base, scale, k)
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__),
@@ -255,6 +261,7 @@ def elo(
         base=base,
         scale=scale,
         k=k,
+        solver=solver,
     )
 
 

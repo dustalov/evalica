@@ -111,10 +111,14 @@ def test_newman(example: Example) -> None:
 def test_elo(example: Example) -> None:
     xs, ys, ws = example
 
-    result = evalica.elo(xs, ys, ws)
+    result_pyo3 = evalica.elo(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.elo(xs, ys, ws, solver="naive")
 
-    assert len(result.scores) == len(set(xs) | set(ys))
-    assert np.isfinite(result.scores).all()
+    for result in (result_pyo3, result_naive):
+        assert len(result.scores) == len(set(xs) | set(ys))
+        assert np.isfinite(result.scores).all()
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
 
 
 @given(example=elements())
@@ -226,9 +230,12 @@ def test_newman_dataset(example: Example, example_golden: "pd.Series[str]") -> N
 def test_elo_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
     xs, ys, ws = example
 
-    result = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400)
+    result_pyo3 = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400, solver="pyo3")
+    result_naive = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400, solver="naive")
 
-    assert_series_equal(result.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [

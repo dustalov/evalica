@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import numpy.typing as npt
+
+from evalica import Winner
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 
 def bradley_terry(
@@ -90,6 +97,44 @@ def newman(
         scores[:] = scores_new
 
     return scores, v, iterations
+
+
+def elo(
+        xs: Collection[int],
+        ys: Collection[int],
+        ws: Collection[Winner],
+        initial: float = 1000.,
+        base: float = 10.,
+        scale: float = 400.,
+        k: float = 30.,
+) -> npt.NDArray[np.float64]:
+    if len(xs) != len(ys) or len(xs) != len(ws) or len(xs) != len(ws) or not xs:
+        return np.zeros(0, dtype=np.float64)
+
+    n = 1 + max(*xs, *ys)
+
+    scores = np.ones(n) * initial
+
+    for x, y, w in zip(xs, ys, ws):
+        q_x = np.power(base, scores[x] / scale)
+        q_y = np.power(base, scores[y] / scale)
+        q = q_x + q_y
+
+        expected_x, expected_y = q_x / q, q_y / q
+
+        scored_x, scored_y = 0., 0.
+
+        if w == Winner.X:
+            scored_x, scored_y = 1., 0.
+        elif w == Winner.Y:
+            scored_x, scored_y = 0., 1.
+        elif w == Winner.Draw:
+            scored_x, scored_y = .5, .5
+
+        scores[x] += k * (scored_x - expected_x)
+        scores[y] += k * (scored_y - expected_y)
+
+    return scores
 
 
 def eigen(
