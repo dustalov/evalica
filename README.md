@@ -24,7 +24,7 @@ The logo has been created using [Recraft](https://www.recraft.ai/).
 
 ## Usage
 
-Evalica transforms pairwise comparisons into ranked lists of items. It offers naïve Python implementations of the corresponding methods along with the more efficient Rust implementations, available via [PyO3](https://pyo3.rs/).
+Evalica transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them.
 
 | **Item X**| **Item Y** | **Winner** |
 |:---:|:---:|:---:|
@@ -55,6 +55,22 @@ As a result, we obtain scores of our items. In this example, `pizza` is the most
 | `pizza` | 1014.97 |
 | `burger` | 970.65 |
 | `sushi` | 1014.38 |
+
+## Command-Line Interface
+
+Evalica also provides a simple command-line interface, allowing the use of these methods in shell scripts and for prototyping.
+
+```
+$ evalica -i food.csv bradley-terry
+item,score,rank
+Tacos,0.43428827947351706,1
+Sushi,0.19060105855071743,2
+Burger,0.14797720376982199,3
+Pasta,0.12815347866987045,4
+Pizza,0.0989799795360731,5
+```
+
+Refer to the [food.csv](food.csv) file as an input example.
 
 ## Implemented Methods
 
