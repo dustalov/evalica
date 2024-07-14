@@ -114,8 +114,10 @@ Evalica is not bound to the specific column names, reducing the potentially expe
 | [Bradley&ndash;Terry] | &#x2705; | &#x2705; |
 | [Elo] | &#x2705; | &#x2705; |
 | [Eigenvalue] | &#x2705; | &#x2705; |
-| [PageRank] | &#x274C; | &#x2705; |
+| [PageRank] | &#x2705; | &#x2705; |
 | [Newman] | &#x2705; | &#x2705; |
+
+<!-- Present: &#x2705; / Absent: &#x274C; -->
 
 [Bradley&ndash;Terry]: https://doi.org/10.2307/2334029
 [Elo]: https://isbnsearch.org/isbn/9780923891275
