@@ -27,27 +27,27 @@ def test_exports() -> None:
 
 @given(example=elements())
 def test_index_elements(example: Example) -> None:  # type: ignore[type-var]
-    xs, ys, ws = example
+    xs, ys, _ = example
 
-    indexed = evalica.index_elements(xs, ys)
+    index, xs_indexed, ys_indexed = evalica.index_elements(xs, ys)
 
-    assert len(indexed.xs) == len(xs)
-    assert len(indexed.ys) == len(ys)
-    assert isinstance(indexed.index, pd.Index)
-    assert len(indexed.index) == len(set(xs) | set(ys))
-    assert set(indexed.index.values) == (set(xs) | set(ys))
+    assert len(xs_indexed) == len(xs)
+    assert len(ys_indexed) == len(ys)
+    assert isinstance(index, pd.Index)
+    assert len(index) == len(set(xs) | set(ys))
+    assert set(index.values) == (set(xs) | set(ys))
 
 
 @given(example=elements())
 def test_index_elements_reuse(example: Example) -> None:
-    xs, ys, ws = example
+    xs, ys, _ = example
 
-    initial = evalica.index_elements(xs, ys)
-    indexed = evalica.index_elements(xs, ys, initial.index)
+    index, xs_indexed, ys_indexed = evalica.index_elements(xs, ys)
+    reindex, xs_reindexed, ys_reindexed = evalica.index_elements(xs, ys, index)
 
-    assert indexed.xs == initial.xs
-    assert indexed.ys == initial.ys
-    assert indexed.index is initial.index
+    assert xs_reindexed == xs_indexed
+    assert ys_reindexed == ys_indexed
+    assert reindex is index
 
 
 @given(example=elements())

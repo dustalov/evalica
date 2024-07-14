@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Collection, Hashable, Iterable
 from dataclasses import dataclass
-from typing import Generic, Literal, NamedTuple, TypeVar, cast
+from typing import Generic, Literal, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -35,17 +35,11 @@ WINNERS = [
 T = TypeVar("T", bound=Hashable)
 
 
-class IndexedElements(Generic[T], NamedTuple):
-    index: pd.Index[T]  # type: ignore[assignment,type-var]
-    xs: list[int]
-    ys: list[int]
-
-
 def index_elements(
         xs: Iterable[T],
         ys: Iterable[T],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
-) -> IndexedElements[T]:  # type: ignore[type-var]
+) -> tuple[pd.Index[T], list[int], list[int]]:  # type: ignore[type-var]
     xy_index: dict[T, int] = {}
 
     def get_dict_index(x: T) -> int:
@@ -67,11 +61,7 @@ def index_elements(
 
     assert index is not None, "index is None"
 
-    return IndexedElements(
-        index=index,
-        xs=xs_indexed,
-        ys=ys_indexed,
-    )
+    return index, xs_indexed, ys_indexed
 
 
 @dataclass(frozen=True)
