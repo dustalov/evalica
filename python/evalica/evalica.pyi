@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Collection
 from enum import Enum
 
 import numpy as np
@@ -21,14 +21,14 @@ class LengthMismatchError(Exception):
 def matrices_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
-        ws: Iterable[Winner],
+        ws: Collection[Winner],
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 
 
 def counting_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
-        ws: Iterable[Winner],
+        ws: Collection[Winner],
         win_weight: float,
         tie_weight: float,
 ) -> npt.NDArray[np.float64]: ...
@@ -53,7 +53,7 @@ def newman_pyo3(
 def elo_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
-        ws: Iterable[Winner],
+        ws: Collection[Winner],
         initial: float,
         base: float,
         scale: float,
@@ -71,7 +71,7 @@ def eigen_pyo3(
 def pagerank_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
-        ws: Iterable[Winner],
+        ws: Collection[Winner],
         damping: float,
         win_weight: float,
         tie_weight: float,

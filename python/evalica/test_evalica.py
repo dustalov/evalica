@@ -71,14 +71,25 @@ def test_matrices(example: Example) -> None:
 def test_counting(example: Example, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
-    result = evalica.counting(
+    result_pyo3 = evalica.counting(
         xs, ys, ws,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver="pyo3",
     )
 
-    assert len(result.scores) == len(set(xs) | set(ys))
-    assert np.isfinite(result.scores).all()
+    result_naive = evalica.counting(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver="naive",
+    )
+
+    for result in (result_pyo3, result_naive):
+        assert len(result.scores) == len(set(xs) | set(ys))
+        assert np.isfinite(result.scores).all()
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
 
 
 @given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
@@ -270,9 +281,12 @@ def test_newman_simple(simple_tied_elements: Example) -> None:
 def test_counting_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
     xs, ys, ws = example
 
-    result = evalica.counting(xs, ys, ws)
+    result_pyo3 = evalica.counting(xs, ys, ws)
+    result_naive = evalica.counting(xs, ys, ws)
 
-    assert_series_equal(result.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [

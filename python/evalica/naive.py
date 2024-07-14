@@ -11,6 +11,32 @@ if TYPE_CHECKING:
     from collections.abc import Collection
 
 
+def counting(
+        xs: Collection[int],
+        ys: Collection[int],
+        ws: Collection[Winner],
+        win_weight: float,
+        tie_weight: float,
+) -> npt.NDArray[np.float64]:
+    if not xs:
+        return np.zeros(0, dtype=np.float64)
+
+    scores = np.zeros(1 + max(*xs, *ys))
+
+    for x, y, w in zip(xs, ys, ws):
+        if w == Winner.X:
+            scores[x] += win_weight
+        elif w == Winner.Y:
+            scores[y] += win_weight
+        elif w == Winner.Draw:
+            scores[x] += tie_weight
+            scores[y] += tie_weight
+        else:
+            continue
+
+    return scores
+
+
 def bradley_terry(
         matrix: npt.NDArray[np.float64],
         tolerance: float = 1e-6,

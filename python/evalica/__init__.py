@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Collection, Hashable, Iterable
+from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from typing import Generic, Literal, TypeVar, cast
 
@@ -21,6 +21,7 @@ from .evalica import (
     pagerank_pyo3,
 )
 from .naive import bradley_terry as bradley_terry_naive
+from .naive import counting as counting_naive
 from .naive import eigen as eigen_naive
 from .naive import elo as elo_naive
 from .naive import newman as newman_naive
@@ -36,8 +37,8 @@ T = TypeVar("T", bound=Hashable)
 
 
 def index_elements(
-        xs: Iterable[T],
-        ys: Iterable[T],
+        xs: Collection[T],
+        ys: Collection[T],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
 ) -> tuple[pd.Index[T], list[int], list[int]]:  # type: ignore[type-var]
     xy_index: dict[T, int] = {}
@@ -72,9 +73,9 @@ class MatricesResult(Generic[T]):
 
 
 def matrices(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
 ) -> MatricesResult[T]:
     index, _xs, _ys = index_elements(xs, ys, index)
@@ -96,27 +97,33 @@ class CountingResult(Generic[T]):
     index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
+    solver: str
 
 
 def counting(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
+        solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> CountingResult[T]:
     index, _xs, _ys = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
-    counts = counting_pyo3(_xs, _ys, ws, win_weight, tie_weight)
+    if solver == "pyo3":
+        scores = counting_pyo3(_xs, _ys, ws, win_weight, tie_weight)
+    else:
+        scores = counting_naive(_xs, _ys, ws, win_weight, tie_weight)
 
     return CountingResult(
-        scores=pd.Series(counts, index=index, name=counting.__name__),
+        scores=pd.Series(scores, index=index, name=counting.__name__),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver=solver,
     )
 
 
@@ -133,9 +140,9 @@ class BradleyTerryResult(Generic[T]):
 
 
 def bradley_terry(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
@@ -181,9 +188,9 @@ class NewmanResult(Generic[T]):
 
 
 def newman(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         v_init: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -268,9 +275,9 @@ class EigenResult(Generic[T]):
 
 
 def eigen(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
@@ -314,9 +321,9 @@ class PageRankResult(Generic[T]):
 
 
 def pagerank(
-        xs: Iterable[T],
-        ys: Iterable[T],
-        ws: Iterable[Winner],
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         damping: float = .85,
         win_weight: float = 1.,
