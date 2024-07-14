@@ -174,6 +174,9 @@ def eigen(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
+    if not matrix.shape[0]:
+        return np.zeros(0, dtype=np.float64), 0
+
     n = matrix.shape[0]
 
     scores = np.ones(n) / n
@@ -191,5 +194,41 @@ def eigen(
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
         scores[:] = scores_new
+
+    return scores, iterations
+
+
+def pagerank_matrix(
+        win_matrix: npt.NDArray[np.float64],
+        tie_matrix: npt.NDArray[np.float64],
+        damping: float,
+        win_weight: float,
+        tie_weight: float,
+) -> npt.NDArray[np.float64]:
+    if not win_matrix.shape[0]:
+        return np.zeros(0, dtype=np.float64)
+
+    p = 1. / win_matrix.shape[0]
+
+    matrix = (win_weight * win_matrix + tie_weight * tie_matrix).T.astype(float)
+    matrix[matrix.sum(axis=1) == 0] = p
+    matrix /= matrix.sum(axis=1).reshape(-1, 1)
+
+    return damping * matrix + (1 - damping) * p
+
+
+def pagerank(
+        win_matrix: npt.NDArray[np.float64],
+        tie_matrix: npt.NDArray[np.float64],
+        damping: float,
+        win_weight: float,
+        tie_weight: float,
+        tolerance: float,
+        limit: int,
+) -> tuple[npt.NDArray[np.float64], int]:
+    matrix = pagerank_matrix(win_matrix, tie_matrix, damping, win_weight, tie_weight)
+
+    scores, iterations = eigen(matrix, tolerance=tolerance, limit=limit)
+    scores /= np.linalg.norm(scores, ord=1)
 
     return scores, iterations
