@@ -76,7 +76,7 @@ Refer to the [food.csv](food.csv) file as an input example.
 
 ## Crowd-Kit
 
-Users of the [Crowd-Kit](https://github.com/Toloka/crowd-kit) library can easily switch to Evalica by replacing their `label` item references with the corresponding `Winner` values.
+Users of the [Crowd-Kit](https://github.com/Toloka/crowd-kit) library can easily switch to Evalica by replacing their `label` item references with the corresponding `Winner` values, enjoying the faster and cleaner code.
 
 ```python
 >>> import pandas as pd

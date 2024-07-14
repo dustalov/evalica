@@ -21,7 +21,7 @@ def counting(
     if not xs:
         return np.zeros(0, dtype=np.float64)
 
-    scores = np.zeros(1 + max(*xs, *ys))
+    scores = np.zeros(1 + max(*xs, *ys), dtype=np.float64)
 
     for x, y, w in zip(xs, ys, ws):
         if w == Winner.X:
