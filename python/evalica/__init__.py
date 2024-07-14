@@ -78,11 +78,11 @@ def matrices(
         ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
 ) -> MatricesResult[T]:
-    index, _xs, _ys = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
-    win_matrix, tie_matrix = matrices_pyo3(_xs, _ys, ws)
+    win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws)
 
     return MatricesResult(
         win_matrix=win_matrix,
@@ -109,14 +109,14 @@ def counting(
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> CountingResult[T]:
-    index, _xs, _ys = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores = counting_pyo3(_xs, _ys, ws, win_weight, tie_weight)
+        scores = counting_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
     else:
-        scores = counting_naive(_xs, _ys, ws, win_weight, tie_weight)
+        scores = counting_naive(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
 
     return CountingResult(
         scores=pd.Series(scores, index=index, name=counting.__name__),
@@ -242,14 +242,14 @@ def elo(
         k: float = 30.,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> EloResult[T]:
-    index, _xs, _ys = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores = elo_pyo3(_xs, _ys, ws, initial, base, scale, k)
+        scores = elo_pyo3(xs_indexed, ys_indexed, ws, initial, base, scale, k)
     else:
-        scores = elo_naive(_xs, _ys, ws, initial, base, scale, k)
+        scores = elo_naive(xs_indexed, ys_indexed, ws, initial, base, scale, k)
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__),
@@ -331,11 +331,11 @@ def pagerank(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
-    index, _xs, _ys = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
 
-    scores, iterations = pagerank_pyo3(_xs, _ys, ws, damping, win_weight, tie_weight, tolerance, limit)
+    scores, iterations = pagerank_pyo3(xs_indexed, ys_indexed, ws, damping, win_weight, tie_weight, tolerance, limit)
 
     return PageRankResult(
         scores=pd.Series(scores, index=index, name=pagerank.__name__),
