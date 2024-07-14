@@ -8,11 +8,6 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-try:
-    from numpy.exceptions import AxisError
-except ImportError:
-    from numpy import AxisError
-
 from .evalica import (
     LengthMismatchError,
     Winner,
@@ -358,9 +353,14 @@ def pagerank(
     )
 
 
+class ScoreDimensionError(ValueError):
+    def __init__(self, ndim: int) -> None:
+        super().__init__(f"scores should be one-dimensional, {ndim} was provided")
+
+
 def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[np.float64]:
     if scores.ndim != 1:
-        raise AxisError(scores.ndim, 1)  # noqa: NPY201
+        raise ScoreDimensionError(scores.ndim)
 
     if not scores.shape[0]:
         return np.zeros((0, 0), dtype=np.float64)
@@ -385,6 +385,7 @@ __all__ = [
     "LengthMismatchError",
     "NewmanResult",
     "PageRankResult",
+    "ScoreDimensionError",
     "WINNERS",
     "Winner",
     "__version__",

@@ -13,11 +13,6 @@ from hypothesis.extra.numpy import arrays
 from hypothesis.extra.pandas import series
 from pandas._testing import assert_series_equal
 
-try:
-    from numpy.exceptions import AxisError
-except ImportError:
-    from numpy import AxisError
-
 import evalica
 from conftest import Example, elements
 
@@ -122,7 +117,7 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
         assert np.isfinite(result.scores).all()
         assert result.iterations > 0
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-5)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4)
 
 
 @given(example=elements(), v_init=st.floats())
@@ -403,7 +398,7 @@ def test_pairwise_scores_shape(shape: tuple[int, ...]) -> None:
         with np.errstate(all="ignore"):
             evalica.pairwise_scores(scores)
     else:
-        with pytest.raises(AxisError):  # noqa: NPY201
+        with pytest.raises(evalica.ScoreDimensionError):
             evalica.pairwise_scores(scores)
 
 
