@@ -8,6 +8,11 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
+try:
+    from numpy.exceptions import AxisError
+except ImportError:
+    from numpy import AxisError
+
 from .evalica import (
     LengthMismatchError,
     Winner,
@@ -355,7 +360,7 @@ def pagerank(
 
 def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[np.float64]:
     if scores.ndim != 1:
-        raise np.exceptions.AxisError(scores.ndim, 1)
+        raise AxisError(scores.ndim, 1)  # noqa: NPY201
 
     if not scores.shape[0]:
         return np.zeros((0, 0), dtype=np.float64)

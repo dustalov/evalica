@@ -13,6 +13,11 @@ from hypothesis.extra.numpy import arrays
 from hypothesis.extra.pandas import series
 from pandas._testing import assert_series_equal
 
+try:
+    from numpy.exceptions import AxisError
+except ImportError:
+    from numpy import AxisError
+
 import evalica
 from conftest import Example, elements
 
@@ -398,7 +403,7 @@ def test_pairwise_scores_shape(shape: tuple[int, ...]) -> None:
         with np.errstate(all="ignore"):
             evalica.pairwise_scores(scores)
     else:
-        with pytest.raises(np.exceptions.AxisError):
+        with pytest.raises(AxisError):  # noqa: NPY201
             evalica.pairwise_scores(scores)
 
 
