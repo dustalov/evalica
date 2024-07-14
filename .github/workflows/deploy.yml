@@ -18,6 +18,7 @@ env:
 jobs:
   build-sdist:
     name: build sdist
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -33,6 +34,7 @@ jobs:
         name: package_sdist
         path: dist
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
