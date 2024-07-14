@@ -154,9 +154,8 @@ fn eigen_pyo3<'py>(
 #[pyfunction]
 fn pagerank_pyo3<'py>(
     py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    win_matrix: PyReadonlyArray2<'py, f64>,
+    tie_matrix: PyReadonlyArray2<'py, f64>,
     damping: f64,
     win_weight: f64,
     tie_weight: f64,
@@ -164,9 +163,8 @@ fn pagerank_pyo3<'py>(
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
     let result = linalg::pagerank(
-        &xs.as_array(),
-        &ys.as_array(),
-        &ws.as_array(),
+        &win_matrix.as_array(),
+        &tie_matrix.as_array(),
         damping,
         win_weight,
         tie_weight,

@@ -69,9 +69,8 @@ def eigen_pyo3(
 
 
 def pagerank_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        win_matrix: npt.NDArray[np.float64],
+        tie_matrix: npt.NDArray[np.float64],
         damping: float,
         win_weight: float,
         tie_weight: float,

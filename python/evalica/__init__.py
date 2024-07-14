@@ -25,6 +25,7 @@ from .naive import counting as counting_naive
 from .naive import eigen as eigen_naive
 from .naive import elo as elo_naive
 from .naive import newman as newman_naive
+from .naive import pagerank as pagerank_naive
 
 WINNERS = [
     Winner.X,
@@ -328,18 +329,22 @@ def pagerank(
         damping: float = .85,
         win_weight: float = 1.,
         tie_weight: float = .5,
+        solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    _matrices = matrices(xs, ys, ws, index)
 
-    assert index is not None, "index is None"
+    win_matrix, tie_matrix = _matrices.win_matrix.astype(float), _matrices.tie_matrix.astype(float)
 
-    scores, iterations = pagerank_pyo3(xs_indexed, ys_indexed, ws, damping, win_weight, tie_weight, tolerance, limit)
+    if solver == "pyo3":
+        scores, iterations = pagerank_pyo3(win_matrix, tie_matrix, damping, win_weight, tie_weight, tolerance, limit)
+    else:
+        scores, iterations = pagerank_naive(win_matrix, tie_matrix, damping, win_weight, tie_weight, tolerance, limit)
 
     return PageRankResult(
-        scores=pd.Series(scores, index=index, name=pagerank.__name__),
-        index=index,
+        scores=pd.Series(scores, index=_matrices.index, name=pagerank.__name__),
+        index=_matrices.index,
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -349,7 +354,10 @@ def pagerank(
 
 
 def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[np.float64]:
-    if len(scores) < 1:
+    if scores.ndim != 1:
+        raise np.exceptions.AxisError(scores.ndim, 1)
+
+    if not scores.shape[0]:
         return np.zeros((0, 0), dtype=np.float64)
 
     pairwise = scores[:, np.newaxis] / (scores + scores[:, np.newaxis])

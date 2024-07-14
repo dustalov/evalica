@@ -1,9 +1,6 @@
-use std::collections::HashMap;
-
-use ndarray::{Array1, ArrayView1, ArrayView2, ErrorKind, ShapeError};
+use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ShapeError};
 use num_traits::Zero;
 
-use crate::{match_lengths, Winner};
 use crate::utils::nan_to_num;
 
 pub fn eigen(
@@ -45,144 +42,62 @@ pub fn eigen(
     Ok((scores, limit))
 }
 
-#[derive(Clone, Debug)]
-struct Edge {
-    x: usize,
-    y: usize,
-    weight: f64,
-}
-
-fn compute_weights(
-    nodes: &[usize],
-    out_edges_map: &HashMap<usize, Vec<Edge>>,
-) -> HashMap<usize, f64> {
-    nodes
-        .iter()
-        .map(|&n| {
-            let weight_sum = out_edges_map
-                .get(&n)
-                .map_or(0.0, |edges| edges.iter().map(|e| e.weight).sum());
-            (n, weight_sum)
-        })
-        .collect()
-}
-
-fn compute_sinks(nodes: &[usize], out_edges_map: &HashMap<usize, Vec<Edge>>) -> Vec<usize> {
-    nodes
-        .iter()
-        .filter(|&&n| out_edges_map.get(&n).map_or(true, |edges| edges.is_empty()))
-        .cloned()
-        .collect()
-}
-
-fn compute_edges(
-    xs: &ArrayView1<usize>,
-    ys: &ArrayView1<usize>,
-    ws: &ArrayView1<Winner>,
+fn pagerank_matrix(
+    win_matrix: &ArrayView2<f64>,
+    tie_matrix: &ArrayView2<f64>,
+    damping: f64,
     win_weight: f64,
     tie_weight: f64,
-) -> (HashMap<usize, Vec<Edge>>, HashMap<usize, Vec<Edge>>) {
-    let mut out_edges_map: HashMap<usize, Vec<Edge>> = HashMap::new();
-    let mut in_edges_map: HashMap<usize, Vec<Edge>> = HashMap::new();
-    let mut edges = Vec::new();
+) -> Array2<f64> {
+    if win_matrix.shape()[0] == 0 {
+        return Array2::<f64>::zeros((0, 0));
+    }
 
-    for (&x, (&y, &ref w)) in xs.iter().zip(ys.iter().zip(ws.iter())) {
-        match w {
-            Winner::X => edges.push(Edge {
-                x: x,
-                y: y,
-                weight: win_weight,
-            }),
-            Winner::Y => edges.push(Edge {
-                x: y,
-                y: x,
-                weight: win_weight,
-            }),
-            Winner::Draw => {
-                edges.push(Edge {
-                    x: x,
-                    y: y,
-                    weight: tie_weight,
-                });
-                edges.push(Edge {
-                    x: y,
-                    y: x,
-                    weight: tie_weight,
-                });
-            }
-            _ => {}
+    let p = 1.0 / win_matrix.shape()[0] as f64;
+
+    let mut matrix = (win_weight * win_matrix + tie_weight * tie_matrix)
+        .t()
+        .to_owned();
+
+    for mut row in matrix.outer_iter_mut() {
+        let sum = row.sum();
+
+        if sum == 0.0 {
+            row.fill(p);
         }
     }
 
-    for &node in xs.iter().chain(ys.iter()) {
-        in_edges_map.insert(node, Vec::new());
-        out_edges_map.insert(node, Vec::new());
-    }
+    let row_sums = matrix.sum_axis(Axis(1)).insert_axis(Axis(1));
+    matrix /= &row_sums;
 
-    for edge in edges.iter() {
-        out_edges_map.get_mut(&edge.x).unwrap().push(edge.clone());
-        in_edges_map.get_mut(&edge.y).unwrap().push(edge.clone());
-    }
-
-    (out_edges_map, in_edges_map)
+    damping * matrix + (1.0 - damping) * p
 }
 
 pub fn pagerank(
-    xs: &ArrayView1<usize>,
-    ys: &ArrayView1<usize>,
-    ws: &ArrayView1<Winner>,
+    win_matrix: &ArrayView2<f64>,
+    tie_matrix: &ArrayView2<f64>,
     damping: f64,
     win_weight: f64,
     tie_weight: f64,
     tolerance: f64,
     limit: usize,
 ) -> Result<(Array1<f64>, usize), ShapeError> {
-    match_lengths!(xs.len(), ys.len(), ws.len());
-
-    if xs.is_empty() {
-        return Ok((Array1::zeros(0), 0));
+    if win_matrix.shape() != tie_matrix.shape() || !win_matrix.is_square() {
+        return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let (out_edges_map, in_edges_map) = compute_edges(xs, ys, ws, win_weight, tie_weight);
-    let nodes: Vec<usize> = out_edges_map.keys().cloned().collect();
-    let n = nodes.len();
+    let matrix = pagerank_matrix(&win_matrix, &tie_matrix, damping, win_weight, tie_weight);
 
-    let mut scores = Array1::ones(n) / n as f64;
-    let edge_weights = compute_weights(&nodes, &out_edges_map);
-    let sinks = compute_sinks(&nodes, &out_edges_map);
+    let result = eigen(&matrix.view(), tolerance, limit);
 
-    let mut converged = false;
-    let mut iterations = 0;
+    match result {
+        Ok((mut scores, iterations)) => {
+            scores /= scores.sum();
 
-    while !converged && iterations < limit {
-        iterations += 1;
-
-        let mut scores_new = scores.clone();
-        let sinkrank: f64 = sinks.iter().map(|&n| scores[n]).sum();
-
-        for &node in &nodes {
-            let teleportation = (1.0 - damping) / n as f64;
-            let spreading = damping * sinkrank / n as f64;
-
-            scores_new[node] =
-                in_edges_map[&node]
-                    .iter()
-                    .fold(teleportation + spreading, |r, e| {
-                        let q = if e.x == node { e.y } else { e.x };
-                        let weight = e.weight / edge_weights[&q];
-                        r + damping * scores[q] * weight
-                    });
+            Ok((scores, iterations))
         }
-
-        nan_to_num(&mut scores_new, tolerance);
-
-        let difference = &scores_new - &scores;
-        converged = difference.dot(&difference).sqrt() < tolerance;
-
-        scores.assign(&scores_new);
+        Err(error) => return Err(error),
     }
-
-    Ok((scores, iterations))
 }
 
 #[cfg(test)]
@@ -233,18 +148,19 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0).unwrap();
+
         let expected = array![
-            0.2854754505994522,
-            0.2076415787301763,
-            0.21178897600723975,
-            0.1297058512645188,
-            0.1653881433986128,
+            0.13280040999661397,
+            0.15405089709854697,
+            0.16240277665024724,
+            0.2779483968089382,
+            0.2727975194456537,
         ];
 
         let (actual, iterations) = pagerank(
-            &xs.view(),
-            &ys.view(),
-            &ws.view(),
+            &win_matrix.view(),
+            &tie_matrix.view(),
             0.85,
             1.0,
             0.5,

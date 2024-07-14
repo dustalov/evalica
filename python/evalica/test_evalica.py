@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 import hypothesis.strategies as st
@@ -115,9 +117,7 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
         assert np.isfinite(result.scores).all()
         assert result.iterations > 0
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-5)
 
 
 @given(example=elements(), v_init=st.floats())
@@ -138,10 +138,8 @@ def test_newman(example: Example, v_init: float) -> None:
         else:
             assert result.v_init is v_init
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
-    assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
 @given(
@@ -206,35 +204,45 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
-        assert result.iterations > 0
+        assert not xs or result.iterations > 0
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
 
 
 @given(
     example=elements(),
-    damping=st.floats(0., 1., exclude_min=True, exclude_max=True),
-    win_weight=st.floats(0., 10., exclude_min=True),
+    damping=st.floats(0., 1.),
+    win_weight=st.floats(0., 10.),
     tie_weight=st.floats(0., 10.),
 )
 def test_pagerank(example: Example, damping: float, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
-    result = evalica.pagerank(
+    result_pyo3 = evalica.pagerank(
         xs, ys, ws,
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver="pyo3",
     )
 
-    assert len(result.scores) == len(set(xs) | set(ys))
-    assert np.isfinite(result.scores).all()
-    assert np.isfinite(result.damping)
-    assert np.isfinite(result.win_weight)
-    assert np.isfinite(result.tie_weight)
-    assert not xs or result.iterations > 0
+    result_naive = evalica.pagerank(
+        xs, ys, ws,
+        damping=damping,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver="naive",
+    )
+
+    for result in (result_pyo3, result_naive):
+        assert len(result.scores) == len(set(xs) | set(ys))
+        assert np.isfinite(result.scores).all()
+        assert np.isfinite(result.damping)
+        assert np.isfinite(result.win_weight)
+        assert np.isfinite(result.tie_weight)
+        assert not xs or result.iterations > 0
+
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
 
 
 @given(example=elements(shape="bad"))
@@ -257,9 +265,7 @@ def test_bradley_terry_simple(simple_elements: Example) -> None:
     result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
     result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
 
 
 def test_newman_simple(simple_tied_elements: Example) -> None:
@@ -268,17 +274,15 @@ def test_newman_simple(simple_tied_elements: Example) -> None:
     result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
     result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance)
-    assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("counting", "food"),
     ("counting", "llmfao"),
 ])
-def test_counting_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+def test_counting_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
     result_pyo3 = evalica.counting(xs, ys, ws)
@@ -293,43 +297,39 @@ def test_counting_dataset(example: Example, example_golden: "pd.Series[str]") ->
     ("bradley_terry", "food"),
     ("bradley_terry", "llmfao"),
 ])
-def test_bradley_terry_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+def test_bradley_terry_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
     result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
     result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_naive.scores, example_golden, atol=tolerance, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, atol=tolerance, check_like=True)
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("newman", "food"),
     ("newman", "llmfao"),
 ])
-def test_newman_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+def test_newman_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
     result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
     result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    tolerance = result_pyo3.tolerance * 10
+    assert_series_equal(result_naive.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
 
-    assert_series_equal(result_naive.scores, example_golden, atol=tolerance, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, atol=tolerance, check_like=True)
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance, check_like=True)
-    assert result_pyo3.v == pytest.approx(result_naive.v, abs=tolerance)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
+    assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("elo", "food"),
     ("elo", "llmfao"),
 ])
-def test_elo_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+def test_elo_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
     result_pyo3 = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400, solver="pyo3")
@@ -344,31 +344,30 @@ def test_elo_dataset(example: Example, example_golden: "pd.Series[str]") -> None
     ("eigen", "food"),
     ("eigen", "llmfao"),
 ])
-def test_eigen_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+def test_eigen_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
     result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
     result_naive = evalica.eigen(xs, ys, ws, solver="naive")
 
-    tolerance = result_pyo3.tolerance * 10
-
-    assert_series_equal(result_naive.scores, example_golden, atol=tolerance, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, atol=tolerance, check_like=True)
-    assert_series_equal(result_pyo3.scores, result_naive.scores, atol=tolerance, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("pagerank", "food"),
     ("pagerank", "llmfao"),
 ])
-def test_pagerank_dataset(example: Example, example_golden: "pd.Series[str]") -> None:
+def test_pagerank_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
-    result = evalica.pagerank(xs, ys, ws)
+    result_pyo3 = evalica.pagerank(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.pagerank(xs, ys, ws, solver="naive")
 
-    tolerance = result.tolerance * 10
-
-    assert_series_equal(result.scores, example_golden, atol=tolerance, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(arrays(dtype=np.float64, shape=array_shapes(max_dims=1, min_side=0)))
@@ -391,8 +390,20 @@ def test_pairwise_scores_empty() -> None:
     assert pairwise.shape == (0, 0)
 
 
+@given(array_shapes())
+def test_pairwise_scores_shape(shape: tuple[int, ...]) -> None:
+    scores = np.zeros(shape, dtype=np.int64)
+
+    if len(shape) == 1:
+        with np.errstate(all="ignore"):
+            evalica.pairwise_scores(scores)
+    else:
+        with pytest.raises(np.exceptions.AxisError):
+            evalica.pairwise_scores(scores)
+
+
 @given(series(dtype=np.float64))
-def test_pairwise_frame(scores: "pd.Series[Any]") -> None:
+def test_pairwise_frame(scores: pd.Series[Any]) -> None:
     with np.errstate(all="ignore"):
         df_pairwise = evalica.pairwise_frame(scores)
 
