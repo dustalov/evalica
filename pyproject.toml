@@ -7,10 +7,16 @@ name = "evalica"
 license = "Apache-2.0"
 description = "Evalica, your favourite evaluation toolkit."
 keywords = [
+    "Bradley-Terry",
+    "Elo",
+    "PageRank",
+    "eigenvector",
     "evaluation",
+    "leaderboard",
     "pairwise comparisons",
     "ranking",
-    "Elo",
+    "rating",
+    "statistics",
 ]
 requires-python = "~= 3.8"
 dependencies = ["numpy>=1.16.0", "pandas"]
