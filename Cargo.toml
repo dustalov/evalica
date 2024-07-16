@@ -1,6 +1,6 @@
 [package]
 name = "evalica"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2021"
 description = "Evalica, your favourite evaluation toolkit."
 repository = "https://github.com/dustalov/evalica"
