@@ -42,22 +42,14 @@ pub fn eigen(
     Ok((scores, limit))
 }
 
-fn pagerank_matrix(
-    win_matrix: &ArrayView2<f64>,
-    tie_matrix: &ArrayView2<f64>,
-    damping: f64,
-    win_weight: f64,
-    tie_weight: f64,
-) -> Array2<f64> {
-    if win_matrix.shape()[0] == 0 {
+fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
+    if matrix.shape()[0] == 0 {
         return Array2::<f64>::zeros((0, 0));
     }
 
-    let p = 1.0 / win_matrix.shape()[0] as f64;
+    let p = 1.0 / matrix.shape()[0] as f64;
 
-    let mut matrix = (win_weight * win_matrix + tie_weight * tie_matrix)
-        .t()
-        .to_owned();
+    let mut matrix = matrix.t().to_owned();
 
     for mut row in matrix.outer_iter_mut() {
         let sum = row.sum();
@@ -74,21 +66,18 @@ fn pagerank_matrix(
 }
 
 pub fn pagerank(
-    win_matrix: &ArrayView2<f64>,
-    tie_matrix: &ArrayView2<f64>,
+    matrix: &ArrayView2<f64>,
     damping: f64,
-    win_weight: f64,
-    tie_weight: f64,
     tolerance: f64,
     limit: usize,
 ) -> Result<(Array1<f64>, usize), ShapeError> {
-    if win_matrix.shape() != tie_matrix.shape() || !win_matrix.is_square() {
+    if !matrix.is_square() {
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let matrix = pagerank_matrix(&win_matrix, &tie_matrix, damping, win_weight, tie_weight);
+    let pagerank_matrix = pagerank_matrix(&matrix, damping);
 
-    let result = eigen(&matrix.view(), tolerance, limit);
+    let result = eigen(&pagerank_matrix.view(), tolerance, limit);
 
     match result {
         Ok((mut scores, iterations)) => {
@@ -120,7 +109,7 @@ mod tests {
 
         let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5).unwrap();
 
-        let matrix = win_matrix + &tie_matrix;
+        let matrix = &win_matrix + &tie_matrix;
 
         let expected = array![
             0.6955953825629276,
@@ -148,7 +137,9 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0).unwrap();
+        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5).unwrap();
+
+        let matrix = &win_matrix + &tie_matrix;
 
         let expected = array![
             0.13280040999661397,
@@ -158,16 +149,7 @@ mod tests {
             0.2727975194456537,
         ];
 
-        let (actual, iterations) = pagerank(
-            &win_matrix.view(),
-            &tie_matrix.view(),
-            0.85,
-            1.0,
-            0.5,
-            tolerance,
-            100,
-        )
-        .unwrap();
+        let (actual, iterations) = pagerank(&matrix.view(), 0.85, tolerance, 100).unwrap();
 
         assert!(iterations > 0);
 

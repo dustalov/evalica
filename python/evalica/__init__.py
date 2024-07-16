@@ -74,15 +74,11 @@ class MatricesResult(Generic[T]):
 
 
 def matrices(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs_indexed: npt.ArrayLike,
+        ys_indexed: npt.ArrayLike,
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: pd.Index[T],  # type: ignore[type-var]
 ) -> MatricesResult[T]:
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
-
-    assert index is not None, "index is None"
-
     win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws)
 
     return MatricesResult(
@@ -131,7 +127,6 @@ def counting(
 @dataclass(frozen=True)
 class BradleyTerryResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    matrix: npt.NDArray[np.float64]
     index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
@@ -154,19 +149,22 @@ def bradley_terry(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    _matrices = matrices(xs, ys, ws, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
-    matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+    assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores, iterations = bradley_terry_pyo3(matrix, tolerance, limit)
+        scores, iterations = bradley_terry_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight, tolerance, limit)
     else:
+        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+
+        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+
         scores, iterations = bradley_terry_naive(matrix, tolerance, limit)
 
     return BradleyTerryResult(
-        scores=pd.Series(scores, index=_matrices.index, name=bradley_terry.__name__),
-        matrix=matrix,
-        index=_matrices.index,
+        scores=pd.Series(scores, index=index, name=bradley_terry.__name__),
+        index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver=solver,
@@ -178,8 +176,6 @@ def bradley_terry(
 @dataclass(frozen=True)
 class NewmanResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    win_matrix: npt.NDArray[np.float64]
-    tie_matrix: npt.NDArray[np.float64]
     index: pd.Index[T]  # type: ignore[type-var]
     v: float
     v_init: float
@@ -194,25 +190,38 @@ def newman(
         ws: Collection[Winner],
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         v_init: float = .5,
+        win_weight: float = 1.,
+        tie_weight: float = 1.,
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> NewmanResult[T]:
-    _matrices = matrices(xs, ys, ws, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
-    win_matrix = _matrices.win_matrix.astype(float)
-    tie_matrix = _matrices.tie_matrix.astype(float)
+    assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores, v, iterations = newman_pyo3(win_matrix, tie_matrix, v_init, tolerance, limit)
+        scores, v, iterations = newman_pyo3(
+            xs_indexed,
+            ys_indexed,
+            ws,
+            v_init,
+            win_weight,
+            tie_weight,
+            tolerance,
+            limit,
+        )
     else:
+        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+
+        win_matrix = win_weight * _matrices.win_matrix.astype(float)
+        tie_matrix = tie_weight * _matrices.tie_matrix.astype(float)
+
         scores, v, iterations = newman_naive(win_matrix, tie_matrix, v_init, tolerance, limit)
 
     return NewmanResult(
-        scores=pd.Series(scores, index=_matrices.index, name=newman.__name__),
-        win_matrix=win_matrix,
-        tie_matrix=tie_matrix,
-        index=_matrices.index,
+        scores=pd.Series(scores, index=index, name=newman.__name__),
+        index=index,
         v=v,
         v_init=v_init,
         solver=solver,
@@ -266,7 +275,6 @@ def elo(
 @dataclass(frozen=True)
 class EigenResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    matrix: npt.NDArray[np.float64]
     index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
@@ -289,19 +297,22 @@ def eigen(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    _matrices = matrices(xs, ys, ws, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
-    matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+    assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores, iterations = eigen_pyo3(matrix, tolerance, limit)
+        scores, iterations = eigen_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight, tolerance, limit)
     else:
+        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+
+        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+
         scores, iterations = eigen_naive(matrix, tolerance, limit)
 
     return EigenResult(
-        scores=pd.Series(scores, index=_matrices.index, name=eigen.__name__),
-        matrix=matrix,
-        index=_matrices.index,
+        scores=pd.Series(scores, index=index, name=eigen.__name__),
+        index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver=solver,
@@ -333,18 +344,31 @@ def pagerank(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
-    _matrices = matrices(xs, ys, ws, index)
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
-    win_matrix, tie_matrix = _matrices.win_matrix.astype(float), _matrices.tie_matrix.astype(float)
+    assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores, iterations = pagerank_pyo3(win_matrix, tie_matrix, damping, win_weight, tie_weight, tolerance, limit)
+        scores, iterations = pagerank_pyo3(
+            xs_indexed,
+            ys_indexed,
+            ws,
+            damping,
+            win_weight,
+            tie_weight,
+            tolerance,
+            limit,
+        )
     else:
-        scores, iterations = pagerank_naive(win_matrix, tie_matrix, damping, win_weight, tie_weight, tolerance, limit)
+        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+
+        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+
+        scores, iterations = pagerank_naive(matrix, damping, tolerance, limit)
 
     return PageRankResult(
-        scores=pd.Series(scores, index=_matrices.index, name=pagerank.__name__),
-        index=_matrices.index,
+        scores=pd.Series(scores, index=index, name=pagerank.__name__),
+        index=index,
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,

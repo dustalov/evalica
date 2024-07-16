@@ -35,16 +35,23 @@ def counting_pyo3(
 
 
 def bradley_terry_pyo3(
-        matrix: npt.NDArray[np.float64],
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Collection[Winner],
+        win_weight: float,
+        tie_weight: float,
         tolerance: float,
         limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
 def newman_pyo3(
-        win_matrix: npt.NDArray[np.float64],
-        tie_matrix: npt.NDArray[np.float64],
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Collection[Winner],
         v_init: float,
+        win_weight: float,
+        tie_weight: float,
         tolerance: float,
         limit: int,
 ) -> tuple[npt.NDArray[np.float64], float, int]: ...
@@ -62,15 +69,20 @@ def elo_pyo3(
 
 
 def eigen_pyo3(
-        matrix: npt.NDArray[np.float64],
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Collection[Winner],
+        win_weight: float,
+        tie_weight: float,
         tolerance: float,
         limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
 def pagerank_pyo3(
-        win_matrix: npt.NDArray[np.float64],
-        tie_matrix: npt.NDArray[np.float64],
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Collection[Winner],
         damping: float,
         win_weight: float,
         tie_weight: float,

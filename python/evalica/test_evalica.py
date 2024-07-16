@@ -56,15 +56,15 @@ def test_index_elements_reuse(example: Example) -> None:
 def test_matrices(example: Example) -> None:
     xs, ys, ws = example
 
-    n = len(set(xs) | set(ys))
+    index, xs_indexed, ys_indexed = evalica.index_elements(xs, ys)
 
     wins = sum(status in [evalica.Winner.X, evalica.Winner.Y] for status in ws)
     ties = sum(status == evalica.Winner.Draw for status in ws)
 
-    result = evalica.matrices(xs, ys, ws)
+    result = evalica.matrices(xs_indexed, ys_indexed, ws, index)
 
-    assert result.win_matrix.shape == (n, n)
-    assert result.tie_matrix.shape == (n, n)
+    assert result.win_matrix.shape == (len(index), len(index))
+    assert result.tie_matrix.shape == (len(index), len(index))
     assert result.win_matrix.sum() == wins
     assert result.tie_matrix.sum() == 2 * ties
 
@@ -113,7 +113,7 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
     )
 
     for result in (result_pyo3, result_naive):
-        assert result.matrix.shape[0] == len(result.scores)
+        assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.iterations > 0
 
@@ -128,7 +128,7 @@ def test_newman(example: Example, v_init: float) -> None:
     result_naive = evalica.newman(xs, ys, ws, v_init=v_init, solver="naive")
 
     for result in (result_pyo3, result_naive):
-        assert result.win_matrix.shape[0] == len(result.scores)
+        assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert np.isfinite(result.v)
         assert result.iterations > 0
