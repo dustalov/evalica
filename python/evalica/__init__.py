@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
-from typing import Generic, Literal, TypeVar, cast
+from typing import Generic, Literal, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -44,22 +44,20 @@ def index_elements(
 ) -> tuple[pd.Index[T], list[int], list[int]]:  # type: ignore[type-var]
     xy_index: dict[T, int] = {}
 
-    def get_dict_index(x: T) -> int:
-        if (idx := xy_index.get(x)) is None:
-            idx = xy_index[x] = len(xy_index)
-
-        return idx
-
-    def get_pandas_index(x: T) -> int:
-        return cast(int, cast("pd.Index[T]", index).get_loc(x))  # type: ignore[type-var]
-
-    get_index = get_dict_index if index is None else get_pandas_index
-
-    xs_indexed = [get_index(x) for x in xs]
-    ys_indexed = [get_index(y) for y in ys]
-
     if index is None:
+        def get_index(x: T) -> int:
+            if (idx := xy_index.get(x)) is None:
+                idx = xy_index[x] = len(xy_index)
+
+            return idx
+
+        xs_indexed = [get_index(x) for x in xs]
+        ys_indexed = [get_index(y) for y in ys]
+
         index = pd.Index(xy_index)
+    else:
+        xs_indexed = index.get_indexer(xs).tolist()  # type: ignore[no-untyped-call]
+        ys_indexed = index.get_indexer(ys).tolist()  # type: ignore[no-untyped-call]
 
     assert index is not None, "index is None"
 
