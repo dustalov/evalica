@@ -5,16 +5,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, NamedTuple, cast
 
 import evalica
-import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import pytest
 from hypothesis import strategies as st
 from hypothesis.strategies import composite
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from _pytest.fixtures import TopRequest
     from hypothesis.strategies import DrawFn
 
@@ -55,62 +51,27 @@ def elements(
 
 
 @pytest.fixture()
-def simple() -> npt.NDArray[np.int64]:
-    return np.array([
-        [0, 1, 2, 0, 1],
-        [2, 0, 2, 1, 0],
-        [1, 2, 0, 0, 1],
-        [1, 2, 1, 0, 2],
-        [2, 0, 1, 3, 0],
-    ], dtype=np.int64)
+def simple() -> Example:
+    df_simple = pd.read_csv(Path(__file__).resolve().parent / "simple.csv", dtype=str)
 
+    xs = df_simple["left"]
+    ys = df_simple["right"]
+    ws = df_simple["winner"].map({
+        "left": evalica.Winner.X,
+        "right": evalica.Winner.Y,
+        "tie": evalica.Winner.Draw,
+    })
 
-@pytest.fixture()
-def simple_tied(simple: npt.NDArray[np.int64]) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]:
-    tie_matrix = np.minimum(simple, simple.T).astype(np.int64)
-    win_matrix = simple - tie_matrix
-
-    return win_matrix, tie_matrix
-
-
-def matrix_to_elements(
-        matrix: npt.NDArray[np.int64],
-        winner_func: Callable[[int, int], evalica.Winner],
-) -> tuple[list[str], list[str], list[evalica.Winner]]:
-    xs, ys, ws = [], [], []
-
-    for x, y in zip(*np.nonzero(matrix)):
-        winner = winner_func(x, y)
-
-        for _ in range(matrix[x, y]):
-            xs.append(str(x))
-            ys.append(str(y))
-            ws.append(winner)
-
-    return xs, ys, ws
-
-
-@pytest.fixture()
-def simple_elements(simple: npt.NDArray[np.int64]) -> Example:
-    xs, ys, ws = matrix_to_elements(simple, lambda x, y: evalica.Winner.X if x > y else evalica.Winner.Y)
     return Example(xs=xs, ys=ys, ws=ws)
 
 
 @pytest.fixture()
-def simple_tied_elements(simple_tied: tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]) -> Example:
-    win_matrix, tie_matrix = simple_tied
+def simple_golden() -> pd.DataFrame:
+    df_golden = pd.read_csv(Path(__file__).resolve().parent / "simple-golden.csv", dtype=str)
 
-    win_xs, win_ys, win_ws = matrix_to_elements(
-        win_matrix,
-        lambda x, y: evalica.Winner.X if x > y else evalica.Winner.Y,
-    )
+    df_golden["score"] = df_golden["score"].astype(float)
 
-    tie_xs, tie_ys, tie_ws = matrix_to_elements(
-        np.triu(tie_matrix),
-        lambda _x, _y: evalica.Winner.Draw,
-    )
-
-    return Example(xs=win_xs + tie_xs, ys=win_ys + tie_ys, ws=win_ws + tie_ws)
+    return df_golden
 
 
 @pytest.fixture()
@@ -161,7 +122,7 @@ def llmfao_golden() -> pd.DataFrame:
     return df_golden
 
 
-DATASETS = frozenset(("food", "llmfao"))
+DATASETS = frozenset(("simple", "food", "llmfao"))
 
 
 @pytest.fixture()

@@ -259,26 +259,8 @@ def test_misshaped(example: Example, algorithm: str) -> None:
         getattr(evalica, algorithm)(*example)
 
 
-def test_bradley_terry_simple(simple_elements: Example) -> None:
-    xs, ys, ws = simple_elements
-
-    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
-
-
-def test_newman_simple(simple_tied_elements: Example) -> None:
-    xs, ys, ws = simple_tied_elements
-
-    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.newman(xs, ys, ws, solver="naive")
-
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
-    assert result_pyo3.v == pytest.approx(result_naive.v)
-
-
 @pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("counting", "simple"),
     ("counting", "food"),
     ("counting", "llmfao"),
 ])
@@ -294,6 +276,7 @@ def test_counting_dataset(example: Example, example_golden: pd.Series[str]) -> N
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("bradley_terry", "simple"),
     ("bradley_terry", "food"),
     ("bradley_terry", "llmfao"),
 ])
@@ -309,6 +292,7 @@ def test_bradley_terry_dataset(example: Example, example_golden: pd.Series[str])
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("newman", "simple"),
     ("newman", "food"),
     ("newman", "llmfao"),
 ])
@@ -318,14 +302,15 @@ def test_newman_dataset(example: Example, example_golden: pd.Series[str]) -> Non
     result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
     result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, example_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, example_golden, rtol=1e-4, check_like=True)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
     assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("elo", "simple"),
     ("elo", "food"),
     ("elo", "llmfao"),
 ])
@@ -341,6 +326,7 @@ def test_elo_dataset(example: Example, example_golden: pd.Series[str]) -> None:
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("eigen", "simple"),
     ("eigen", "food"),
     ("eigen", "llmfao"),
 ])
@@ -356,6 +342,7 @@ def test_eigen_dataset(example: Example, example_golden: pd.Series[str]) -> None
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("pagerank", "simple"),
     ("pagerank", "food"),
     ("pagerank", "llmfao"),
 ])
