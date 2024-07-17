@@ -16,7 +16,7 @@ mod utils;
 
 #[pyclass]
 #[repr(u8)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash)]
 pub enum Winner {
     X,
     Y,
