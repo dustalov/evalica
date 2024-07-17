@@ -14,7 +14,7 @@ class Winner(Enum):
     Ignore = ...
 
 
-class LengthMismatchError(Exception):
+class LengthMismatchError(ValueError):
     ...
 
 

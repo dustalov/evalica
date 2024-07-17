@@ -32,7 +32,7 @@ unsafe impl Element for Winner {
     }
 }
 
-create_exception!(evalica, LengthMismatchError, pyo3::exceptions::PyException);
+create_exception!(evalica, LengthMismatchError, pyo3::exceptions::PyValueError);
 
 #[pyfunction]
 fn matrices_pyo3<'py>(
