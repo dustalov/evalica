@@ -104,6 +104,9 @@ def counting(
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> CountingResult[T]:
+    assert np.isfinite(win_weight), "win_weight must be finite"
+    assert np.isfinite(tie_weight), "tie_weight must be finite"
+
     index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
@@ -194,6 +197,9 @@ def newman(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> NewmanResult[T]:
+    assert np.isfinite(win_weight), "win_weight must be finite"
+    assert np.isfinite(tie_weight), "tie_weight must be finite"
+
     index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
@@ -342,6 +348,9 @@ def pagerank(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
+    assert np.isfinite(win_weight), "win_weight must be finite"
+    assert np.isfinite(tie_weight), "tie_weight must be finite"
+
     index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
 
     assert index is not None, "index is None"
