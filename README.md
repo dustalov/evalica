@@ -23,6 +23,7 @@ The logo has been created using [Recraft](https://www.recraft.ai/).
 ## Installation
 
 - [pip](https://pip.pypa.io/): `pip install evalica`
+- [Anaconda](https://docs.conda.io/en/latest/): <https://github.com/conda-forge/staged-recipes/pull/26903>
 
 ## Usage
 
