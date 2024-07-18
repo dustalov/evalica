@@ -95,6 +95,20 @@ def test_counting(example: Example, win_weight: float, tie_weight: float) -> Non
 
 
 @given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_average_win_rate(example: Example, win_weight: float, tie_weight: float) -> None:
+    xs, ys, ws = example
+
+    result = evalica.average_win_rate(
+        xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+    )
+
+    assert len(result.scores) == len(set(xs) | set(ys))
+    assert np.isfinite(result.scores).all()
+
+
+@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
 def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -> None:
     xs, ys, ws = example
 
@@ -248,6 +262,7 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
 @given(example=elements(shape="bad"))
 @pytest.mark.parametrize("algorithm", [
     "counting",
+    "average_win_rate",
     "bradley_terry",
     "newman",
     "elo",
@@ -273,6 +288,19 @@ def test_counting_dataset(example: Example, example_golden: pd.Series[str]) -> N
     assert_series_equal(result_naive.scores, example_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
+
+
+@pytest.mark.parametrize(("algorithm", "dataset"), [
+    ("average_win_rate", "simple"),
+    ("average_win_rate", "food"),
+    ("average_win_rate", "llmfao"),
+])
+def test_average_win_rate_dataset(example: Example, example_golden: pd.Series[str]) -> None:
+    xs, ys, ws = example
+
+    result = evalica.average_win_rate(xs, ys, ws)
+
+    assert_series_equal(result.scores, example_golden, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [

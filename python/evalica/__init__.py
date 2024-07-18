@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from typing import Generic, Literal, TypeVar
@@ -122,6 +123,49 @@ def counting(
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver=solver,
+    )
+
+
+@dataclass(frozen=True)
+class AverageWinRateResult(Generic[T]):
+    scores: pd.Series[T]  # type: ignore[type-var]
+    index: pd.Index[T]  # type: ignore[type-var]
+    win_weight: float
+    tie_weight: float
+
+
+def average_win_rate(
+        xs: Collection[T],
+        ys: Collection[T],
+        ws: Collection[Winner],
+        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        win_weight: float = 1.,
+        tie_weight: float = .5,
+) -> AverageWinRateResult[T]:
+    assert np.isfinite(win_weight), "win_weight must be finite"
+    assert np.isfinite(tie_weight), "tie_weight must be finite"
+
+    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+
+    assert index is not None, "index is None"
+
+    _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+
+    matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+
+    with np.errstate(invalid="ignore"):
+        matrix /= matrix + matrix.T
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Mean of empty slice")
+
+        scores = np.nan_to_num(np.nanmean(matrix, axis=1), copy=False)
+
+    return AverageWinRateResult(
+        scores=pd.Series(scores, index=index, name=average_win_rate.__name__),
+        index=index,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
     )
 
 
@@ -420,6 +464,7 @@ __all__ = [
     "WINNERS",
     "Winner",
     "__version__",
+    "average_win_rate",
     "bradley_terry",
     "counting",
     "eigen",
