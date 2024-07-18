@@ -1,4 +1,9 @@
 algorithm,item,score
+average_win_rate,3,0.7708333333333334
+average_win_rate,4,0.6388888888888888
+average_win_rate,1,0.5
+average_win_rate,2,0.4375
+average_win_rate,0,0.1875
 bradley_terry,4,0.34947527489923
 bradley_terry,3,0.33688868041573855
 bradley_terry,2,0.13168568070110523

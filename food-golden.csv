@@ -1,4 +1,9 @@
 algorithm,item,score
+average_win_rate,Tacos,0.7
+average_win_rate,Sushi,0.47916666666666663
+average_win_rate,Burger,0.4583333333333333
+average_win_rate,Pizza,0.4375
+average_win_rate,Pasta,0.425
 bradley_terry,Tacos,0.43428982771223773
 bradley_terry,Sushi,0.19060028489839073
 bradley_terry,Burger,0.14797665121689418

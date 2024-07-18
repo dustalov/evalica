@@ -1,4 +1,63 @@
 algorithm,item,score
+average_win_rate,GPT 4,0.758757470599576
+average_win_rate,LLaMA-2-Chat (70B),0.7315761244636481
+average_win_rate,command-nightly,0.7052449094115761
+average_win_rate,command,0.6829014083597605
+average_win_rate,Mythalion 13B,0.6688289044824005
+average_win_rate,MPT-Chat (7B),0.6551044193901338
+average_win_rate,Chronos Hermes (13B),0.6550606709920436
+average_win_rate,LLaMA 2 SFT v10 (70B),0.6537460283258603
+average_win_rate,Platypus-2 Instruct (70B),0.6484197900864568
+average_win_rate,Claude v1,0.6470652173913044
+average_win_rate,Falcon Instruct (40B),0.6462008056181497
+average_win_rate,Guanaco (65B),0.6452740378076975
+average_win_rate,ReMM SLERP L2 13B,0.6417548500881833
+average_win_rate,Jurassic 2 Mid,0.6375730994152046
+average_win_rate,GPT-NeoXT-Chat-Base (20B),0.6365857650681552
+average_win_rate,MythoMax-L2 (13B),0.6328987150415721
+average_win_rate,Guanaco (13B),0.6286135347280858
+average_win_rate,Claude v2,0.6244053761855619
+average_win_rate,Alpaca (7B),0.6242832355614311
+average_win_rate,GPT 3.5 Turbo,0.6231359601496902
+average_win_rate,Luminous Base Control,0.6217130602240896
+average_win_rate,Claude v1.2,0.6209722644505253
+average_win_rate,GPT 3.5 Turbo (16k),0.6122156600348608
+average_win_rate,LLaMA-2-Chat (13B),0.6108064260842039
+average_win_rate,MPT-Chat (30B),0.6083943833943835
+average_win_rate,LLaMA-2-Chat (7B),0.5983245465090979
+average_win_rate,Jurassic 2 Ultra,0.5934172077922077
+average_win_rate,Claude Instant v1,0.5850567406449759
+average_win_rate,Luminous Supreme Control,0.5698712093533065
+average_win_rate,RedPajama-INCITE Chat (7B),0.5677665631469979
+average_win_rate,Vicuna v1.5 (13B),0.5592698550405317
+average_win_rate,Qwen-Chat (7B),0.5473686036186036
+average_win_rate,Pythia-Chat-Base (7B),0.5433346624136097
+average_win_rate,Falcon Instruct (7B),0.5299588227499762
+average_win_rate,Guanaco (33B),0.5297787960831439
+average_win_rate,Vicuna v1.3 (13B),0.5243384836203985
+average_win_rate,PaLM 2 Bison (Code Chat),0.5221333877680627
+average_win_rate,Jurassic 2 Light,0.5013679895830926
+average_win_rate,Luminous Extended Control,0.4919679958704349
+average_win_rate,Code Llama Instruct (34B),0.47638832631522693
+average_win_rate,command-light,0.46186470391107615
+average_win_rate,Vicuna v1.3 (7B),0.44738224637681157
+average_win_rate,Weaver 12k,0.4372789647632751
+average_win_rate,Luminous Base,0.4115349319296687
+average_win_rate,RedPajama-INCITE Chat (3B),0.3990362811791383
+average_win_rate,Code Llama Instruct (13B),0.3980281678198345
+average_win_rate,Dolly v2 (12B),0.38364469650140676
+average_win_rate,Airoboros L2 70B,0.37689477091072837
+average_win_rate,Open-Assistant Pythia SFT-4 (12B),0.353410269689665
+average_win_rate,PaLM 2 Bison,0.35005327871269903
+average_win_rate,Luminous Extended,0.3473615383154857
+average_win_rate,Koala (13B),0.346535409035409
+average_win_rate,Luminous Supreme,0.34215482267541764
+average_win_rate,Code Llama Instruct (7B),0.3415220239743499
+average_win_rate,StarCoderChat Alpha (16B),0.34023118795511564
+average_win_rate,Vicuna-FastChat-T5 (3B),0.338534793122559
+average_win_rate,Dolly v2 (3B),0.30133289717528844
+average_win_rate,Open-Assistant StableLM SFT-7 (7B),0.2965089761285414
+average_win_rate,Dolly v2 (7B),0.28253827216508703
 bradley_terry,GPT 4,0.04121787368330589
 bradley_terry,Platypus-2 Instruct (70B),0.02923317841210955
 bradley_terry,command,0.028852056443071993
