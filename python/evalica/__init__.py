@@ -185,6 +185,7 @@ class BradleyTerryResult(Generic[T]):
     solver: str
     tolerance: float
     iterations: int
+    limit: int
 
 
 def bradley_terry(
@@ -222,6 +223,7 @@ def bradley_terry(
         solver=solver,
         tolerance=tolerance,
         iterations=iterations,
+        limit=limit,
     )
 
 
@@ -234,6 +236,7 @@ class NewmanResult(Generic[T]):
     solver: str
     tolerance: float
     iterations: int
+    limit: int
 
 
 def newman(
@@ -282,6 +285,7 @@ def newman(
         solver=solver,
         tolerance=tolerance,
         iterations=iterations,
+        limit=limit,
     )
 
 
@@ -336,6 +340,7 @@ class EigenResult(Generic[T]):
     solver: str
     tolerance: float
     iterations: int
+    limit: int
 
 
 def eigen(
@@ -373,6 +378,7 @@ def eigen(
         solver=solver,
         tolerance=tolerance,
         iterations=iterations,
+        limit=limit,
     )
 
 
@@ -385,6 +391,7 @@ class PageRankResult(Generic[T]):
     tie_weight: float
     tolerance: float
     iterations: int
+    limit: int
 
 
 def pagerank(
@@ -432,6 +439,7 @@ def pagerank(
         tie_weight=tie_weight,
         tolerance=tolerance,
         iterations=iterations,
+        limit=limit,
     )
 
 

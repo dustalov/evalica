@@ -141,6 +141,7 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.iterations > 0
+        assert result.limit > 0
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4)
 
@@ -157,6 +158,7 @@ def test_newman(example: Example, v_init: float) -> None:
         assert np.isfinite(result.scores).all()
         assert np.isfinite(result.v)
         assert result.iterations > 0
+        assert result.limit > 0
 
         if np.isfinite(v_init):
             assert result.v_init == v_init
@@ -230,6 +232,7 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert not xs or result.iterations > 0
+        assert result.limit > 0
 
     assert_series_equal(result_pyo3.scores, result_naive.scores)
 
@@ -266,6 +269,7 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
         assert np.isfinite(result.win_weight)
         assert np.isfinite(result.tie_weight)
         assert not xs or result.iterations > 0
+        assert result.limit > 0
 
     assert_series_equal(result_pyo3.scores, result_naive.scores)
 
