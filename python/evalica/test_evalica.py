@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pickle
 from typing import Any
 
 import hypothesis.strategies as st
@@ -25,6 +26,13 @@ def test_version() -> None:
 def test_exports() -> None:
     for attr in evalica.__all__:
         assert hasattr(evalica, attr), f"missing attribute: {attr}"
+
+
+def test_winner_pickle() -> None:
+    for w in evalica.WINNERS:
+        dumped = pickle.dumps(w)
+        loaded = pickle.loads(dumped)  # noqa: S301
+        assert w == loaded
 
 
 @given(example=elements())

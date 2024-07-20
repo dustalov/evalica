@@ -14,7 +14,7 @@ mod elo;
 mod linalg;
 mod utils;
 
-#[pyclass]
+#[pyclass(module = "evalica")]
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq, Hash)]
 pub enum Winner {
@@ -22,6 +22,45 @@ pub enum Winner {
     Y,
     Draw,
     Ignore,
+}
+
+impl From<u8> for Winner {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Winner::Draw,
+            1 => Winner::X,
+            2 => Winner::Y,
+            _ => Winner::Ignore,
+        }
+    }
+}
+
+impl Into<u8> for Winner {
+    fn into(self) -> u8 {
+        match self {
+            Self::Draw => 0,
+            Self::X => 1,
+            Self::Y => 2,
+            Self::Ignore => u8::MAX,
+        }
+    }
+}
+
+#[pymethods]
+impl Winner {
+    #[new]
+    fn new() -> Self {
+        Winner::Ignore
+    }
+
+    fn __getstate__(&self) -> PyResult<u8> {
+        Ok(self.clone().into())
+    }
+
+    fn __setstate__(&mut self, state: u8) -> PyResult<()> {
+        *self = Winner::from(state);
+        Ok(())
+    }
 }
 
 unsafe impl Element for Winner {
