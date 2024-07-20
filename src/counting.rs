@@ -3,25 +3,26 @@ use std::ops::AddAssign;
 use ndarray::{Array1, ArrayView1, Axis, ErrorKind, ShapeError};
 use num_traits::{Float, FromPrimitive, Num};
 
+use crate::{check_lengths, check_total, Winner};
 use crate::utils::{matrices, nan_mean, nan_to_num};
-use crate::{match_lengths, Winner};
 
 pub fn counting<A: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
+    total: usize,
     win_weight: A,
     tie_weight: A,
 ) -> Result<Array1<A>, ShapeError> {
-    match_lengths!(xs.len(), ys.len(), ws.len());
+    check_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
         return Ok(Array1::zeros(0));
     }
 
-    let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
+    check_total!(xs, ys, total);
 
-    let mut scores = Array1::zeros(n);
+    let mut scores = Array1::zeros(total);
 
     for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
         match w {
@@ -42,16 +43,17 @@ pub fn average_win_rate<A: Float + AddAssign + FromPrimitive>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
+    total: usize,
     win_weight: A,
     tie_weight: A,
 ) -> Result<Array1<A>, ShapeError> {
-    match_lengths!(xs.len(), ys.len(), ws.len());
+    check_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
         return Ok(Array1::zeros(0));
     }
 
-    let (win_matrix, tie_matrix) = matrices(xs, ys, ws, win_weight, tie_weight).unwrap();
+    let (win_matrix, tie_matrix) = matrices(xs, ys, ws, total, win_weight, tie_weight).unwrap();
 
     let mut matrix = &win_matrix + &tie_matrix;
 
@@ -85,7 +87,7 @@ mod tests {
 
         let expected = array![1.5, 3.0, 3.0, 4.5, 4.0];
 
-        let actual = counting(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5).unwrap();
+        let actual = counting(&xs.view(), &ys.view(), &ws.view(), 5, 1.0, 0.5).unwrap();
 
         assert_eq!(actual, expected);
     }
@@ -98,7 +100,7 @@ mod tests {
 
         let expected = array![0.1875, 0.5, 0.4375, 0.7708333333333334, 0.6388888888888888];
 
-        let actual = average_win_rate(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5).unwrap();
+        let actual = average_win_rate(&xs.view(), &ys.view(), &ws.view(), 5, 1.0, 0.5).unwrap();
 
         assert_eq!(actual, expected);
     }

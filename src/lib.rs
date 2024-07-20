@@ -40,8 +40,9 @@ fn matrices_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
 ) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
-    match matrices(&xs.as_array(), &ys.as_array(), &ws.as_array(), 1, 1) {
+    match matrices(&xs.as_array(), &ys.as_array(), &ws.as_array(), total, 1, 1) {
         Ok((wins, ties)) => Ok((
             wins.into_pyarray_bound(py).unbind(),
             ties.into_pyarray_bound(py).unbind(),
@@ -56,6 +57,7 @@ fn counting_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
@@ -63,6 +65,7 @@ fn counting_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         win_weight,
         tie_weight,
     ) {
@@ -77,6 +80,7 @@ fn average_win_rate_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
@@ -84,6 +88,7 @@ fn average_win_rate_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         win_weight,
         tie_weight,
     ) {
@@ -98,6 +103,7 @@ fn bradley_terry_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     win_weight: f64,
     tie_weight: f64,
     tolerance: f64,
@@ -107,6 +113,7 @@ fn bradley_terry_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         win_weight,
         tie_weight,
     ) {
@@ -130,6 +137,7 @@ fn newman_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     v_init: f64,
     win_weight: f64,
     tie_weight: f64,
@@ -140,6 +148,7 @@ fn newman_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         win_weight,
         tie_weight,
     ) {
@@ -167,6 +176,7 @@ fn elo_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     initial: f64,
     base: f64,
     scale: f64,
@@ -176,6 +186,7 @@ fn elo_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         initial,
         base,
         scale,
@@ -192,6 +203,7 @@ fn eigen_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     win_weight: f64,
     tie_weight: f64,
     tolerance: f64,
@@ -201,6 +213,7 @@ fn eigen_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         win_weight,
         tie_weight,
     ) {
@@ -224,6 +237,7 @@ fn pagerank_pyo3<'py>(
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
     ws: PyArrayLike1<'py, Winner>,
+    total: usize,
     damping: f64,
     win_weight: f64,
     tie_weight: f64,
@@ -234,6 +248,7 @@ fn pagerank_pyo3<'py>(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
+        total,
         win_weight,
         tie_weight,
     ) {

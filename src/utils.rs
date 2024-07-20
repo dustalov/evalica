@@ -9,9 +9,18 @@ use num_traits::{Float, FromPrimitive, Num};
 use crate::Winner;
 
 #[macro_export]
-macro_rules! match_lengths {
+macro_rules! check_lengths {
     ($xs:expr, $ys:expr, $ws:expr) => {
         if $xs != $ys || $xs != $ws || $ys != $ws {
+            return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! check_total {
+    ($xs:expr, $ys:expr, $total:expr) => {
+        if std::cmp::max(*$xs.iter().max().unwrap(), *$ys.iter().max().unwrap()) > $total {
             return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
         }
     };
@@ -71,19 +80,20 @@ pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
+    total: usize,
     win_weight: A,
     tie_weight: B,
 ) -> Result<(Array2<A>, Array2<B>), ShapeError> {
-    match_lengths!(xs.len(), ys.len(), ws.len());
+    check_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
         return Ok((Array2::zeros((0, 0)), Array2::zeros((0, 0))));
     }
 
-    let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
+    check_total!(xs, ys, total);
 
-    let mut wins = Array2::zeros((n, n));
-    let mut ties = Array2::zeros((n, n));
+    let mut wins = Array2::zeros((total, total));
+    let mut ties = Array2::zeros((total, total));
 
     for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
         match w {
@@ -128,6 +138,7 @@ pub mod fixtures {
         Winner::X,
         Winner::X,
     ];
+    pub(crate) static TOTAL: usize = 5;
 }
 
 #[cfg(test)]
@@ -173,7 +184,7 @@ mod tests {
             [0, 0, 0, 0, 0],
         ];
 
-        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view(), 1, 1).unwrap();
+        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view(), 5, 1, 1).unwrap();
 
         assert_eq!(wins, expected_wins);
         assert_eq!(ties, expected_ties);

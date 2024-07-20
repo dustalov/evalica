@@ -1,25 +1,26 @@
 use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
 
-use crate::{match_lengths, utils::one_nan_to_num, Winner};
+use crate::{check_lengths, check_total, utils::one_nan_to_num, Winner};
 
 pub fn elo(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
+    total: usize,
     initial: f64,
     base: f64,
     scale: f64,
     k: f64,
 ) -> Result<Array1<f64>, ShapeError> {
-    match_lengths!(xs.len(), ys.len(), ws.len());
+    check_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
         return Ok(Array1::zeros(0));
     }
 
-    let n = 1 + std::cmp::max(*xs.iter().max().unwrap(), *ys.iter().max().unwrap());
+    check_total!(xs, ys, total);
 
-    let mut scores = Array1::<f64>::ones(n) * initial;
+    let mut scores = Array1::<f64>::ones(total) * initial;
 
     for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
         let q_x = one_nan_to_num(base.powf(scores[*x] / scale), 0.0);
@@ -62,7 +63,17 @@ mod tests {
 
         let expected = array![1501.0, 1485.0, 1515.0, 1498.0];
 
-        let actual = elo(&xs.view(), &ys.view(), &ws.view(), initial, base, scale, k).unwrap();
+        let actual = elo(
+            &xs.view(),
+            &ys.view(),
+            &ws.view(),
+            5,
+            initial,
+            base,
+            scale,
+            k,
+        )
+        .unwrap();
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);

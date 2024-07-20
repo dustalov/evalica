@@ -22,6 +22,7 @@ def matrices_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 
 
@@ -29,6 +30,7 @@ def counting_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         win_weight: float,
         tie_weight: float,
 ) -> npt.NDArray[np.float64]: ...
@@ -38,6 +40,7 @@ def average_win_rate_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         win_weight: float,
         tie_weight: float,
 ) -> npt.NDArray[np.float64]: ...
@@ -47,6 +50,7 @@ def bradley_terry_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         win_weight: float,
         tie_weight: float,
         tolerance: float,
@@ -58,6 +62,7 @@ def newman_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         v_init: float,
         win_weight: float,
         tie_weight: float,
@@ -70,6 +75,7 @@ def elo_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         initial: float,
         base: float,
         scale: float,
@@ -81,6 +87,7 @@ def eigen_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         win_weight: float,
         tie_weight: float,
         tolerance: float,
@@ -92,6 +99,7 @@ def pagerank_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,
         ws: Collection[Winner],
+        total: int,
         damping: float,
         win_weight: float,
         tie_weight: float,

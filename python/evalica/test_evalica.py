@@ -289,6 +289,29 @@ def test_misshaped(example: Example, algorithm: str) -> None:
         getattr(evalica, algorithm)(*example)
 
 
+@pytest.mark.parametrize("algorithm", [
+    "counting",
+    "average_win_rate",
+    "bradley_terry",
+    "newman",
+    "elo",
+    "eigen",
+    "pagerank",
+])
+def test_incomplete_index(algorithm: str) -> None:
+    xs = ["a", "c", "e"]
+    ys = ["b", "d", "f"]
+    ws = [evalica.Winner.X, evalica.Winner.Ignore, evalica.Winner.Y]
+
+    index, _, _ = evalica.index_elements(xs, ys)
+
+    result = getattr(evalica, algorithm)(xs, ys, ws, index=index)
+    result_incomplete = getattr(evalica, algorithm)(xs[:-1], ys[:-1], ws[:-1], index=index)
+
+    assert len(result.scores) == len(result_incomplete.scores)
+
+
+
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("counting", "simple"),
     ("counting", "food"),

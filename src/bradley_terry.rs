@@ -123,7 +123,8 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 0.5).unwrap();
+        let (win_matrix, tie_matrix) =
+            matrices(&xs, &ys, &ws, utils::fixtures::TOTAL, 1.0, 0.5).unwrap();
 
         let matrix = win_matrix + &tie_matrix;
 
@@ -153,7 +154,8 @@ mod tests {
         let ys = ArrayView1::from(&utils::fixtures::YS);
         let ws = ArrayView1::from(&utils::fixtures::WS);
 
-        let (win_matrix, tie_matrix) = matrices(&xs, &ys, &ws, 1.0, 1.0).unwrap();
+        let (win_matrix, tie_matrix) =
+            matrices(&xs, &ys, &ws, utils::fixtures::TOTAL, 1.0, 1.0).unwrap();
 
         let expected_v = 3.4609664512240546;
         let v_init = 0.5;

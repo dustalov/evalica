@@ -79,7 +79,7 @@ def matrices(
         ws: Collection[Winner],
         index: pd.Index[T],  # type: ignore[type-var]
 ) -> MatricesResult[T]:
-    win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws)
+    win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws, len(index))
 
     return MatricesResult(
         win_matrix=win_matrix,
@@ -114,7 +114,7 @@ def counting(
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores = counting_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
+        scores = counting_pyo3(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
     else:
         scores = counting_naive(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
 
@@ -153,7 +153,7 @@ def average_win_rate(
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores = average_win_rate_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
+        scores = average_win_rate_pyo3(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
     else:
         _matrices = matrices(xs_indexed, ys_indexed, ws, index)
 
@@ -207,7 +207,16 @@ def bradley_terry(
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores, iterations = bradley_terry_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight, tolerance, limit)
+        scores, iterations = bradley_terry_pyo3(
+            xs_indexed,
+            ys_indexed,
+            ws,
+            len(index),
+            win_weight,
+            tie_weight,
+            tolerance,
+            limit,
+        )
     else:
         _matrices = matrices(xs_indexed, ys_indexed, ws, index)
 
@@ -263,6 +272,7 @@ def newman(
             xs_indexed,
             ys_indexed,
             ws,
+            len(index),
             v_init,
             win_weight,
             tie_weight,
@@ -316,7 +326,7 @@ def elo(
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores = elo_pyo3(xs_indexed, ys_indexed, ws, initial, base, scale, k)
+        scores = elo_pyo3(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k)
     else:
         scores = elo_naive(xs_indexed, ys_indexed, ws, initial, base, scale, k)
 
@@ -362,7 +372,16 @@ def eigen(
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores, iterations = eigen_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight, tolerance, limit)
+        scores, iterations = eigen_pyo3(
+            xs_indexed,
+            ys_indexed,
+            ws,
+            len(index),
+            win_weight,
+            tie_weight,
+            tolerance,
+            limit,
+        )
     else:
         _matrices = matrices(xs_indexed, ys_indexed, ws, index)
 
@@ -418,6 +437,7 @@ def pagerank(
             xs_indexed,
             ys_indexed,
             ws,
+            len(index),
             damping,
             win_weight,
             tie_weight,
