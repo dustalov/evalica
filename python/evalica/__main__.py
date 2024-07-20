@@ -50,6 +50,7 @@ def invoke(args: argparse.Namespace) -> pd.Series[str]:
 
 ALGORITHMS = {
     "counting": evalica.counting,
+    "average-win-rate": evalica.average_win_rate,
     "bradley-terry": evalica.bradley_terry,
     "elo": evalica.elo,
     "eigen": evalica.eigen,
