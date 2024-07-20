@@ -275,41 +275,54 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
 
 
 @given(example=elements(shape="bad"))
-@pytest.mark.parametrize("algorithm", [
-    "counting",
-    "average_win_rate",
-    "bradley_terry",
-    "newman",
-    "elo",
-    "eigen",
-    "pagerank",
+@pytest.mark.parametrize(("algorithm", "solver"), [
+    ("counting", "pyo3"),
+    ("counting", "naive"),
+    ("average_win_rate", "pyo3"),
+    ("average_win_rate", "naive"),
+    ("bradley_terry", "pyo3"),
+    ("bradley_terry", "naive"),
+    ("newman", "pyo3"),
+    ("newman", "naive"),
+    ("elo", "pyo3"),
+    ("elo", "naive"),
+    ("eigen", "pyo3"),
+    ("eigen", "naive"),
+    ("pagerank", "pyo3"),
+    ("pagerank", "naive"),
 ])
-def test_misshaped(example: Example, algorithm: str) -> None:
+def test_misshaped(example: Example, algorithm: str, solver: str) -> None:
     with pytest.raises(evalica.LengthMismatchError):
-        getattr(evalica, algorithm)(*example)
+        getattr(evalica, algorithm)(*example, solver=solver)
 
 
-@pytest.mark.parametrize("algorithm", [
-    "counting",
-    "average_win_rate",
-    "bradley_terry",
-    "newman",
-    "elo",
-    "eigen",
-    "pagerank",
+@pytest.mark.parametrize(("algorithm", "solver"), [
+    ("counting", "pyo3"),
+    ("counting", "naive"),
+    ("average_win_rate", "pyo3"),
+    ("average_win_rate", "naive"),
+    ("bradley_terry", "pyo3"),
+    ("bradley_terry", "naive"),
+    ("newman", "pyo3"),
+    ("newman", "naive"),
+    ("elo", "pyo3"),
+    ("elo", "naive"),
+    ("eigen", "pyo3"),
+    ("eigen", "naive"),
+    ("pagerank", "pyo3"),
+    ("pagerank", "naive"),
 ])
-def test_incomplete_index(algorithm: str) -> None:
+def test_incomplete_index(algorithm: str, solver: str) -> None:
     xs = ["a", "c", "e"]
     ys = ["b", "d", "f"]
     ws = [evalica.Winner.X, evalica.Winner.Ignore, evalica.Winner.Y]
 
     index, _, _ = evalica.index_elements(xs, ys)
 
-    result = getattr(evalica, algorithm)(xs, ys, ws, index=index)
-    result_incomplete = getattr(evalica, algorithm)(xs[:-1], ys[:-1], ws[:-1], index=index)
+    result = getattr(evalica, algorithm)(xs, ys, ws, index=index, solver=solver)
+    result_incomplete = getattr(evalica, algorithm)(xs[:-1], ys[:-1], ws[:-1], index=index, solver=solver)
 
     assert len(result.scores) == len(result_incomplete.scores)
-
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [
@@ -386,8 +399,8 @@ def test_newman_dataset(example: Example, example_golden: pd.Series[str]) -> Non
 def test_elo_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     xs, ys, ws = example
 
-    result_pyo3 = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400, solver="pyo3")
-    result_naive = evalica.elo(xs, ys, ws, initial=1000, k=4, scale=400, solver="naive")
+    result_pyo3 = evalica.elo(xs, ys, ws, solver="pyo3")
+    result_naive = evalica.elo(xs, ys, ws, solver="naive")
 
     assert_series_equal(result_naive.scores, example_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, example_golden, check_like=True)

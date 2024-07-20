@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
-from evalica import Winner
+from evalica import LengthMismatchError, Winner
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -15,13 +15,17 @@ def counting(
         xs: Collection[int],
         ys: Collection[int],
         ws: Collection[Winner],
+        total: int,
         win_weight: float,
         tie_weight: float,
 ) -> npt.NDArray[np.float64]:
+    if len(xs) != len(ys) or len(xs) != len(ws) or len(ys) != len(ws):
+        raise LengthMismatchError
+
     if not xs:
         return np.zeros(0, dtype=np.float64)
 
-    scores = np.zeros(1 + max(*xs, *ys), dtype=np.float64)
+    scores = np.zeros(total, dtype=np.float64)
 
     for x, y, w in zip(xs, ys, ws):
         if w == Winner.X:
@@ -130,17 +134,19 @@ def elo(
         xs: Collection[int],
         ys: Collection[int],
         ws: Collection[Winner],
+        total: int,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
         k: float = 30.,
 ) -> npt.NDArray[np.float64]:
+    if len(xs) != len(ys) or len(xs) != len(ws) or len(ys) != len(ws):
+        raise LengthMismatchError
+
     if not xs:
         return np.zeros(0, dtype=np.float64)
 
-    n = 1 + max(*xs, *ys)
-
-    scores = np.ones(n) * initial
+    scores = np.ones(total) * initial
 
     for x, y, w in zip(xs, ys, ws):
         with np.errstate(all="ignore"):

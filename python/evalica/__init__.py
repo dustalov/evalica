@@ -116,7 +116,7 @@ def counting(
     if solver == "pyo3":
         scores = counting_pyo3(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
     else:
-        scores = counting_naive(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
+        scores = counting_naive(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
 
     return CountingResult(
         scores=pd.Series(scores, index=index, name=counting.__name__),
@@ -318,7 +318,7 @@ def elo(
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
-        k: float = 30.,
+        k: float = 4.,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> EloResult[T]:
     index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
@@ -328,7 +328,7 @@ def elo(
     if solver == "pyo3":
         scores = elo_pyo3(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k)
     else:
-        scores = elo_naive(xs_indexed, ys_indexed, ws, initial, base, scale, k)
+        scores = elo_naive(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k)
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__),
