@@ -1,8 +1,9 @@
 use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
-use num_traits::Num;
+use ndarray::{Array1, ArrayView1, Axis, ErrorKind, ShapeError};
+use num_traits::{Float, FromPrimitive, Num};
 
+use crate::utils::{matrices, nan_mean, nan_to_num};
 use crate::{match_lengths, Winner};
 
 pub fn counting<A: Num + Copy + AddAssign>(
@@ -37,13 +38,44 @@ pub fn counting<A: Num + Copy + AddAssign>(
     Ok(scores)
 }
 
+pub fn average_win_rate<A: Float + AddAssign + FromPrimitive>(
+    xs: &ArrayView1<usize>,
+    ys: &ArrayView1<usize>,
+    ws: &ArrayView1<Winner>,
+    win_weight: A,
+    tie_weight: A,
+) -> Result<Array1<A>, ShapeError> {
+    match_lengths!(xs.len(), ys.len(), ws.len());
+
+    if xs.is_empty() {
+        return Ok(Array1::zeros(0));
+    }
+
+    let (win_matrix, tie_matrix) = matrices(xs, ys, ws, win_weight, tie_weight).unwrap();
+
+    let mut matrix = &win_matrix + &tie_matrix;
+
+    let matrix_t = matrix.t();
+    matrix = &matrix / (&matrix + &matrix_t);
+
+    let mut scores = Array1::zeros(matrix.shape()[0]);
+
+    for (i, row) in matrix.axis_iter(Axis(0)).enumerate() {
+        scores[i] = nan_mean(&row);
+    }
+
+    nan_to_num(&mut scores, A::zero());
+
+    Ok(scores)
+}
+
 #[cfg(test)]
 mod tests {
     use ndarray::{array, ArrayView1};
 
     use crate::utils;
 
-    use super::counting;
+    use super::{average_win_rate, counting};
 
     #[test]
     fn test_counting() {
@@ -54,6 +86,19 @@ mod tests {
         let expected = array![1.5, 3.0, 3.0, 4.5, 4.0];
 
         let actual = counting(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_average_win_rate() {
+        let xs = ArrayView1::from(&utils::fixtures::XS);
+        let ys = ArrayView1::from(&utils::fixtures::YS);
+        let ws = ArrayView1::from(&utils::fixtures::WS);
+
+        let expected = array![0.1875, 0.5, 0.4375, 0.7708333333333334, 0.6388888888888888];
+
+        let actual = average_win_rate(&xs.view(), &ys.view(), &ws.view(), 1.0, 0.5).unwrap();
 
         assert_eq!(actual, expected);
     }

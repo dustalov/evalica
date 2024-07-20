@@ -112,7 +112,7 @@ Evalica is not bound to the specific column names, reducing the potentially expe
 | **Method** | **In Python** | **In Rust** |
 |---|:---:|:---:|
 | Counting | &#x2705; | &#x2705; |
-| Average Win Rate | &#x2705; | &#x274C; |
+| Average Win Rate | &#x2705; | &#x2705; |
 | [Bradley&ndash;Terry] | &#x2705; | &#x2705; |
 | [Elo] | &#x2705; | &#x2705; |
 | [Eigenvalue] | &#x2705; | &#x2705; |

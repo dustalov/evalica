@@ -3,7 +3,7 @@ use pyo3::create_exception;
 use pyo3::prelude::*;
 
 use crate::bradley_terry::{bradley_terry, newman};
-use crate::counting::counting;
+use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::matrices;
@@ -60,6 +60,27 @@ fn counting_pyo3<'py>(
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
     match counting(
+        &xs.as_array(),
+        &ys.as_array(),
+        &ws.as_array(),
+        win_weight,
+        tie_weight,
+    ) {
+        Ok(scores) => Ok(scores.into_pyarray_bound(py).unbind()),
+        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+    }
+}
+
+#[pyfunction]
+fn average_win_rate_pyo3<'py>(
+    py: Python,
+    xs: PyArrayLike1<'py, usize>,
+    ys: PyArrayLike1<'py, usize>,
+    ws: PyArrayLike1<'py, Winner>,
+    win_weight: f64,
+    tie_weight: f64,
+) -> PyResult<Py<PyArray1<f64>>> {
+    match average_win_rate(
         &xs.as_array(),
         &ys.as_array(),
         &ws.as_array(),
@@ -239,6 +260,7 @@ fn evalica(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     )?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;
+    m.add_function(wrap_pyfunction!(average_win_rate_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(bradley_terry_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(newman_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(elo_pyo3, m)?)?;

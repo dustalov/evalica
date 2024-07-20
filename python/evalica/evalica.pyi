@@ -34,6 +34,15 @@ def counting_pyo3(
 ) -> npt.NDArray[np.float64]: ...
 
 
+def average_win_rate_pyo3(
+        xs: npt.ArrayLike,
+        ys: npt.ArrayLike,
+        ws: Collection[Winner],
+        win_weight: float,
+        tie_weight: float,
+) -> npt.NDArray[np.float64]: ...
+
+
 def bradley_terry_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,

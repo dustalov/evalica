@@ -13,6 +13,7 @@ from .evalica import (
     LengthMismatchError,
     Winner,
     __version__,
+    average_win_rate_pyo3,
     bradley_terry_pyo3,
     counting_pyo3,
     eigen_pyo3,
@@ -132,6 +133,7 @@ class AverageWinRateResult(Generic[T]):
     index: pd.Index[T]  # type: ignore[type-var]
     win_weight: float
     tie_weight: float
+    solver: str
 
 
 def average_win_rate(
@@ -141,6 +143,7 @@ def average_win_rate(
         index: pd.Index[T] | None = None,  # type: ignore[type-var]
         win_weight: float = 1.,
         tie_weight: float = .5,
+        solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> AverageWinRateResult[T]:
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
@@ -149,23 +152,27 @@ def average_win_rate(
 
     assert index is not None, "index is None"
 
-    _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+    if solver == "pyo3":
+        scores = average_win_rate_pyo3(xs_indexed, ys_indexed, ws, win_weight, tie_weight)
+    else:
+        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
 
-    matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
 
-    with np.errstate(invalid="ignore"):
-        matrix /= matrix + matrix.T
+        with np.errstate(invalid="ignore"):
+            matrix /= matrix + matrix.T
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Mean of empty slice")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Mean of empty slice")
 
-        scores = np.nan_to_num(np.nanmean(matrix, axis=1), copy=False)
+            scores = np.nan_to_num(np.nanmean(matrix, axis=1), copy=False)
 
     return AverageWinRateResult(
         scores=pd.Series(scores, index=index, name=average_win_rate.__name__),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver=solver,
     )
 
 
