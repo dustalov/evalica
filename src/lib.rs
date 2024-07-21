@@ -27,10 +27,10 @@ pub enum Winner {
 impl From<u8> for Winner {
     fn from(value: u8) -> Self {
         match value {
-            0 => Winner::Draw,
-            1 => Winner::X,
-            2 => Winner::Y,
-            _ => Winner::Ignore,
+            0 => Self::Draw,
+            1 => Self::X,
+            2 => Self::Y,
+            _ => Self::Ignore,
         }
     }
 }
