@@ -4,6 +4,7 @@
 
 [![Tests][github_tests_badge]][github_tests_link]
 [![PyPI Version][pypi_badge]][pypi_link]
+[![Anaconda.org][conda_badge]][conda_link]
 [![Codecov][codecov_badge]][codecov_link]
 
 [github_tests_badge]: https://github.com/dustalov/evalica/actions/workflows/test.yml/badge.svg?branch=master
@@ -12,18 +13,20 @@
 [pypi_link]: https://pypi.python.org/pypi/evalica
 [codecov_badge]: https://codecov.io/gh/dustalov/evalica/branch/master/graph/badge.svg
 [codecov_link]: https://codecov.io/gh/dustalov/evalica
+[conda_badge]: https://anaconda.org/conda-forge/evalica/badges/version.svg
+[conda_link]: https://anaconda.org/conda-forge/evalica
 
 **Evalica** is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
 
 - [Tutorial](https://dustalov.github.io/evalica/) (and [Tutorial.ipynb](Tutorial.ipynb))
 - [Pair2Rank](https://huggingface.co/spaces/dustalov/pair2rank)
 
-The logo has been created using [Recraft](https://www.recraft.ai/).
+The logo was created using [Recraft](https://www.recraft.ai/).
 
 ## Installation
 
 - [pip](https://pip.pypa.io/): `pip install evalica`
-- [Anaconda](https://docs.conda.io/en/latest/): <https://github.com/conda-forge/staged-recipes/pull/26903>
+- [Anaconda](https://docs.conda.io/en/latest/): `conda install conda-forge::evalica`
 
 ## Usage
 
