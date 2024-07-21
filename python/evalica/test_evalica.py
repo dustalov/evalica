@@ -100,7 +100,7 @@ def test_counting(example: Example, win_weight: float, tie_weight: float) -> Non
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
@@ -126,7 +126,7 @@ def test_average_win_rate(example: Example, win_weight: float, tie_weight: float
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
@@ -154,7 +154,7 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
         assert result.iterations > 0
         assert result.limit > 0
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4, check_like=True)
 
 
 @given(example=elements(), v_init=st.floats())
@@ -177,7 +177,7 @@ def test_newman(example: Example, v_init: float) -> None:
         else:
             assert result.v_init is v_init
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
     assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
@@ -220,7 +220,7 @@ def test_elo(
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
@@ -248,7 +248,7 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
         assert not xs or result.iterations > 0
         assert result.limit > 0
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(
@@ -286,7 +286,7 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
         assert not xs or result.iterations > 0
         assert result.limit > 0
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(example=elements(shape="bad"))
