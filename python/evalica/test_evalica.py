@@ -98,6 +98,7 @@ def test_counting(example: Example, win_weight: float, tie_weight: float) -> Non
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
 
     assert_series_equal(result_pyo3.scores, result_naive.scores)
 
@@ -123,6 +124,7 @@ def test_average_win_rate(example: Example, win_weight: float, tie_weight: float
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
 
     assert_series_equal(result_pyo3.scores, result_naive.scores)
 
@@ -148,6 +150,7 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
         assert result.iterations > 0
         assert result.limit > 0
 
@@ -164,6 +167,7 @@ def test_newman(example: Example, v_init: float) -> None:
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
         assert np.isfinite(result.v)
         assert result.iterations > 0
         assert result.limit > 0
@@ -214,6 +218,7 @@ def test_elo(
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
 
     assert_series_equal(result_pyo3.scores, result_naive.scores)
 
@@ -239,6 +244,7 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
         assert not xs or result.iterations > 0
         assert result.limit > 0
 
@@ -273,6 +279,7 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
+        assert result.scores.is_monotonic_decreasing
         assert np.isfinite(result.damping)
         assert np.isfinite(result.win_weight)
         assert np.isfinite(result.tie_weight)

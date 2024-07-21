@@ -119,7 +119,7 @@ def counting(
         scores = counting_naive(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
 
     return CountingResult(
-        scores=pd.Series(scores, index=index, name=counting.__name__),
+        scores=pd.Series(scores, index=index, name=counting.__name__).sort_values(ascending=False),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -168,7 +168,7 @@ def average_win_rate(
             scores = np.nan_to_num(np.nanmean(matrix, axis=1), copy=False)
 
     return AverageWinRateResult(
-        scores=pd.Series(scores, index=index, name=average_win_rate.__name__),
+        scores=pd.Series(scores, index=index, name=average_win_rate.__name__).sort_values(ascending=False),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -225,7 +225,7 @@ def bradley_terry(
         scores, iterations = bradley_terry_naive(matrix, tolerance, limit)
 
     return BradleyTerryResult(
-        scores=pd.Series(scores, index=index, name=bradley_terry.__name__),
+        scores=pd.Series(scores, index=index, name=bradley_terry.__name__).sort_values(ascending=False),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -288,7 +288,7 @@ def newman(
         scores, v, iterations = newman_naive(win_matrix, tie_matrix, v_init, tolerance, limit)
 
     return NewmanResult(
-        scores=pd.Series(scores, index=index, name=newman.__name__),
+        scores=pd.Series(scores, index=index, name=newman.__name__).sort_values(ascending=False),
         index=index,
         v=v,
         v_init=v_init,
@@ -331,7 +331,7 @@ def elo(
         scores = elo_naive(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k)
 
     return EloResult(
-        scores=pd.Series(scores, index=index, name=elo.__name__),
+        scores=pd.Series(scores, index=index, name=elo.__name__).sort_values(ascending=False),
         index=index,
         initial=initial,
         base=base,
@@ -390,7 +390,7 @@ def eigen(
         scores, iterations = eigen_naive(matrix, tolerance, limit)
 
     return EigenResult(
-        scores=pd.Series(scores, index=index, name=eigen.__name__),
+        scores=pd.Series(scores, index=index, name=eigen.__name__).sort_values(ascending=False),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -452,7 +452,7 @@ def pagerank(
         scores, iterations = pagerank_naive(matrix, damping, tolerance, limit)
 
     return PageRankResult(
-        scores=pd.Series(scores, index=index, name=pagerank.__name__),
+        scores=pd.Series(scores, index=index, name=pagerank.__name__).sort_values(ascending=False),
         index=index,
         damping=damping,
         win_weight=win_weight,
