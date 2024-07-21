@@ -168,7 +168,8 @@ def average_win_rate(
             scores = np.nan_to_num(np.nanmean(matrix, axis=1), copy=False)
 
     return AverageWinRateResult(
-        scores=pd.Series(scores, index=index, name=average_win_rate.__name__).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(scores, index=index, name=average_win_rate.__name__).sort_values(
+            ascending=False, kind="stable"),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
