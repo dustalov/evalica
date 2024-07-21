@@ -75,7 +75,8 @@ strict = true
 
 [tool.nbqa.addopts]
 ruff = [
-    "--ignore=B018", # useless-expression
+    "--ignore=B018",   # useless-expression
+    "--ignore=RUF001", # ambiguous-unicode-character-string
 ]
 
 [tool.ruff]
