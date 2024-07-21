@@ -19,8 +19,13 @@
 **Evalica** is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
 
 - [Tutorial](https://dustalov.github.io/evalica/) (and [Tutorial.ipynb](Tutorial.ipynb))
-- [Chatbot-Arena.ipynb](Chatbot-Arena.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dustalov/evalica/blob/master/Chatbot-Arena.ipynb] [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dustalov/evalica/HEAD?labpath=Chatbot-Arena.ipynb)
+- [Chatbot-Arena.ipynb](Chatbot-Arena.ipynb) [![Open in Colab][colab_badge]][colab_link] [![Binder][binder_badge]][binder_link]
 - [Pair2Rank](https://huggingface.co/spaces/dustalov/pair2rank)
+
+[colab_badge]: https://colab.research.google.com/assets/colab-badge.svg
+[colab_link]: https://colab.research.google.com/github/dustalov/evalica/blob/master/Chatbot-Arena.ipynb
+[binder_badge]: https://mybinder.org/badge_logo.svg
+[binder_link]: https://mybinder.org/v2/gh/dustalov/evalica/HEAD?labpath=Chatbot-Arena.ipynb
 
 The logo was created using [Recraft](https://www.recraft.ai/).
 
