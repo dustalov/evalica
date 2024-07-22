@@ -1,8 +1,11 @@
+"""Evalica, your favourite evaluation suite."""
+
 from __future__ import annotations
 
 import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Generic, Literal, TypeVar
 
 import numpy as np
@@ -39,29 +42,25 @@ WINNERS = [
 T = TypeVar("T", bound=Hashable)
 
 
-def index_elements(
+def indexing(
         xs: Collection[T],
         ys: Collection[T],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
-) -> tuple[pd.Index[T], list[int], list[int]]:  # type: ignore[type-var]
-    xy_index: dict[T, int] = {}
-
+        index: dict[T, int] | None = None,
+) -> tuple[dict[T, int], list[int], list[int]]:
     if index is None:
-        def get_index(x: T) -> int:
-            if (idx := xy_index.get(x)) is None:
-                idx = xy_index[x] = len(xy_index)
-
-            return idx
-
-        xs_indexed = [get_index(x) for x in xs]
-        ys_indexed = [get_index(y) for y in ys]
-
-        index = pd.Index(xy_index)
+        index = {}
+        xy_index = index
     else:
-        xs_indexed = index.get_indexer(xs).tolist()  # type: ignore[no-untyped-call]
-        ys_indexed = index.get_indexer(ys).tolist()  # type: ignore[no-untyped-call]
+        xy_index = MappingProxyType(index)  # type: ignore[assignment]
 
-    assert index is not None, "index is None"
+    def get_indexing(x: T) -> int:
+        if (idx := xy_index.get(x)) is None:
+            idx = xy_index[x] = len(xy_index)
+
+        return idx
+
+    xs_indexed = [get_indexing(x) for x in xs]
+    ys_indexed = [get_indexing(y) for y in ys]
 
     return index, xs_indexed, ys_indexed
 
@@ -70,14 +69,14 @@ def index_elements(
 class MatricesResult(Generic[T]):
     win_matrix: npt.NDArray[np.int64]
     tie_matrix: npt.NDArray[np.int64]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
 
 
 def matrices(
         xs_indexed: npt.ArrayLike,
         ys_indexed: npt.ArrayLike,
         ws: Collection[Winner],
-        index: pd.Index[T],  # type: ignore[type-var]
+        index: dict[T, int],
 ) -> MatricesResult[T]:
     win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws, len(index))
 
@@ -91,7 +90,7 @@ def matrices(
 @dataclass(frozen=True)
 class CountingResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     win_weight: float
     tie_weight: float
     solver: str
@@ -101,7 +100,7 @@ def counting(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -109,7 +108,7 @@ def counting(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -130,7 +129,7 @@ def counting(
 @dataclass(frozen=True)
 class AverageWinRateResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     win_weight: float
     tie_weight: float
     solver: str
@@ -140,7 +139,7 @@ def average_win_rate(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -148,7 +147,7 @@ def average_win_rate(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -180,7 +179,7 @@ def average_win_rate(
 @dataclass(frozen=True)
 class BradleyTerryResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     win_weight: float
     tie_weight: float
     solver: str
@@ -193,7 +192,7 @@ def bradley_terry(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -203,7 +202,7 @@ def bradley_terry(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -240,7 +239,7 @@ def bradley_terry(
 @dataclass(frozen=True)
 class NewmanResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     v: float
     v_init: float
     solver: str
@@ -253,7 +252,7 @@ def newman(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         v_init: float = .5,
         win_weight: float = 1.,
         tie_weight: float = 1.,
@@ -264,7 +263,7 @@ def newman(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -303,7 +302,7 @@ def newman(
 @dataclass(frozen=True)
 class EloResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     initial: float
     base: float
     scale: float
@@ -315,14 +314,14 @@ def elo(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
         k: float = 4.,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> EloResult[T]:
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -345,7 +344,7 @@ def elo(
 @dataclass(frozen=True)
 class EigenResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     win_weight: float
     tie_weight: float
     solver: str
@@ -358,7 +357,7 @@ def eigen(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -368,7 +367,7 @@ def eigen(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -405,7 +404,7 @@ def eigen(
 @dataclass(frozen=True)
 class PageRankResult(Generic[T]):
     scores: pd.Series[T]  # type: ignore[type-var]
-    index: pd.Index[T]  # type: ignore[type-var]
+    index: dict[T, int]
     damping: float
     win_weight: float
     tie_weight: float
@@ -418,7 +417,7 @@ def pagerank(
         xs: Collection[T],
         ys: Collection[T],
         ws: Collection[Winner],
-        index: pd.Index[T] | None = None,  # type: ignore[type-var]
+        index: dict[T, int] | None = None,
         damping: float = .85,
         win_weight: float = 1.,
         tie_weight: float = .5,
@@ -429,7 +428,7 @@ def pagerank(
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = index_elements(xs, ys, index)
+    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -505,7 +504,7 @@ __all__ = [
     "counting",
     "eigen",
     "elo",
-    "index_elements",
+    "indexing",
     "matrices",
     "newman",
     "pagerank",
