@@ -47,7 +47,7 @@ dev = [
     "ruff",
     "twine",
 ]
-docs = ["mkdocs-material", "mkdocstrings-python"]
+docs = ["mkdocs", "mkdocstrings-python"]
 
 [project.readme]
 file = "README.md"
