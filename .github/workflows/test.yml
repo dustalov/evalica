@@ -49,7 +49,7 @@ jobs:
     - name: Set up Maturin
       run: |
         uv pip install maturin
-        maturin develop --uv --extras dev
+        maturin develop --uv --extras dev,docs
     - name: Lint with Mypy
       run: mypy .
     - name: Lint with Ruff
@@ -69,6 +69,8 @@ jobs:
       run: nbqa mypy *.ipynb
     - name: Lint Jupyter with Ruff
       run: nbqa ruff *.ipynb
+    - name: Run MkDocs
+      run: mkdocs build --strict
     - name: Run Jupyter
       run: |
         mkdir jupyter

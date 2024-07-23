@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 import numpy.typing as npt
 
+"""The version of Evalica."""
 __version__: str = ...
 
 

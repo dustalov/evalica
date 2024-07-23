@@ -32,6 +32,7 @@ from .naive import elo as elo_naive
 from .naive import newman as newman_naive
 from .naive import pagerank as pagerank_naive
 
+"""Known values of Winner."""
 WINNERS = [
     Winner.X,
     Winner.Y,
@@ -46,27 +47,49 @@ def indexing(
         xs: Collection[T],
         ys: Collection[T],
         index: dict[T, int] | None = None,
-) -> tuple[dict[T, int], list[int], list[int]]:
+) -> tuple[list[int], list[int], dict[T, int]]:
+    """
+    Map the input elements into their numerical representations.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        index: The pre-computed index.
+
+    Returns:
+        The tuple containing the numerical representations of the input elements and the corresponding index.
+
+    """
     if index is None:
         index = {}
         xy_index = index
     else:
         xy_index = MappingProxyType(index)  # type: ignore[assignment]
 
-    def get_indexing(x: T) -> int:
+    def get_index(x: T) -> int:
         if (idx := xy_index.get(x)) is None:
             idx = xy_index[x] = len(xy_index)
 
         return idx
 
-    xs_indexed = [get_indexing(x) for x in xs]
-    ys_indexed = [get_indexing(y) for y in ys]
+    xs_indexed = [get_index(x) for x in xs]
+    ys_indexed = [get_index(y) for y in ys]
 
-    return index, xs_indexed, ys_indexed
+    return xs_indexed, ys_indexed, index
 
 
 @dataclass(frozen=True)
 class MatricesResult(Generic[T]):
+    """
+    The win and tie matrices.
+
+    Attributes:
+        win_matrix: The matrix representing wins between the elements.
+        tie_matrix: The matrix representing ties between the elements; it is always symmetric.
+        index: The index.
+
+    """
+
     win_matrix: npt.NDArray[np.int64]
     tie_matrix: npt.NDArray[np.int64]
     index: dict[T, int]
@@ -78,6 +101,19 @@ def matrices(
         ws: Collection[Winner],
         index: dict[T, int],
 ) -> MatricesResult[T]:
+    """
+    Build win and tie matrices from the given elements.
+
+    Args:
+        xs_indexed: The left-hand side elements.
+        ys_indexed: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+
+    Returns:
+        The win and tie matrices.
+
+    """
     win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws, len(index))
 
     return MatricesResult(
@@ -89,6 +125,18 @@ def matrices(
 
 @dataclass(frozen=True)
 class CountingResult(Generic[T]):
+    """
+    The counting result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     win_weight: float
@@ -105,10 +153,26 @@ def counting(
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> CountingResult[T]:
+    """
+    Count individual elements.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+
+    Returns:
+        The counting result.
+
+    """
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -128,6 +192,18 @@ def counting(
 
 @dataclass(frozen=True)
 class AverageWinRateResult(Generic[T]):
+    """
+    The average win rate result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     win_weight: float
@@ -144,10 +220,26 @@ def average_win_rate(
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> AverageWinRateResult[T]:
+    """
+    Count pairwise win rates between the elements and average per element.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+
+    Returns:
+        The average win rate result.
+
+    """
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -178,6 +270,21 @@ def average_win_rate(
 
 @dataclass(frozen=True)
 class BradleyTerryResult(Generic[T]):
+    """
+    The Bradley-Terry result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        iterations: The actual number of iterations.
+        limit: The maximum number of iterations.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     win_weight: float
@@ -199,10 +306,28 @@ def bradley_terry(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> BradleyTerryResult[T]:
+    """
+    Compute the Bradley-Terry scores for the given pairwise comparison.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        limit: The maximum number of iterations.
+
+    Returns:
+        The Bradley-Terry result.
+
+    """
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -238,10 +363,29 @@ def bradley_terry(
 
 @dataclass(frozen=True)
 class NewmanResult(Generic[T]):
+    """
+    The Newman's algorithm result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        v: The tie parameter.
+        v_init: The initial tie parameter.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        iterations: The actual number of iterations.
+        limit: The maximum number of iterations.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     v: float
     v_init: float
+    win_weight: float
+    tie_weight: float
     solver: str
     tolerance: float
     iterations: int
@@ -260,10 +404,31 @@ def newman(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> NewmanResult[T]:
+    """
+    Compute the scores for the given pairwise comparison using the Newman's algorithm.
+
+    <https://www.jmlr.org/papers/v24/22-1086.html>
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        v_init: The initial tie parameter.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        limit: The maximum number of iterations.
+
+    Returns:
+        The Newman's result.
+
+    """
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -292,6 +457,8 @@ def newman(
         index=index,
         v=v,
         v_init=v_init,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
         solver=solver,
         tolerance=tolerance,
         iterations=iterations,
@@ -301,6 +468,20 @@ def newman(
 
 @dataclass(frozen=True)
 class EloResult(Generic[T]):
+    """
+    The Elo result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        initial: The initial score of each element.
+        base: The base of the exponent.
+        scale: The scale factor.
+        k: The K-factor.
+        solver: The solver.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     initial: float
@@ -321,7 +502,25 @@ def elo(
         k: float = 4.,
         solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> EloResult[T]:
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    """
+    Compute the Elo scores.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        initial: The initial score of each element.
+        base: The base of the exponent.
+        scale: The scale factor.
+        k: The K-factor.
+        solver: The solver.
+
+    Returns:
+        The Elo result.
+
+    """
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -343,6 +542,21 @@ def elo(
 
 @dataclass(frozen=True)
 class EigenResult(Generic[T]):
+    """
+    The eigenvalue result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        iterations: The actual number of iterations.
+        limit: The maximum number of iterations.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     win_weight: float
@@ -364,10 +578,28 @@ def eigen(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> EigenResult[T]:
+    """
+    Compute the eigenvalue-based scores.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        limit: The maximum number of iterations.
+
+    Returns:
+        The eigenvalue result.
+
+    """
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -403,11 +635,28 @@ def eigen(
 
 @dataclass(frozen=True)
 class PageRankResult(Generic[T]):
+    """
+    The PageRank result.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+        damping: The damping (alpha) factor.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        iterations: The actual number of iterations.
+        limit: The maximum number of iterations.
+
+    """
+
     scores: pd.Series[T]  # type: ignore[type-var]
     index: dict[T, int]
     damping: float
     win_weight: float
     tie_weight: float
+    solver: str
     tolerance: float
     iterations: int
     limit: int
@@ -425,10 +674,29 @@ def pagerank(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult[T]:
+    """
+    Compute the PageRank scores.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        ws: The winner elements.
+        index: The index.
+        damping: The damping (alpha) factor.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        tolerance: The convergence tolerance.
+        limit: The maximum number of iterations.
+
+    Returns:
+        The PageRank result.
+
+    """
     assert np.isfinite(win_weight), "win_weight must be finite"
     assert np.isfinite(tie_weight), "tie_weight must be finite"
 
-    index, xs_indexed, ys_indexed = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
 
     assert index is not None, "index is None"
 
@@ -457,6 +725,7 @@ def pagerank(
         damping=damping,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        solver=solver,
         tolerance=tolerance,
         iterations=iterations,
         limit=limit,
@@ -464,11 +733,30 @@ def pagerank(
 
 
 class ScoreDimensionError(ValueError):
+    """Inappropriate dimension given; it should be 1D."""
+
     def __init__(self, ndim: int) -> None:
+        """
+        Create and return a new object.
+
+        Args:
+            ndim: The given number of dimensions.
+
+        """
         super().__init__(f"scores should be one-dimensional, {ndim} was provided")
 
 
 def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[np.float64]:
+    """
+    Estimate the pairwise scores.
+
+    Args:
+        scores: The element scores.
+
+    Returns:
+        The matrix representing pairwise scores between the elements.
+
+    """
     if scores.ndim != 1:
         raise ScoreDimensionError(scores.ndim)
 
@@ -484,6 +772,16 @@ def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[n
 
 
 def pairwise_frame(scores: pd.Series[T]) -> pd.DataFrame:  # type: ignore[type-var]
+    """
+    Create a data frame out of the estimated pairwise scores.
+
+    Args:
+        scores: The element scores.
+
+    Returns:
+        The data frame representing pairwise scores between the elements.
+
+    """
     return pd.DataFrame(pairwise_scores(scores.to_numpy()), index=scores.index, columns=scores.index)
 
 

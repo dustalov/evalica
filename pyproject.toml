@@ -47,6 +47,7 @@ dev = [
     "ruff",
     "twine",
 ]
+docs = ["mkdocs-material", "mkdocstrings-python"]
 
 [project.readme]
 file = "README.md"
@@ -86,11 +87,19 @@ target-version = "py38"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D",       # pydocstyle
+    "D203",    # one-blank-line-before-class
+    "D212",    # multi-line-summary-first-line
+    "D406",    # new-line-after-section-name
+    "D407",    # dashed-underline-after-section
     "ERA001",  # commented-out-code
     "FIX002",  # line-contains-todo
     "PLR0913", # too-many-arguments
     "S101",    # assert
     "TD002",   # missing-todo-author
     "TD003",   # missing-todo-link
+]
+
+[tool.ruff.lint.per-file-ignores]
+"!__init__.py" = [
+    "D", # pydocstyle
 ]

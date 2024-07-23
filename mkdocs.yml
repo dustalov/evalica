@@ -1,0 +1,16 @@
+site_name: Evalica
+site_author: Dmitry Ustalov
+site_description: Evalica, your favourite evaluation suite.
+copyright: Copyright &copy; 2024 Dmitry Ustalov
+repo_name: dustalov/evalica
+repo_url: https://github.com/dustalov/evalica
+plugins:
+- search
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        import:
+        - https://docs.python.org/3/objects.inv
+        - https://numpy.org/doc/stable/objects.inv
+        - https://pandas.pydata.org/docs/objects.inv

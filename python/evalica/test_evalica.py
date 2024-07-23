@@ -38,10 +38,10 @@ def test_winner_pickle() -> None:
 
 
 @given(example=elements())
-def test_index(example: Example) -> None:  # type: ignore[type-var]
+def test_indexing(example: Example) -> None:  # type: ignore[type-var]
     xs, ys, _ = example
 
-    index, xs_indexed, ys_indexed = evalica.indexing(xs, ys)
+    xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
     assert len(xs_indexed) == len(xs)
     assert len(ys_indexed) == len(ys)
@@ -51,11 +51,11 @@ def test_index(example: Example) -> None:  # type: ignore[type-var]
 
 
 @given(example=elements())
-def test_index_reuse(example: Example) -> None:
+def test_reindexing(example: Example) -> None:
     xs, ys, _ = example
 
-    index, xs_indexed, ys_indexed = evalica.indexing(xs, ys)
-    reindex, xs_reindexed, ys_reindexed = evalica.indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
+    xs_reindexed, ys_reindexed, reindex = evalica.indexing(xs, ys, index)
 
     assert xs_reindexed == xs_indexed
     assert ys_reindexed == ys_indexed
@@ -63,10 +63,10 @@ def test_index_reuse(example: Example) -> None:
 
 
 @given(example=elements())
-def test_index_reuse_unknown(example: Example) -> None:
+def test_reindexing_unknown(example: Example) -> None:
     xs, ys, _ = example
 
-    index, xs_indexed, ys_indexed = evalica.indexing(xs, ys)
+    xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
     xs += [" ".join(xs) + "_unknown"]
     ys += [" ".join(ys) + "_unknown"]
@@ -79,7 +79,7 @@ def test_index_reuse_unknown(example: Example) -> None:
 def test_matrices(example: Example) -> None:
     xs, ys, ws = example
 
-    index, xs_indexed, ys_indexed = evalica.indexing(xs, ys)
+    xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
     wins = sum(status in [evalica.Winner.X, evalica.Winner.Y] for status in ws)
     ties = sum(status == evalica.Winner.Draw for status in ws)
@@ -347,7 +347,7 @@ def test_incomplete_index(algorithm: str, solver: str) -> None:
     ys = ["b", "d", "f"]
     ws = [evalica.Winner.X, evalica.Winner.Ignore, evalica.Winner.Y]
 
-    index, _, _ = evalica.indexing(xs, ys)
+    _, _, index = evalica.indexing(xs, ys)
 
     result = getattr(evalica, algorithm)(xs, ys, ws, index=index, solver=solver)
     result_incomplete = getattr(evalica, algorithm)(xs[:-1], ys[:-1], ws[:-1], index=index, solver=solver)
