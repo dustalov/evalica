@@ -1,10 +1,6 @@
 name: Deploy
 
 on:
-  workflow_run:
-    workflows: [ "Tests" ]
-    branches: [ "master" ]
-    types: [ "completed" ]
   release:
     types: [ "published" ]
   workflow_dispatch:
@@ -18,7 +14,6 @@ env:
 jobs:
   build-sdist:
     name: build sdist
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -34,7 +29,6 @@ jobs:
         name: package_sdist
         path: dist
   build:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -107,27 +101,6 @@ jobs:
       with:
         name: package_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
         path: dist
-  pypi:
-    if: github.event_name == 'release'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/evalica
-    permissions:
-      id-token: write
-    runs-on: ubuntu-latest
-    needs:
-    - build-sdist
-    - build
-    steps:
-    - name: Download packages
-      uses: actions/download-artifact@v4
-      with:
-        pattern: package_*
-        merge-multiple: true
-        path: dist
-    - run: ls -lh dist/
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
   testpypi:
     environment:
       name: testpypi
@@ -151,3 +124,22 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
+  pypi:
+    if: github.event_name == 'release'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/evalica
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: testpypi
+    steps:
+    - name: Download packages
+      uses: actions/download-artifact@v4
+      with:
+        pattern: package_*
+        merge-multiple: true
+        path: dist
+    - run: ls -lh dist/
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
