@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from hypothesis.strategies import DrawFn
 
 
-class Example(NamedTuple):
-    """A tuple holding example data."""
+class Comparison(NamedTuple):
+    """A tuple holding comparison data."""
 
     xs: list[str] | pd.Series[str]
     ys: list[str] | pd.Series[str]
@@ -28,10 +28,10 @@ def enumerate_sizes(n: int) -> list[tuple[int, ...]]:
 
 
 @composite
-def elements(
+def comparisons(
         draw: DrawFn,
         shape: Literal["good", "bad"] = "good",
-) -> Example:  # type: ignore[type-var]
+) -> Comparison:  # type: ignore[type-var]
     length = draw(st.integers(0, 5))
 
     if shape == "good":
@@ -47,11 +47,11 @@ def elements(
         ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
         ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length_z, max_size=length_z)
 
-    return Example(xs=draw(xs), ys=draw(ys), ws=draw(ws))
+    return Comparison(xs=draw(xs), ys=draw(ys), ws=draw(ws))
 
 
 @pytest.fixture()
-def simple() -> Example:
+def simple() -> Comparison:
     df_simple = pd.read_csv(Path(__file__).resolve().parent / "simple.csv", dtype=str)
 
     xs = df_simple["left"]
@@ -62,7 +62,7 @@ def simple() -> Example:
         "tie": evalica.Winner.Draw,
     })
 
-    return Example(xs=xs, ys=ys, ws=ws)
+    return Comparison(xs=xs, ys=ys, ws=ws)
 
 
 @pytest.fixture()
@@ -75,7 +75,7 @@ def simple_golden() -> pd.DataFrame:
 
 
 @pytest.fixture()
-def food() -> Example:
+def food() -> Comparison:
     df_food = pd.read_csv(Path(__file__).resolve().parent / "food.csv", dtype=str)
 
     xs = df_food["left"]
@@ -86,7 +86,7 @@ def food() -> Example:
         "tie": evalica.Winner.Draw,
     })
 
-    return Example(xs=xs, ys=ys, ws=ws)
+    return Comparison(xs=xs, ys=ys, ws=ws)
 
 
 @pytest.fixture()
@@ -99,7 +99,7 @@ def food_golden() -> pd.DataFrame:
 
 
 @pytest.fixture()
-def llmfao() -> Example:
+def llmfao() -> Comparison:
     df_llmfao = pd.read_csv("https://github.com/dustalov/llmfao/raw/master/crowd-comparisons.csv", dtype=str)
 
     xs = df_llmfao["left"]
@@ -110,7 +110,7 @@ def llmfao() -> Example:
         "tie": evalica.Winner.Draw,
     })
 
-    return Example(xs=xs, ys=ys, ws=ws)
+    return Comparison(xs=xs, ys=ys, ws=ws)
 
 
 @pytest.fixture()
@@ -126,14 +126,14 @@ DATASETS = frozenset(("simple", "food", "llmfao"))
 
 
 @pytest.fixture()
-def example(request: TopRequest, dataset: str) -> Example:
+def comparison(request: TopRequest, dataset: str) -> Comparison:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
-    return cast(Example, request.getfixturevalue(dataset))
+    return cast(Comparison, request.getfixturevalue(dataset))
 
 
 @pytest.fixture()
-def example_golden(request: TopRequest, dataset: str, algorithm: str) -> pd.Series[str]:
+def comparison_golden(request: TopRequest, dataset: str, algorithm: str) -> pd.Series[str]:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
     df_golden = cast(pd.DataFrame, request.getfixturevalue(f"{dataset}_golden"))

@@ -14,7 +14,7 @@ from hypothesis.extra.pandas import series
 from pandas._testing import assert_series_equal
 
 import evalica
-from conftest import Example, elements
+from conftest import Comparison, comparisons
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -37,9 +37,9 @@ def test_winner_pickle() -> None:
         assert w == loaded
 
 
-@given(example=elements())
-def test_indexing(example: Example) -> None:  # type: ignore[type-var]
-    xs, ys, _ = example
+@given(comparison=comparisons())
+def test_indexing(comparison: Comparison) -> None:  # type: ignore[type-var]
+    xs, ys, _ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
@@ -50,9 +50,9 @@ def test_indexing(example: Example) -> None:  # type: ignore[type-var]
     assert set(index.values()) == (set(xs_indexed) | set(ys_indexed))
 
 
-@given(example=elements())
-def test_reindexing(example: Example) -> None:
-    xs, ys, _ = example
+@given(comparison=comparisons())
+def test_reindexing(comparison: Comparison) -> None:
+    xs, ys, _ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
     xs_reindexed, ys_reindexed, reindex = evalica.indexing(xs, ys, index)
@@ -62,9 +62,9 @@ def test_reindexing(example: Example) -> None:
     assert reindex is index
 
 
-@given(example=elements())
-def test_reindexing_unknown(example: Example) -> None:
-    xs, ys, _ = example
+@given(comparison=comparisons())
+def test_reindexing_unknown(comparison: Comparison) -> None:
+    xs, ys, _ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
@@ -75,9 +75,9 @@ def test_reindexing_unknown(example: Example) -> None:
         evalica.indexing(xs, ys, index)
 
 
-@given(example=elements())
-def test_matrices(example: Example) -> None:
-    xs, ys, ws = example
+@given(comparison=comparisons())
+def test_matrices(comparison: Comparison) -> None:
+    xs, ys, ws = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
@@ -92,9 +92,9 @@ def test_matrices(example: Example) -> None:
     assert result.tie_matrix.sum() == 2 * ties
 
 
-@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
-def test_counting(example: Example, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = example
+@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.counting(
         xs, ys, ws,
@@ -118,9 +118,9 @@ def test_counting(example: Example, win_weight: float, tie_weight: float) -> Non
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
-def test_average_win_rate(example: Example, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = example
+@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.average_win_rate(
         xs, ys, ws,
@@ -144,9 +144,9 @@ def test_average_win_rate(example: Example, win_weight: float, tie_weight: float
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
-def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = example
+@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.bradley_terry(
         xs, ys, ws,
@@ -172,9 +172,9 @@ def test_bradley_terry(example: Example, win_weight: float, tie_weight: float) -
     assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4, check_like=True)
 
 
-@given(example=elements(), v_init=st.floats())
-def test_newman(example: Example, v_init: float) -> None:
-    xs, ys, ws = example
+@given(comparison=comparisons(), v_init=st.floats())
+def test_newman(comparison: Comparison, v_init: float) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.newman(xs, ys, ws, v_init=v_init, solver="pyo3")
     result_naive = evalica.newman(xs, ys, ws, v_init=v_init, solver="naive")
@@ -197,20 +197,20 @@ def test_newman(example: Example, v_init: float) -> None:
 
 
 @given(
-    example=elements(),
+    comparison=comparisons(),
     initial=st.floats(0., 1000.),
     base=st.floats(0., 1000.),
     scale=st.floats(0., 1000.),
     k=st.floats(0., 1000.),
 )
 def test_elo(
-        example: Example,
+        comparison: Comparison,
         initial: float,
         base: float,
         scale: float,
         k: float,
 ) -> None:
-    xs, ys, ws = example
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.elo(
         xs, ys, ws,
@@ -238,9 +238,9 @@ def test_elo(
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@given(example=elements(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
-def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = example
+@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.eigen(
         xs, ys, ws,
@@ -267,13 +267,13 @@ def test_eigen(example: Example, win_weight: float, tie_weight: float) -> None:
 
 
 @given(
-    example=elements(),
+    comparison=comparisons(),
     damping=st.floats(0., 1.),
     win_weight=st.floats(0., 10.),
     tie_weight=st.floats(0., 10.),
 )
-def test_pagerank(example: Example, damping: float, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = example
+def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie_weight: float) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.pagerank(
         xs, ys, ws,
@@ -304,7 +304,7 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@given(example=elements(shape="bad"))
+@given(comparison=comparisons(shape="bad"))
 @pytest.mark.parametrize(("algorithm", "solver"), [
     ("counting", "pyo3"),
     ("counting", "naive"),
@@ -321,9 +321,9 @@ def test_pagerank(example: Example, damping: float, win_weight: float, tie_weigh
     ("pagerank", "pyo3"),
     ("pagerank", "naive"),
 ])
-def test_misshaped(example: Example, algorithm: str, solver: str) -> None:
+def test_misshaped(comparison: Comparison, algorithm: str, solver: str) -> None:
     with pytest.raises(evalica.LengthMismatchError):
-        getattr(evalica, algorithm)(*example, solver=solver)
+        getattr(evalica, algorithm)(*comparison, solver=solver)
 
 
 @pytest.mark.parametrize(("algorithm", "solver"), [
@@ -360,14 +360,14 @@ def test_incomplete_index(algorithm: str, solver: str) -> None:
     ("counting", "food"),
     ("counting", "llmfao"),
 ])
-def test_counting_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_counting_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.counting(xs, ys, ws, solver="pyo3")
     result_naive = evalica.counting(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
@@ -376,14 +376,14 @@ def test_counting_dataset(example: Example, example_golden: pd.Series[str]) -> N
     ("average_win_rate", "food"),
     ("average_win_rate", "llmfao"),
 ])
-def test_average_win_rate_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_average_win_rate_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.average_win_rate(xs, ys, ws, solver="pyo3")
     result_naive = evalica.average_win_rate(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
@@ -392,14 +392,14 @@ def test_average_win_rate_dataset(example: Example, example_golden: pd.Series[st
     ("bradley_terry", "food"),
     ("bradley_terry", "llmfao"),
 ])
-def test_bradley_terry_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_bradley_terry_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
     result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, rtol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, rtol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
@@ -408,14 +408,14 @@ def test_bradley_terry_dataset(example: Example, example_golden: pd.Series[str])
     ("newman", "food"),
     ("newman", "llmfao"),
 ])
-def test_newman_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_newman_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
     result_naive = evalica.newman(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, rtol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, rtol=1e-4, check_like=True)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
     assert result_pyo3.v == pytest.approx(result_naive.v)
@@ -426,14 +426,14 @@ def test_newman_dataset(example: Example, example_golden: pd.Series[str]) -> Non
     ("elo", "food"),
     ("elo", "llmfao"),
 ])
-def test_elo_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_elo_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.elo(xs, ys, ws, solver="pyo3")
     result_naive = evalica.elo(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
@@ -442,14 +442,14 @@ def test_elo_dataset(example: Example, example_golden: pd.Series[str]) -> None:
     ("eigen", "food"),
     ("eigen", "llmfao"),
 ])
-def test_eigen_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_eigen_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
     result_naive = evalica.eigen(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
@@ -458,14 +458,14 @@ def test_eigen_dataset(example: Example, example_golden: pd.Series[str]) -> None
     ("pagerank", "food"),
     ("pagerank", "llmfao"),
 ])
-def test_pagerank_dataset(example: Example, example_golden: pd.Series[str]) -> None:
-    xs, ys, ws = example
+def test_pagerank_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
+    xs, ys, ws = comparison
 
     result_pyo3 = evalica.pagerank(xs, ys, ws, solver="pyo3")
     result_naive = evalica.pagerank(xs, ys, ws, solver="naive")
 
-    assert_series_equal(result_naive.scores, example_golden, check_like=True)
-    assert_series_equal(result_pyo3.scores, example_golden, check_like=True)
+    assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
+    assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
