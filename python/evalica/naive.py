@@ -51,7 +51,7 @@ def bradley_terry(
 
     wins = matrix.sum(axis=1)
 
-    norm_matrix = np.zeros_like(matrix, dtype=float)
+    normalized = np.zeros_like(matrix, dtype=float)
 
     scores = np.ones(matrix.shape[0])
     scores_new = scores.copy()
@@ -64,10 +64,10 @@ def bradley_terry(
         broadcast_scores = np.broadcast_to(scores, matrix.shape)
 
         with np.errstate(all="ignore"):
-            norm_matrix[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
+            normalized[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
 
             scores_new[:] = wins
-            scores_new /= norm_matrix.sum(axis=0)
+            scores_new /= normalized.sum(axis=0)
             scores_new /= scores_new.sum()
 
         scores_new = np.nan_to_num(scores_new, nan=tolerance)

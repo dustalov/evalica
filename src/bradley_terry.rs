@@ -12,13 +12,17 @@ pub fn bradley_terry(
     }
 
     let totals = &matrix.t().clone() + matrix;
-    let active = totals.mapv(|x| x > 0.0);
 
-    let wins: Array1<f64> = matrix.sum_axis(Axis(1));
+    let active = totals
+        .indexed_iter()
+        .filter(|((_, _), &total)| total > 0.0)
+        .collect::<Vec<((usize, usize), &f64)>>();
 
-    let mut norm_matrix: Array2<f64> = Array2::zeros(matrix.raw_dim());
+    let wins = matrix.sum_axis(Axis(1));
 
-    let mut scores: Array1<f64> = Array1::ones(matrix.shape()[0]);
+    let mut normalized = Array2::zeros(matrix.raw_dim());
+
+    let mut scores = Array1::ones(matrix.shape()[0]);
 
     let mut converged = false;
     let mut iterations = 0;
@@ -26,16 +30,14 @@ pub fn bradley_terry(
     while !converged && iterations < limit {
         iterations += 1;
 
-        let broadcast_scores = &scores.broadcast((scores.len(), scores.len())).unwrap();
-        let sum_scores = broadcast_scores + &broadcast_scores.t();
+        for ((i, j), &v) in active.iter() {
+            let i = *i;
+            let j = *j;
 
-        for ((i, j), &active_val) in active.indexed_iter() {
-            if active_val {
-                norm_matrix[[i, j]] = totals[[i, j]] / sum_scores[[i, j]];
-            }
+            normalized[[i, j]] = v / (scores[i] + scores[j]);
         }
 
-        let mut scores_new = &wins / &norm_matrix.sum_axis(Axis(1));
+        let mut scores_new = &wins / &normalized.sum_axis(Axis(1));
         scores_new /= scores_new.sum();
         nan_to_num(&mut scores_new, tolerance);
 
