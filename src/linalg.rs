@@ -1,20 +1,22 @@
-use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ShapeError};
-use num_traits::Zero;
+use std::ops::DivAssign;
+
+use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
+use num_traits::Float;
 
 use crate::utils::nan_to_num;
 
-pub fn eigen(
-    matrix: &ArrayView2<f64>,
-    tolerance: f64,
+pub fn eigen<A: Float + ScalarOperand + DivAssign>(
+    matrix: &ArrayView2<A>,
+    tolerance: A,
     limit: usize,
-) -> Result<(Array1<f64>, usize), ShapeError> {
+) -> Result<(Array1<A>, usize), ShapeError> {
     if !matrix.is_square() {
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
     let n = matrix.shape()[0];
 
-    let mut scores = Array1::ones(n) / n as f64;
+    let mut scores = Array1::from_elem(n, A::one() / A::from(n).unwrap());
     let mut scores_new = scores.clone();
 
     let mut converged = false;

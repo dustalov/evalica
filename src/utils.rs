@@ -4,7 +4,7 @@ use std::num::FpCategory;
 use std::ops::AddAssign;
 
 use ndarray::{Array1, Array2, ArrayView1, ErrorKind, ShapeError};
-use num_traits::{Float, FromPrimitive, Num};
+use num_traits::{Float, Num};
 
 use crate::Winner;
 
@@ -58,19 +58,19 @@ pub fn nan_to_num<A: Float>(xs: &mut Array1<A>, nan: A) {
     xs.map_inplace(|x| *x = one_nan_to_num(*x, nan));
 }
 
-pub fn nan_mean<A: Float + AddAssign + FromPrimitive>(xs: &ArrayView1<A>) -> A {
+pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
     let mut sum = A::zero();
-    let mut count = 0usize;
+    let mut count = A::zero();
 
     for &value in xs.iter() {
         if !value.is_nan() {
             sum += value;
-            count += 1;
+            count += A::one();
         }
     }
 
-    if count > 0 {
-        sum / A::from_usize(count).unwrap()
+    if count > A::zero() {
+        sum / count
     } else {
         A::zero()
     }

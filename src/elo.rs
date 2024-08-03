@@ -1,17 +1,20 @@
+use std::ops::AddAssign;
+
 use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
+use num_traits::Float;
 
 use crate::{check_lengths, check_total, utils::one_nan_to_num, Winner};
 
-pub fn elo(
+pub fn elo<A: Float + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
     total: usize,
-    initial: f64,
-    base: f64,
-    scale: f64,
-    k: f64,
-) -> Result<Array1<f64>, ShapeError> {
+    initial: A,
+    base: A,
+    scale: A,
+    k: A,
+) -> Result<Array1<A>, ShapeError> {
     check_lengths!(xs.len(), ys.len(), ws.len());
 
     if xs.is_empty() {
@@ -20,21 +23,23 @@ pub fn elo(
 
     check_total!(xs, ys, total);
 
-    let mut scores = Array1::<f64>::ones(total) * initial;
+    let mut scores = Array1::from_elem(total, initial);
+
+    let half = A::one() / (A::one() + A::one());
 
     for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
-        let q_x = one_nan_to_num(base.powf(scores[*x] / scale), 0.0);
-        let q_y = one_nan_to_num(base.powf(scores[*y] / scale), 0.0);
+        let q_x = one_nan_to_num(base.powf(scores[*x] / scale), A::zero());
+        let q_y = one_nan_to_num(base.powf(scores[*y] / scale), A::zero());
 
-        let q = one_nan_to_num(q_x + q_y, 0.0);
+        let q = one_nan_to_num(q_x + q_y, A::zero());
 
-        let expected_x = one_nan_to_num(q_x / q, 0.0);
-        let expected_y = one_nan_to_num(q_y / q, 0.0);
+        let expected_x = one_nan_to_num(q_x / q, A::zero());
+        let expected_y = one_nan_to_num(q_y / q, A::zero());
 
         let (scored_x, scored_y) = match w {
-            Winner::X => (1.0, 0.0),
-            Winner::Y => (0.0, 1.0),
-            Winner::Draw => (0.5, 0.5),
+            Winner::X => (A::one(), A::zero()),
+            Winner::Y => (A::zero(), A::one()),
+            Winner::Draw => (half, half),
             _ => continue,
         };
 

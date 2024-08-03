@@ -1,12 +1,15 @@
-use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ShapeError};
+use std::ops::DivAssign;
+
+use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
+use num_traits::Float;
 
 use crate::utils::{nan_to_num, one_nan_to_num};
 
-pub fn bradley_terry(
-    matrix: &ArrayView2<f64>,
-    tolerance: f64,
+pub fn bradley_terry<A: Float + ScalarOperand + DivAssign>(
+    matrix: &ArrayView2<A>,
+    tolerance: A,
     limit: usize,
-) -> Result<(Array1<f64>, usize), ShapeError> {
+) -> Result<(Array1<A>, usize), ShapeError> {
     if !matrix.is_square() {
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
@@ -15,8 +18,8 @@ pub fn bradley_terry(
 
     let active = totals
         .indexed_iter()
-        .filter(|((_, _), &total)| total > 0.0)
-        .collect::<Vec<((usize, usize), &f64)>>();
+        .filter(|((_, _), &total)| total > A::zero())
+        .collect::<Vec<((usize, usize), &A)>>();
 
     let wins = matrix.sum_axis(Axis(1));
 
