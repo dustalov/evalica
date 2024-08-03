@@ -15,3 +15,5 @@ python:
     path: .
     extra_requirements:
     - docs
+  post_install:
+  - python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs rm -fv
