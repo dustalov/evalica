@@ -7,6 +7,9 @@ build:
   tools:
     python: latest
     rust: latest
+  jobs:
+    post_install:
+    - python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs rm -fv
 mkdocs:
   configuration: mkdocs.yml
 python:
@@ -15,6 +18,3 @@ python:
     path: .
     extra_requirements:
     - docs
-jobs:
-  post_install:
-  - python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs rm -fv
