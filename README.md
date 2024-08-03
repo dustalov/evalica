@@ -3,18 +3,21 @@
 [![Evalica](Evalica.svg)](https://github.com/dustalov/evalica)
 
 [![Tests][github_tests_badge]][github_tests_link]
+[![Read the Docs][rtfd_badge]][rtfd_link]
 [![PyPI Version][pypi_badge]][pypi_link]
 [![Anaconda.org][conda_badge]][conda_link]
 [![Codecov][codecov_badge]][codecov_link]
 
 [github_tests_badge]: https://github.com/dustalov/evalica/actions/workflows/test.yml/badge.svg?branch=master
 [github_tests_link]: https://github.com/dustalov/evalica/actions/workflows/test.yml
+[rtfd_badge]: https://readthedocs.org/projects/evalica/badge/
+[rtfd_link]: https://evalica.readthedocs.io/
 [pypi_badge]: https://badge.fury.io/py/evalica.svg
 [pypi_link]: https://pypi.python.org/pypi/evalica
-[codecov_badge]: https://codecov.io/gh/dustalov/evalica/branch/master/graph/badge.svg
-[codecov_link]: https://codecov.io/gh/dustalov/evalica
 [conda_badge]: https://anaconda.org/conda-forge/evalica/badges/version.svg
 [conda_link]: https://anaconda.org/conda-forge/evalica
+[codecov_badge]: https://codecov.io/gh/dustalov/evalica/branch/master/graph/badge.svg
+[codecov_link]: https://codecov.io/gh/dustalov/evalica
 
 **Evalica** is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
 

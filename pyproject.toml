@@ -58,7 +58,7 @@ evalica = "evalica.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/dustalov/evalica"
-Documentation = "https://dustalov.github.io/evalica/"
+Documentation = "https://evalica.readthedocs.io/"
 Download = "https://pypi.org/project/evalica/#files"
 
 [tool.coverage.report]
