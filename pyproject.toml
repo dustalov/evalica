@@ -36,6 +36,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
+    "abi3audit",
     "hypothesis[numpy]",
     "mypy",
     "nbqa",
