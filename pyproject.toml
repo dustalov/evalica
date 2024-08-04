@@ -74,6 +74,7 @@ exclude_also = [
 ]
 
 [tool.maturin]
+features = ["python"]
 python-source = "python"
 
 [tool.mypy]
