@@ -4,19 +4,24 @@ from enum import Enum
 import numpy as np
 import numpy.typing as npt
 
-"""The version of Evalica."""
 __version__: str = ...
+"""The version of Evalica."""
 
 
 class Winner(Enum):
+    """The outcome of the pairwise comparison."""
     X = ...
+    """The first element won."""
     Y = ...
+    """The second element won."""
     Draw = ...
+    """There is a tie."""
     Ignore = ...
+    """The comparison should be ignored."""
 
 
 class LengthMismatchError(ValueError):
-    ...
+    """The dataset dimensions mismatched."""
 
 
 def matrices_pyo3(

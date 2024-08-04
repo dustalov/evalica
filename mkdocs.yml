@@ -4,8 +4,16 @@ site_description: Evalica, your favourite evaluation suite.
 copyright: Copyright &copy; 2024 Dmitry Ustalov
 repo_name: dustalov/evalica
 repo_url: https://github.com/dustalov/evalica
+nav:
+- Home: index.md
+- Counting: counting.md
+- Bradley-Terry: bradley-terry.md
+- Elo: elo.md
+- Linear Algebra: linalg.md
+- Utilities: utils.md
+- Errors: errors.md
 theme:
-  name: readthedocs
+  name: material
 plugins:
 - search
 - mkdocstrings:
@@ -16,3 +24,7 @@ plugins:
         - https://docs.python.org/3/objects.inv
         - https://numpy.org/doc/stable/objects.inv
         - https://pandas.pydata.org/docs/objects.inv
+        options:
+          show_root_heading: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true

@@ -47,7 +47,11 @@ dev = [
     "ruff",
     "twine",
 ]
-docs = ["mkdocs", "mkdocstrings-python"]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings-python"
+]
 
 [project.readme]
 file = "README.md"
@@ -58,8 +62,11 @@ evalica = "evalica.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/dustalov/evalica"
+Changelog = "https://github.com/dustalov/evalica/releases"
+Issues = "https://github.com/dustalov/evalica/issues"
 Documentation = "https://evalica.readthedocs.io/"
 Download = "https://pypi.org/project/evalica/#files"
+Repository = "https://github.com/dustalov/evalica"
 
 [tool.coverage.report]
 exclude_also = [
@@ -94,6 +101,7 @@ ignore = [
     "ERA001",  # commented-out-code
     "FIX002",  # line-contains-todo
     "PLR0913", # too-many-arguments
+    "PYI021",  # docstring-in-stub
     "S101",    # assert
     "TD002",   # missing-todo-author
     "TD003",   # missing-todo-link

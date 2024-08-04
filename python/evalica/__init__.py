@@ -32,13 +32,13 @@ from .naive import elo as elo_naive
 from .naive import newman as newman_naive
 from .naive import pagerank as pagerank_naive
 
-"""Known values of Winner."""
 WINNERS = [
     Winner.X,
     Winner.Y,
     Winner.Draw,
     Winner.Ignore,
 ]
+"""Known values of Winner."""
 
 T = TypeVar("T", bound=Hashable)
 
@@ -791,6 +791,7 @@ __all__ = [
     "EigenResult",
     "EloResult",
     "LengthMismatchError",
+    "MatricesResult",
     "NewmanResult",
     "PageRankResult",
     "ScoreDimensionError",
