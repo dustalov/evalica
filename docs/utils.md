@@ -3,5 +3,6 @@
 ::: evalica.indexing
 ::: evalica.matrices
 ::: evalica.MatricesResult
+::: evalica.pairwise_frame
+::: evalica.pairwise_scores
 ::: evalica.__version__
-[errors.md](errors.md)
