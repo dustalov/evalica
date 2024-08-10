@@ -355,6 +355,7 @@ def test_incomplete_index(algorithm: str, solver: str) -> None:
     assert len(result.scores) == len(result_incomplete.scores)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("counting", "simple"),
     ("counting", "food"),
@@ -371,6 +372,7 @@ def test_counting_dataset(comparison: Comparison, comparison_golden: pd.Series[s
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("average_win_rate", "simple"),
     ("average_win_rate", "food"),
@@ -387,6 +389,7 @@ def test_average_win_rate_dataset(comparison: Comparison, comparison_golden: pd.
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("bradley_terry", "simple"),
     ("bradley_terry", "food"),
@@ -403,6 +406,7 @@ def test_bradley_terry_dataset(comparison: Comparison, comparison_golden: pd.Ser
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("newman", "simple"),
     ("newman", "food"),
@@ -421,6 +425,7 @@ def test_newman_dataset(comparison: Comparison, comparison_golden: pd.Series[str
     assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("elo", "simple"),
     ("elo", "food"),
@@ -437,6 +442,7 @@ def test_elo_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("eigen", "simple"),
     ("eigen", "food"),
@@ -453,6 +459,7 @@ def test_eigen_dataset(comparison: Comparison, comparison_golden: pd.Series[str]
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("pagerank", "simple"),
     ("pagerank", "food"),

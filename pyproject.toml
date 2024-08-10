@@ -44,6 +44,7 @@ dev = [
     "pandas-stubs",
     "plotly",
     "pytest",
+    "pytest-codspeed",
     "pytest-cov",
     "ruff",
     "twine",

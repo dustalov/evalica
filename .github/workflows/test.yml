@@ -57,6 +57,12 @@ jobs:
     - name: Run tests (Python)
       run: pytest --cov
     - if: matrix.python-version == '3.12'
+      name: Run benchmarks
+      uses: CodSpeedHQ/action@v3
+      with:
+        token: ${{ secrets.CODSPEED_TOKEN }}
+      run: pytest --codspeed
+    - if: matrix.python-version == '3.12'
       name: Upload to Codecov
       uses: codecov/codecov-action@v4.5.0
       with:
