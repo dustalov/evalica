@@ -76,6 +76,8 @@ jobs:
       run: nbqa mypy *.ipynb
     - name: Lint Jupyter with Ruff
       run: nbqa ruff *.ipynb
+    - name: Lint with abi3audit
+      run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
     - name: Run Jupyter
       run: |
         mkdir jupyter
@@ -90,8 +92,6 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         path: "./jupyter"
-    - name: Lint with abi3audit
-      run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
   pages:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     environment:
