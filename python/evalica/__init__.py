@@ -137,7 +137,7 @@ class CountingResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     win_weight: float
     tie_weight: float
@@ -204,7 +204,7 @@ class AverageWinRateResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     win_weight: float
     tie_weight: float
@@ -285,7 +285,7 @@ class BradleyTerryResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     win_weight: float
     tie_weight: float
@@ -380,7 +380,7 @@ class NewmanResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     v: float
     v_init: float
@@ -482,7 +482,7 @@ class EloResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     initial: float
     base: float
@@ -557,7 +557,7 @@ class EigenResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     win_weight: float
     tie_weight: float
@@ -651,7 +651,7 @@ class PageRankResult(Generic[T]):
 
     """
 
-    scores: pd.Series[T]  # type: ignore[type-var]
+    scores: pd.Series[float]
     index: dict[T, int]
     damping: float
     win_weight: float
