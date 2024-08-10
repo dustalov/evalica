@@ -471,6 +471,19 @@ def test_pagerank_dataset(comparison: Comparison, comparison_golden: pd.Series[s
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
+@pytest.mark.benchmark()
+def test_llmfao_indexing(llmfao: Comparison) -> None:
+    evalica.indexing(llmfao.xs, llmfao.ys)
+
+
+def test_llmfao_matrices(llmfao: Comparison, benchmark: BenchmarkFixture) -> None:
+    xs_indexed, ys_indexed, index = evalica.indexing(llmfao.xs, llmfao.ys)
+
+    func = partial(evalica.matrices, xs_indexed, ys_indexed, llmfao.ws, index=index)
+
+    benchmark(func)
+
+
 @pytest.mark.parametrize(("algorithm", "solver"), [
     ("counting", "pyo3"),
     ("counting", "naive"),
