@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pickle
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import hypothesis.strategies as st
@@ -18,6 +19,7 @@ from conftest import Comparison, comparisons
 
 if TYPE_CHECKING:
     import pandas as pd
+    from pytest_codspeed import BenchmarkFixture
 
 
 def test_version() -> None:
@@ -355,7 +357,6 @@ def test_incomplete_index(algorithm: str, solver: str) -> None:
     assert len(result.scores) == len(result_incomplete.scores)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("counting", "simple"),
     ("counting", "food"),
@@ -372,7 +373,6 @@ def test_counting_dataset(comparison: Comparison, comparison_golden: pd.Series[s
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("average_win_rate", "simple"),
     ("average_win_rate", "food"),
@@ -389,7 +389,6 @@ def test_average_win_rate_dataset(comparison: Comparison, comparison_golden: pd.
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("bradley_terry", "simple"),
     ("bradley_terry", "food"),
@@ -406,7 +405,6 @@ def test_bradley_terry_dataset(comparison: Comparison, comparison_golden: pd.Ser
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("newman", "simple"),
     ("newman", "food"),
@@ -425,7 +423,6 @@ def test_newman_dataset(comparison: Comparison, comparison_golden: pd.Series[str
     assert result_pyo3.v == pytest.approx(result_naive.v)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("elo", "simple"),
     ("elo", "food"),
@@ -442,7 +439,6 @@ def test_elo_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("eigen", "simple"),
     ("eigen", "food"),
@@ -459,7 +455,6 @@ def test_eigen_dataset(comparison: Comparison, comparison_golden: pd.Series[str]
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@pytest.mark.benchmark()
 @pytest.mark.parametrize(("algorithm", "dataset"), [
     ("pagerank", "simple"),
     ("pagerank", "food"),
@@ -474,6 +469,30 @@ def test_pagerank_dataset(comparison: Comparison, comparison_golden: pd.Series[s
     assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
+
+
+@pytest.mark.parametrize(("algorithm", "solver"), [
+    ("counting", "pyo3"),
+    ("counting", "naive"),
+    ("average_win_rate", "pyo3"),
+    ("average_win_rate", "naive"),
+    ("bradley_terry", "pyo3"),
+    ("bradley_terry", "naive"),
+    ("newman", "pyo3"),
+    ("newman", "naive"),
+    ("elo", "pyo3"),
+    ("elo", "naive"),
+    ("eigen", "pyo3"),
+    ("eigen", "naive"),
+    ("pagerank", "pyo3"),
+    ("pagerank", "naive"),
+])
+def test_llmfao_performance(llmfao: Comparison, algorithm: str, solver: str, benchmark: BenchmarkFixture) -> None:
+    _, _, index = evalica.indexing(llmfao.xs, llmfao.ys)
+
+    func = partial(getattr(evalica, algorithm), *llmfao, index=index, solver=solver)
+
+    benchmark(func())
 
 
 @given(arrays(dtype=np.float64, shape=array_shapes(max_dims=1, min_side=0)))

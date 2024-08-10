@@ -50,7 +50,8 @@ jobs:
       run: |
         uv pip install maturin
         maturin develop --uv --extras dev,docs
-    - name: Lint with Mypy
+    - if: matrix.python-version != '3.8'
+      name: Lint with Mypy
       run: mypy .
     - name: Lint with Ruff
       run: ruff check
@@ -67,8 +68,6 @@ jobs:
       uses: codecov/codecov-action@v4.5.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-    - name: Lint with abi3audit
-      run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
     - name: Run Module
       run: python3 -m evalica --input=food.csv counting
     - name: Run CLI
@@ -91,6 +90,8 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         path: "./jupyter"
+    - name: Lint with abi3audit
+      run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
   pages:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     environment:
