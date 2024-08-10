@@ -492,7 +492,7 @@ def test_llmfao_performance(llmfao: Comparison, algorithm: str, solver: str, ben
 
     func = partial(getattr(evalica, algorithm), *llmfao, index=index, solver=solver)
 
-    benchmark(func())
+    benchmark(func)
 
 
 @given(arrays(dtype=np.float64, shape=array_shapes(max_dims=1, min_side=0)))
