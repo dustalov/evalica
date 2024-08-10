@@ -61,7 +61,7 @@ jobs:
       uses: CodSpeedHQ/action@v3
       with:
         token: ${{ secrets.CODSPEED_TOKEN }}
-      run: pytest --codspeed
+        run: pytest --codspeed
     - if: matrix.python-version == '3.12'
       name: Upload to Codecov
       uses: codecov/codecov-action@v4.5.0
