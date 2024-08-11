@@ -1,6 +1,6 @@
 # Evalica, your favourite evaluation toolkit
 
-[![Evalica](Evalica.svg)](https://github.com/dustalov/evalica)
+[![Evalica](https://raw.githubusercontent.com/dustalov/evalica/master/Evalica.svg)](https://github.com/dustalov/evalica)
 
 [![Tests][github_tests_badge]][github_tests_link]
 [![Read the Docs][rtfd_badge]][rtfd_link]
