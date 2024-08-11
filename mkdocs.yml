@@ -12,7 +12,7 @@ nav:
 - Linear Algebra: linalg.md
 - Utilities: utils.md
 - Errors: errors.md
-- Crowd-Kit Users: crowdkit.md
+- Migration: migration.md
 theme:
   name: material
 plugins:
