@@ -309,6 +309,11 @@ def bradley_terry(
     """
     Compute the Bradley-Terry scores for the given pairwise comparison.
 
+    Quote:
+        Bradley, R.A., Terry, M.E.: Rank Analysis of Incomplete Block Designs: I.
+        The Method of Paired Comparisons. Biometrika. 39, 324&ndash;345 (1952).
+        <https://doi.org/10.2307/2334029>.
+
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
@@ -407,7 +412,10 @@ def newman(
     """
     Compute the scores for the given pairwise comparison using the Newman's algorithm.
 
-    <https://www.jmlr.org/papers/v24/22-1086.html>
+    Quote:
+        Newman, M.E.J.: Efficient Computation of Rankings from Pairwise Comparisons.
+        Journal of Machine Learning Research. 24, 1&ndash;25 (2023).
+        <https://www.jmlr.org/papers/v24/22-1086.html>.
 
     Args:
         xs: The left-hand side elements.
@@ -504,6 +512,9 @@ def elo(
 ) -> EloResult[T]:
     """
     Compute the Elo scores.
+
+    Quote:
+        Elo, A.E.: The rating of chessplayers, past and present. Arco Pub, New York (1978).
 
     Args:
         xs: The left-hand side elements.
@@ -676,6 +687,11 @@ def pagerank(
 ) -> PageRankResult[T]:
     """
     Compute the PageRank scores.
+
+    Quote:
+        Brin, S., Page, L.: The anatomy of a large-scale hypertextual Web search engine.
+        Computer Networks and ISDN Systems. 30, 107&ndash;117 (1998).
+        <https://doi.org/10.1016/S0169-7552(98)00110-X>.
 
     Args:
         xs: The left-hand side elements.
