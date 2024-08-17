@@ -50,7 +50,7 @@ def comparisons(
     return Comparison(xs=draw(xs), ys=draw(ys), ws=draw(ws))
 
 
-@pytest.fixture()
+@pytest.fixture
 def simple() -> Comparison:
     df_simple = pd.read_csv(Path(__file__).resolve().parent / "simple.csv", dtype=str)
 
@@ -65,7 +65,7 @@ def simple() -> Comparison:
     return Comparison(xs=xs, ys=ys, ws=ws)
 
 
-@pytest.fixture()
+@pytest.fixture
 def simple_golden() -> pd.DataFrame:
     df_golden = pd.read_csv(Path(__file__).resolve().parent / "simple-golden.csv", dtype=str)
 
@@ -74,7 +74,7 @@ def simple_golden() -> pd.DataFrame:
     return df_golden
 
 
-@pytest.fixture()
+@pytest.fixture
 def food() -> Comparison:
     df_food = pd.read_csv(Path(__file__).resolve().parent / "food.csv", dtype=str)
 
@@ -89,7 +89,7 @@ def food() -> Comparison:
     return Comparison(xs=xs, ys=ys, ws=ws)
 
 
-@pytest.fixture()
+@pytest.fixture
 def food_golden() -> pd.DataFrame:
     df_golden = pd.read_csv(Path(__file__).resolve().parent / "food-golden.csv", dtype=str)
 
@@ -98,7 +98,7 @@ def food_golden() -> pd.DataFrame:
     return df_golden
 
 
-@pytest.fixture()
+@pytest.fixture
 def llmfao() -> Comparison:
     df_llmfao = pd.read_csv("https://github.com/dustalov/llmfao/raw/master/crowd-comparisons.csv", dtype=str)
 
@@ -113,7 +113,7 @@ def llmfao() -> Comparison:
     return Comparison(xs=xs, ys=ys, ws=ws)
 
 
-@pytest.fixture()
+@pytest.fixture
 def llmfao_golden() -> pd.DataFrame:
     df_golden = pd.read_csv(Path(__file__).resolve().parent / "llmfao-golden.csv", dtype=str)
 
@@ -125,14 +125,14 @@ def llmfao_golden() -> pd.DataFrame:
 DATASETS = frozenset(("simple", "food", "llmfao"))
 
 
-@pytest.fixture()
+@pytest.fixture
 def comparison(request: TopRequest, dataset: str) -> Comparison:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
     return cast(Comparison, request.getfixturevalue(dataset))
 
 
-@pytest.fixture()
+@pytest.fixture
 def comparison_golden(request: TopRequest, dataset: str, algorithm: str) -> pd.Series[str]:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
