@@ -214,7 +214,7 @@ mod tests {
 
         let expected = array![[0.00, 0.00, 0.00], [1.00, 0.50, 0.25], [1.00, 0.75, 0.50]];
 
-        let actual = pairwise_scores(&scores.view()).unwrap();
+        let actual = pairwise_scores(&scores.view());
 
         assert_eq!(actual, expected);
     }
