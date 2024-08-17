@@ -508,6 +508,14 @@ def test_llmfao_performance(llmfao: Comparison, algorithm: str, solver: str, ben
     benchmark(func)
 
 
+def test_llmfao_pairwise_scores(llmfao: Comparison, benchmark: BenchmarkFixture) -> None:
+    result = evalica.counting(*llmfao)
+
+    func = partial(evalica.pairwise_scores, result.scores)
+
+    benchmark(func)
+
+
 @given(arrays(dtype=np.float64, shape=array_shapes(max_dims=1, min_side=0)))
 def test_pairwise_scores(scores: npt.NDArray[np.float64]) -> None:
     with np.errstate(all="ignore"):
