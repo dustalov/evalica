@@ -77,8 +77,6 @@ jobs:
       run: evalica --input=food.csv counting
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb
-    - name: Lint Jupyter with Ruff
-      run: nbqa ruff *.ipynb
     - name: Lint with abi3audit
       run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
     - name: Run Jupyter

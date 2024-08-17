@@ -84,12 +84,6 @@ ignore_missing_imports = true
 plugins = ["numpy.typing.mypy_plugin"]
 strict = true
 
-[tool.nbqa.addopts]
-ruff = [
-    "--ignore=B018",   # useless-expression
-    "--ignore=RUF001", # ambiguous-unicode-character-string
-]
-
 [tool.ruff]
 line-length = 120
 target-version = "py38"
@@ -113,4 +107,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "!__init__.py" = [
     "D", # pydocstyle
+]
+"*.ipynb" = [
+    "B018",   # useless-expression
+    "RUF001", # ambiguous-unicode-character-string
 ]

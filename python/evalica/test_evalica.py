@@ -471,7 +471,7 @@ def test_pagerank_dataset(comparison: Comparison, comparison_golden: pd.Series[s
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
-@pytest.mark.benchmark()
+@pytest.mark.benchmark
 def test_llmfao_indexing(llmfao: Comparison) -> None:
     evalica.indexing(llmfao.xs, llmfao.ys)
 
