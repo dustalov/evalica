@@ -511,7 +511,7 @@ def test_llmfao_performance(llmfao: Comparison, algorithm: str, solver: str, ben
 def test_llmfao_pairwise_scores(llmfao: Comparison, benchmark: BenchmarkFixture) -> None:
     result = evalica.counting(*llmfao)
 
-    func = partial(evalica.pairwise_scores, result.scores)
+    func = partial(evalica.pairwise_scores, result.scores.to_numpy())
 
     benchmark(func)
 
