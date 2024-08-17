@@ -18,6 +18,8 @@ import evalica
 from conftest import Comparison, comparisons
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     import pandas as pd
     from pytest_codspeed import BenchmarkFixture
 
@@ -519,33 +521,34 @@ def test_llmfao_pairwise_scores(llmfao: Comparison, benchmark: BenchmarkFixture)
 @given(arrays(dtype=np.float64, shape=array_shapes(max_dims=1, min_side=0)))
 def test_pairwise_scores(scores: npt.NDArray[np.float64]) -> None:
     with np.errstate(all="ignore"):
-        pairwise = evalica.pairwise_scores(scores)
+        pairwise_pyo3 = evalica.pairwise_scores(scores, solver="pyo3")
+        pairwise_naive = evalica.pairwise_scores(scores, solver="naive")
 
-    assert pairwise.dtype == scores.dtype
-    assert pairwise.shape == (len(scores), len(scores))
-
-    if np.isfinite(scores).all():
+    for pairwise in (pairwise_pyo3, pairwise_naive):
+        assert pairwise.dtype == scores.dtype
+        assert pairwise.shape == (len(scores), len(scores))
         assert np.isfinite(pairwise).all()
-    else:
-        assert not np.isfinite(pairwise).all()
 
 
-def test_pairwise_scores_empty() -> None:
-    pairwise = evalica.pairwise_scores(np.zeros(0, dtype=np.float64))
+@pytest.mark.parametrize("solver", ["pyo3", "naive"])
+def test_pairwise_scores_empty(solver: Literal["pyo3", "naive"]) -> None:
+    pairwise = evalica.pairwise_scores(np.zeros(0, dtype=np.float64), solver=solver)
+
     assert pairwise.dtype == np.float64
     assert pairwise.shape == (0, 0)
 
 
+@pytest.mark.parametrize("solver", ["pyo3", "naive"])
 @given(array_shapes())
-def test_pairwise_scores_shape(shape: tuple[int, ...]) -> None:
-    scores = np.zeros(shape, dtype=np.int64)
+def test_pairwise_scores_shape(solver: Literal["pyo3", "naive"], shape: tuple[int, ...]) -> None:
+    scores = np.zeros(shape)
 
     if len(shape) == 1:
         with np.errstate(all="ignore"):
-            evalica.pairwise_scores(scores)
+            evalica.pairwise_scores(scores, solver=solver)
     else:
-        with pytest.raises(evalica.ScoreDimensionError):
-            evalica.pairwise_scores(scores)
+        with pytest.raises(ValueError):  # noqa: PT011
+            evalica.pairwise_scores(scores, solver=solver)
 
 
 @given(series(dtype=np.float64))

@@ -3,8 +3,8 @@ use std::ops::AddAssign;
 use ndarray::{Array1, ArrayView1, Axis, ErrorKind, ShapeError};
 use num_traits::{Float, Num};
 
-use crate::{check_lengths, check_total, Winner};
 use crate::utils::{matrices, nan_mean, nan_to_num};
+use crate::{check_lengths, check_total, Winner};
 
 pub fn counting<A: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,

@@ -3,7 +3,7 @@ use std::hash::Hash;
 use std::num::FpCategory;
 use std::ops::AddAssign;
 
-use ndarray::{Array1, Array2, ArrayView1, ErrorKind, ShapeError};
+use ndarray::{Array, Array2, ArrayView1, Dimension, ErrorKind, ShapeError};
 use num_traits::{Float, Num};
 
 use crate::Winner;
@@ -54,7 +54,7 @@ pub fn one_nan_to_num<A: Float>(x: A, nan: A) -> A {
     }
 }
 
-pub fn nan_to_num<A: Float>(xs: &mut Array1<A>, nan: A) {
+pub fn nan_to_num<A: Float, D: Dimension>(xs: &mut Array<A, D>, nan: A) {
     xs.map_inplace(|x| *x = one_nan_to_num(*x, nan));
 }
 
@@ -114,6 +114,24 @@ pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
     Ok((wins, ties))
 }
 
+pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
+    if scores.is_empty() {
+        return Array2::zeros((0, 0));
+    }
+
+    let len = scores.len();
+
+    let mut pairwise = Array2::zeros((len, len));
+
+    for ((i, j), value) in pairwise.indexed_iter_mut() {
+        *value = scores[i] / (scores[i] + scores[j]);
+    }
+
+    nan_to_num(&mut pairwise, A::zero());
+
+    pairwise
+}
+
 #[cfg(test)]
 pub mod fixtures {
     use crate::Winner;
@@ -145,7 +163,7 @@ pub mod fixtures {
 mod tests {
     use ndarray::array;
 
-    use super::{index, matrices, Winner};
+    use super::{index, matrices, pairwise_scores, Winner};
 
     #[test]
     fn test_index() {
@@ -188,5 +206,16 @@ mod tests {
 
         assert_eq!(wins, expected_wins);
         assert_eq!(ties, expected_ties);
+    }
+
+    #[test]
+    fn test_pairwise_scores() {
+        let scores = array![0.0, 1.0, 3.0];
+
+        let expected = array![[0.00, 0.00, 0.00], [1.00, 0.50, 0.25], [1.00, 0.75, 0.50]];
+
+        let actual = pairwise_scores(&scores.view()).unwrap();
+
+        assert_eq!(actual, expected);
     }
 }

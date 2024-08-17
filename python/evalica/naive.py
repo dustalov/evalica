@@ -9,6 +9,14 @@ from evalica import LengthMismatchError, Winner
 
 if TYPE_CHECKING:
     from collections.abc import Collection
+    from typing import Any
+
+
+def pairwise_scores(scores: npt.NDArray[np.number[Any]]) -> npt.NDArray[np.float64]:
+    if not scores.shape[0]:
+        return np.zeros((0, 0))
+
+    return np.nan_to_num(scores[:, np.newaxis] / (scores + scores[:, np.newaxis]))
 
 
 def counting(

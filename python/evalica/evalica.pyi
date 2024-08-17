@@ -32,6 +32,9 @@ def matrices_pyo3(
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
 
 
+def pairwise_scores_pyo3(scores: npt.ArrayLike) -> npt.NDArray[np.float64]: ...
+
+
 def counting_pyo3(
         xs: npt.ArrayLike,
         ys: npt.ArrayLike,

@@ -1,12 +1,13 @@
 use numpy::{Element, IntoPyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayLike1};
 use pyo3::create_exception;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
-use crate::utils::matrices;
+use crate::utils::{matrices, pairwise_scores};
 use crate::Winner;
 
 #[pymethods]
@@ -34,7 +35,7 @@ unsafe impl Element for Winner {
     }
 }
 
-create_exception!(evalica, LengthMismatchError, pyo3::exceptions::PyValueError);
+create_exception!(evalica, LengthMismatchError, PyValueError);
 
 #[pyfunction]
 fn matrices_pyo3<'py>(
@@ -51,6 +52,16 @@ fn matrices_pyo3<'py>(
         )),
         Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
     }
+}
+
+#[pyfunction]
+fn pairwise_scores_pyo3<'py>(
+    py: Python,
+    scores: PyArrayLike1<'py, f64>,
+) -> PyResult<Py<PyArray2<f64>>> {
+    let pairwise = pairwise_scores(&scores.as_array());
+
+    Ok(pairwise.into_pyarray_bound(py).unbind())
 }
 
 #[pyfunction]
@@ -276,6 +287,7 @@ fn evalica(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
         py.get_type_bound::<LengthMismatchError>(),
     )?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
+    m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(average_win_rate_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(bradley_terry_pyo3, m)?)?;

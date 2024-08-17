@@ -24,6 +24,7 @@ from .evalica import (
     matrices_pyo3,
     newman_pyo3,
     pagerank_pyo3,
+    pairwise_scores_pyo3,
 )
 from .naive import bradley_terry as bradley_terry_naive
 from .naive import counting as counting_naive
@@ -31,6 +32,7 @@ from .naive import eigen as eigen_naive
 from .naive import elo as elo_naive
 from .naive import newman as newman_naive
 from .naive import pagerank as pagerank_naive
+from .naive import pairwise_scores as pairwise_scores_naive
 
 WINNERS = [
     Winner.X,
@@ -762,12 +764,16 @@ class ScoreDimensionError(ValueError):
         super().__init__(f"scores should be one-dimensional, {ndim} was provided")
 
 
-def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[np.float64]:
+def pairwise_scores(
+    scores: npt.NDArray[np.float64],
+    solver: Literal["naive", "pyo3"] = "pyo3",
+) -> npt.NDArray[np.float64]:
     """
     Estimate the pairwise scores.
 
     Args:
         scores: The element scores.
+        solver: The solver.
 
     Returns:
         The matrix representing pairwise scores between the elements.
@@ -776,15 +782,10 @@ def pairwise_scores(scores: npt.NDArray[np.float64 | np.int64]) -> npt.NDArray[n
     if scores.ndim != 1:
         raise ScoreDimensionError(scores.ndim)
 
-    if not scores.shape[0]:
-        return np.zeros((0, 0), dtype=np.float64)
+    if solver == "naive":
+        return pairwise_scores_naive(scores)
 
-    pairwise = scores[:, np.newaxis] / (scores + scores[:, np.newaxis])
-
-    if np.isfinite(scores).all():
-        pairwise = np.nan_to_num(pairwise)
-
-    return pairwise
+    return pairwise_scores_pyo3(scores)
 
 
 def pairwise_frame(scores: pd.Series[T]) -> pd.DataFrame:  # type: ignore[type-var]
