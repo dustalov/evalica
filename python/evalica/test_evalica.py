@@ -511,7 +511,11 @@ def test_llmfao_performance(llmfao: Comparison, algorithm: str, solver: str, ben
 
 
 @pytest.mark.parametrize("solver", ["pyo3", "naive"])
-def test_llmfao_pairwise_scores(llmfao: Comparison, solver: str, benchmark: BenchmarkFixture) -> None:
+def test_llmfao_pairwise_scores(
+    llmfao: Comparison,
+    solver: Literal["pyo3", "naive"],
+    benchmark: BenchmarkFixture,
+) -> None:
     result = evalica.counting(*llmfao)
 
     func = partial(evalica.pairwise_scores, result.scores.to_numpy(), solver=solver)
