@@ -13,7 +13,15 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
 
 jobs:
-  test:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests (Rust)
+      run: cargo test --verbose
+  python:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -30,16 +38,11 @@ jobs:
           ~/.cargo/git/db/
           .venv/
           target/
-        # Cargo.lock is in .gitignore, so we use Cargo.toml
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-python-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests (Rust)
-      run: cargo test --verbose
     - name: Create virtual environment
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -102,7 +105,7 @@ jobs:
       id-token: write
       pages: write
     runs-on: ubuntu-latest
-    needs: test
+    needs: python
     steps:
     - name: Deploy to GitHub Pages
       id: deployment
