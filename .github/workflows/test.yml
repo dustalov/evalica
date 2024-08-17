@@ -23,6 +23,7 @@ jobs:
       run: cargo test --verbose
   python:
     runs-on: ubuntu-latest
+    needs: rust
     strategy:
       fail-fast: false
       matrix:
