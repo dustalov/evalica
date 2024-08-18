@@ -12,6 +12,7 @@ from hypothesis import given
 from hypothesis.extra._array_helpers import array_shapes
 from hypothesis.extra.numpy import arrays
 from hypothesis.extra.pandas import series
+from numpy.testing import assert_array_equal
 from pandas._testing import assert_series_equal
 
 import evalica
@@ -533,6 +534,8 @@ def test_pairwise_scores(scores: npt.NDArray[np.float64]) -> None:
         assert pairwise.dtype == scores.dtype
         assert pairwise.shape == (len(scores), len(scores))
         assert np.isfinite(pairwise).all()
+
+    assert_array_equal(pairwise_pyo3, pairwise_naive)
 
 
 @pytest.mark.parametrize("solver", ["pyo3", "naive"])
