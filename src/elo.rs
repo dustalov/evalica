@@ -10,6 +10,8 @@ pub fn elo<A: Float + AddAssign>(
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
     total: usize,
+    win_weight: A,
+    tie_weight: A,
     initial: A,
     base: A,
     scale: A,
@@ -25,8 +27,6 @@ pub fn elo<A: Float + AddAssign>(
 
     let mut scores = Array1::from_elem(total, initial);
 
-    let half = A::one() / (A::one() + A::one());
-
     for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
         let q_x = one_nan_to_num(base.powf(scores[*x] / scale), A::zero());
         let q_y = one_nan_to_num(base.powf(scores[*y] / scale), A::zero());
@@ -37,9 +37,9 @@ pub fn elo<A: Float + AddAssign>(
         let expected_y = one_nan_to_num(q_y / q, A::zero());
 
         let (scored_x, scored_y) = match w {
-            Winner::X => (A::one(), A::zero()),
-            Winner::Y => (A::zero(), A::one()),
-            Winner::Draw => (half, half),
+            Winner::X => (win_weight, A::zero()),
+            Winner::Y => (A::zero(), win_weight),
+            Winner::Draw => (tie_weight, tie_weight),
         };
 
         scores[*x] += k * (scored_x - expected_x);
@@ -72,6 +72,8 @@ mod tests {
             &ys.view(),
             &ws.view(),
             5,
+            1.0,
+            0.5,
             initial,
             base,
             scale,

@@ -83,6 +83,8 @@ def elo_pyo3(
         ys: npt.ArrayLike,
         ws: Collection[Winner],
         total: int,
+        win_weight: float,
+        tie_weight: float,
         initial: float,
         base: float,
         scale: float,

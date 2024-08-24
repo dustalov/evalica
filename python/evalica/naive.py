@@ -143,6 +143,8 @@ def elo(
         ys: Collection[int],
         ws: Collection[Winner],
         total: int,
+        win_weight: float = 1.0,
+        tie_weight: float = 0.5,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
@@ -169,13 +171,11 @@ def elo(
         scored_x, scored_y = 0., 0.
 
         if w == Winner.X:
-            scored_x, scored_y = 1., 0.
+            scored_x = win_weight
         elif w == Winner.Y:
-            scored_x, scored_y = 0., 1.
+            scored_y = win_weight
         elif w == Winner.Draw:
-            scored_x, scored_y = .5, .5
-        else:
-            continue
+            scored_x = scored_y = tie_weight
 
         scores[x] += k * (scored_x - expected_x)
         scores[y] += k * (scored_y - expected_y)

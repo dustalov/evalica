@@ -207,6 +207,8 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
 
 @given(
     comparison=comparisons(),
+    win_weight=st.floats(0., 10.),
+    tie_weight=st.floats(0., 10.),
     initial=st.floats(0., 1000.),
     base=st.floats(0., 1000.),
     scale=st.floats(0., 1000.),
@@ -214,6 +216,8 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
 )
 def test_elo(
         comparison: Comparison,
+        win_weight: float,
+        tie_weight: float,
         initial: float,
         base: float,
         scale: float,
@@ -223,6 +227,8 @@ def test_elo(
 
     result_pyo3 = evalica.elo(
         xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
         initial=initial,
         base=base,
         scale=scale,
@@ -232,6 +238,8 @@ def test_elo(
 
     result_naive = evalica.elo(
         xs, ys, ws,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
         initial=initial,
         base=base,
         scale=scale,

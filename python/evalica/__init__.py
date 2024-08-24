@@ -483,6 +483,8 @@ class EloResult(Generic[T]):
     Attributes:
         scores: The element scores.
         index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
         initial: The initial score of each element.
         base: The base of the exponent.
         scale: The scale factor.
@@ -493,6 +495,8 @@ class EloResult(Generic[T]):
 
     scores: pd.Series[float]
     index: dict[T, int]
+    win_weight: float
+    tie_weight: float
     initial: float
     base: float
     scale: float
@@ -505,6 +509,8 @@ def elo(
         ys: Collection[T],
         ws: Collection[Winner],
         index: dict[T, int] | None = None,
+        win_weight: float = 1.0,
+        tie_weight: float = 0.5,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
@@ -522,6 +528,8 @@ def elo(
         ys: The right-hand side elements.
         ws: The winner elements.
         index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
         initial: The initial score of each element.
         base: The base of the exponent.
         scale: The scale factor.
@@ -537,13 +545,15 @@ def elo(
     assert index is not None, "index is None"
 
     if solver == "pyo3":
-        scores = elo_pyo3(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k)
+        scores = elo_pyo3(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight, initial, base, scale, k)
     else:
-        scores = elo_naive(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k)
+        scores = elo_naive(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight, initial, base, scale, k)
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
         initial=initial,
         base=base,
         scale=scale,
