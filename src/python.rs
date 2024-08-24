@@ -17,6 +17,11 @@ impl Winner {
         Winner::Ignore
     }
 
+    fn __hash__(&self) -> u64 {
+        let value: u8 = self.clone().into();
+        value.into()
+    }
+
     fn __getstate__(&self) -> PyResult<u8> {
         Ok(self.clone().into())
     }

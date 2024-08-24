@@ -35,6 +35,10 @@ def test_exports() -> None:
         assert hasattr(evalica, attr), f"missing attribute: {attr}"
 
 
+def test_winner_hashable() -> None:
+    assert len(evalica.WINNERS) == len(set(evalica.WINNERS))
+
+
 def test_winner_pickle() -> None:
     for w in evalica.WINNERS:
         dumped = pickle.dumps(w)
