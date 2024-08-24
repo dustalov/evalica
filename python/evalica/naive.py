@@ -143,12 +143,12 @@ def elo(
         ys: Collection[int],
         ws: Collection[Winner],
         total: int,
-        win_weight: float = 1.0,
-        tie_weight: float = 0.5,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
         k: float = 30.,
+        win_weight: float = 1.0,
+        tie_weight: float = 0.5,
 ) -> npt.NDArray[np.float64]:
     if len(xs) != len(ys) or len(xs) != len(ws) or len(ys) != len(ws):
         raise LengthMismatchError

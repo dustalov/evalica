@@ -10,12 +10,12 @@ pub fn elo<A: Float + AddAssign>(
     ys: &ArrayView1<usize>,
     ws: &ArrayView1<Winner>,
     total: usize,
-    win_weight: A,
-    tie_weight: A,
     initial: A,
     base: A,
     scale: A,
     k: A,
+    win_weight: A,
+    tie_weight: A,
 ) -> Result<Array1<A>, ShapeError> {
     check_lengths!(xs.len(), ys.len(), ws.len());
 
