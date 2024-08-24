@@ -14,7 +14,7 @@ use crate::Winner;
 impl Winner {
     #[new]
     fn new() -> Self {
-        Winner::Ignore
+        Winner::Draw
     }
 
     fn __hash__(&self) -> u64 {

@@ -16,7 +16,6 @@ pub enum Winner {
     X,
     Y,
     Draw,
-    Ignore,
 }
 
 impl From<u8> for Winner {
@@ -25,7 +24,7 @@ impl From<u8> for Winner {
             0 => Self::Draw,
             1 => Self::X,
             2 => Self::Y,
-            _ => Self::Ignore,
+            _ => panic!("Invalid value: {}", value),
         }
     }
 }
@@ -36,7 +35,6 @@ impl Into<u8> for Winner {
             Self::Draw => 0,
             Self::X => 1,
             Self::Y => 2,
-            Self::Ignore => u8::MAX,
         }
     }
 }

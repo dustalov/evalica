@@ -107,7 +107,6 @@ pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
                 ties[[*x, *y]] += tie_weight;
                 ties[[*y, *x]] += tie_weight;
             }
-            _ => {}
         }
     }
 
@@ -182,9 +181,9 @@ mod tests {
 
     #[test]
     fn test_matrices() {
-        let xs = array![0, 1, 2, 3];
-        let ys = array![1, 2, 3, 4];
-        let ws = array![Winner::X, Winner::Y, Winner::Draw, Winner::Ignore];
+        let xs = array![0, 1, 2];
+        let ys = array![1, 2, 3];
+        let ws = array![Winner::X, Winner::Y, Winner::Draw];
 
         let expected_wins = array![
             [0, 1, 0, 0, 0],

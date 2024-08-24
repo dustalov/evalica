@@ -16,8 +16,6 @@ class Winner(Enum):
     """The second element won."""
     Draw = ...
     """There is a tie."""
-    Ignore = ...
-    """The comparison should be ignored."""
 
 
 class LengthMismatchError(ValueError):

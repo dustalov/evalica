@@ -38,7 +38,6 @@ WINNERS = [
     Winner.X,
     Winner.Y,
     Winner.Draw,
-    Winner.Ignore,
 ]
 """Known values of Winner."""
 

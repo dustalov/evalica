@@ -40,7 +40,6 @@ pub fn elo<A: Float + AddAssign>(
             Winner::X => (A::one(), A::zero()),
             Winner::Y => (A::zero(), A::one()),
             Winner::Draw => (half, half),
-            _ => continue,
         };
 
         scores[*x] += k * (scored_x - expected_x);

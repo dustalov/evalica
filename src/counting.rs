@@ -32,7 +32,6 @@ pub fn counting<A: Num + Copy + AddAssign>(
                 scores[*x] += tie_weight;
                 scores[*y] += tie_weight;
             }
-            _ => {}
         }
     }
 

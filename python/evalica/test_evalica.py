@@ -354,7 +354,7 @@ def test_misshaped(comparison: Comparison, algorithm: str, solver: str) -> None:
 def test_incomplete_index(algorithm: str, solver: str) -> None:
     xs = ["a", "c", "e"]
     ys = ["b", "d", "f"]
-    ws = [evalica.Winner.X, evalica.Winner.Ignore, evalica.Winner.Y]
+    ws = [evalica.Winner.X, evalica.Winner.Draw, evalica.Winner.Y]
 
     _, _, index = evalica.indexing(xs, ys)
 
