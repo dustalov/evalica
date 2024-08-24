@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -219,7 +219,7 @@ def pagerank_matrix(
     if not matrix.shape[0]:
         return np.zeros(0, dtype=np.float64)
 
-    p = 1. / matrix.shape[0]
+    p = cast(float, 1. / matrix.shape[0])
 
     matrix = matrix.T
     matrix[matrix.sum(axis=1) == 0] = p
