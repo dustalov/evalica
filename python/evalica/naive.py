@@ -219,7 +219,7 @@ def pagerank_matrix(
     if not matrix.shape[0]:
         return np.zeros(0, dtype=np.float64)
 
-    p = cast(float, 1. / matrix.shape[0])
+    p = cast(float, 1. / matrix.shape[0])  # type: ignore[redundant-cast]
 
     matrix = matrix.T
     matrix[matrix.sum(axis=1) == 0] = p
