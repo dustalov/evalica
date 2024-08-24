@@ -38,7 +38,7 @@ WINNERS = {
 def read_csv(f: IO[str]) -> tuple[list[str], list[str], list[Winner]]:
     df_input = pd.read_csv(f, dtype=str)
 
-    df_input["winner"] = df_input["winner"].lower().map(WINNERS)
+    df_input["winner"] = df_input["winner"].str.lower().map(WINNERS)
     df_input = df_input[~df_input["winner"].isna()]
 
     xs = df_input["left"].tolist()
