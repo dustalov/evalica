@@ -19,34 +19,43 @@ def pairwise_scores(scores: npt.NDArray[np.number[Any]]) -> npt.NDArray[np.float
     return np.nan_to_num(scores[:, np.newaxis] / (scores + scores[:, np.newaxis]))
 
 
+def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
+    length = len(xs)
+
+    for collection in rest:
+        if len(collection) != length:
+            raise LengthMismatchError
+
+
 def counting(
         xs: Collection[int],
         ys: Collection[int],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         win_weight: float,
         tie_weight: float,
 ) -> npt.NDArray[np.float64]:
-    if len(xs) != len(ys) or len(xs) != len(ws) or len(ys) != len(ws):
-        raise LengthMismatchError
+    _check_lengths(xs, ys, winners, weights)
 
     if not xs:
         return np.zeros(0, dtype=np.float64)
 
     scores = np.zeros(total, dtype=np.float64)
 
-    for x, y, w in zip(xs, ys, ws):
-        if w == Winner.X:
-            scores[x] += win_weight
-        elif w == Winner.Y:
-            scores[y] += win_weight
-        elif w == Winner.Draw:
-            scores[x] += tie_weight
-            scores[y] += tie_weight
-        else:
-            continue
+    with np.errstate(all="ignore"):
+        for x, y, w, weight in zip(xs, ys, winners, weights):
+            if w == Winner.X:
+                scores[x] += weight * win_weight
+            elif w == Winner.Y:
+                scores[y] += weight * win_weight
+            elif w == Winner.Draw:
+                scores[x] += weight * tie_weight
+                scores[y] += weight * tie_weight
+            else:
+                continue
 
-    return scores
+    return np.nan_to_num(scores)
 
 
 def bradley_terry(
@@ -54,7 +63,9 @@ def bradley_terry(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
-    totals = matrix.T + matrix
+    with np.errstate(all="ignore"):
+        totals = matrix.T + matrix
+
     active = totals > 0
 
     wins = matrix.sum(axis=1)
@@ -69,20 +80,20 @@ def bradley_terry(
     while not converged and iterations < limit:
         iterations += 1
 
-        broadcast_scores = np.broadcast_to(scores, matrix.shape)
-
         with np.errstate(all="ignore"):
-            normalized[active] = totals[active] / (broadcast_scores[active] + broadcast_scores.T[active])
+            sums = np.add.outer(scores, scores)
+
+            normalized[active] = totals[active] / sums[active]
 
             scores_new[:] = wins
             scores_new /= normalized.sum(axis=0)
             scores_new /= scores_new.sum()
 
-        scores_new = np.nan_to_num(scores_new, nan=tolerance)
+        scores_new[:] = np.nan_to_num(scores_new, nan=tolerance)
 
         converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
-        scores[:] = np.nan_to_num(scores_new, nan=tolerance)
+        scores[:] = scores_new
 
     return scores, iterations
 
@@ -141,7 +152,8 @@ def newman(
 def elo(
         xs: Collection[int],
         ys: Collection[int],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         initial: float = 1000.,
         base: float = 10.,
@@ -150,16 +162,15 @@ def elo(
         win_weight: float = 1.0,
         tie_weight: float = 0.5,
 ) -> npt.NDArray[np.float64]:
-    if len(xs) != len(ys) or len(xs) != len(ws) or len(ys) != len(ws):
-        raise LengthMismatchError
+    _check_lengths(xs, ys, winners, weights)
 
     if not xs:
         return np.zeros(0, dtype=np.float64)
 
     scores = np.ones(total) * initial
 
-    for x, y, w in zip(xs, ys, ws):
-        with np.errstate(all="ignore"):
+    with np.errstate(all="ignore"):
+        for x, y, w, weight in zip(xs, ys, winners, weights):
             q_x = np.nan_to_num(np.power(base, scores[x] / scale))
             q_y = np.nan_to_num(np.power(base, scores[y] / scale))
 
@@ -168,19 +179,19 @@ def elo(
             expected_x = np.nan_to_num(q_x / q)
             expected_y = np.nan_to_num(q_y / q)
 
-        scored_x, scored_y = 0., 0.
+            scored_x, scored_y = 0., 0.
 
-        if w == Winner.X:
-            scored_x = win_weight
-        elif w == Winner.Y:
-            scored_y = win_weight
-        elif w == Winner.Draw:
-            scored_x = scored_y = tie_weight
+            if w == Winner.X:
+                scored_x = weight * win_weight
+            elif w == Winner.Y:
+                scored_y = weight * win_weight
+            elif w == Winner.Draw:
+                scored_x = scored_y = weight * tie_weight
 
-        scores[x] += k * (scored_x - expected_x)
-        scores[y] += k * (scored_y - expected_y)
+            scores[x] += k * (scored_x - expected_x)
+            scores[y] += k * (scored_y - expected_y)
 
-    return scores
+    return np.nan_to_num(scores)
 
 
 def eigen(

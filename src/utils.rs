@@ -1,29 +1,42 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::num::FpCategory;
-use std::ops::AddAssign;
+use std::ops::{AddAssign, MulAssign};
 
-use ndarray::{Array, Array2, ArrayView1, Dimension, ErrorKind, ShapeError};
+use ndarray::{
+    Array, Array2, ArrayView1, ArrayView2, Dimension, ErrorKind, ScalarOperand, ShapeError,
+};
 use num_traits::{Float, Num};
 
 use crate::Winner;
 
 #[macro_export]
 macro_rules! check_lengths {
-    ($xs:expr, $ys:expr, $ws:expr) => {
-        if $xs != $ys || $xs != $ws || $ys != $ws {
-            return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
-        }
+    ($first:expr, $($rest:expr),+) => {
+        $(
+            if $first != $rest {
+                return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+            }
+        )*
     };
 }
 
 #[macro_export]
 macro_rules! check_total {
-    ($xs:expr, $ys:expr, $total:expr) => {
-        if std::cmp::max(*$xs.iter().max().unwrap(), *$ys.iter().max().unwrap()) > $total {
+    ($total:expr, $($xs:expr),+ $(,)?) => {{
+        let mut max_value = 0;
+
+        $(
+            let iter_max = $xs.iter().max().unwrap();
+            if *iter_max > max_value {
+                max_value = *iter_max;
+            }
+        )+
+
+        if max_value > $total {
             return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
         }
-    };
+    }};
 }
 
 #[allow(dead_code)]
@@ -76,41 +89,61 @@ pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
     }
 }
 
-pub fn matrices<A: Num + Copy + AddAssign, B: Num + Copy + AddAssign>(
+pub fn matrices<A: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    ws: &ArrayView1<Winner>,
+    winners: &ArrayView1<Winner>,
+    weights: &ArrayView1<A>,
     total: usize,
-    win_weight: A,
-    tie_weight: B,
-) -> Result<(Array2<A>, Array2<B>), ShapeError> {
-    check_lengths!(xs.len(), ys.len(), ws.len());
+) -> Result<(Array2<A>, Array2<A>), ShapeError> {
+    check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
         return Ok((Array2::zeros((0, 0)), Array2::zeros((0, 0))));
     }
 
-    check_total!(xs, ys, total);
+    check_total!(total, xs, ys);
 
     let mut wins = Array2::zeros((total, total));
-    let mut ties = Array2::zeros((total, total));
+    let mut ties = wins.clone();
 
-    for ((x, y), &ref w) in xs.iter().zip(ys.iter()).zip(ws.iter()) {
+    for (((&x, &y), &ref w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
         match w {
             Winner::X => {
-                wins[[*x, *y]] += win_weight;
+                wins[[x, y]] += weight;
             }
             Winner::Y => {
-                wins[[*y, *x]] += win_weight;
+                wins[[y, x]] += weight;
             }
             Winner::Draw => {
-                ties[[*x, *y]] += tie_weight;
-                ties[[*y, *x]] += tie_weight;
+                ties[[x, y]] += weight;
+                ties[[y, x]] += weight;
             }
         }
     }
 
     Ok((wins, ties))
+}
+
+pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
+    win_matrix: &ArrayView2<A>,
+    tie_matrix: &ArrayView2<A>,
+    win_weight: A,
+    tie_weight: A,
+    nan: A,
+) -> Array2<A> {
+    let mut win_matrix = win_matrix.to_owned();
+    nan_to_num(&mut win_matrix, nan);
+    win_matrix *= win_weight;
+
+    let mut tie_matrix = tie_matrix.to_owned();
+    nan_to_num(&mut tie_matrix, nan);
+    tie_matrix *= tie_weight;
+
+    let mut matrix = &win_matrix + &tie_matrix;
+    nan_to_num(&mut matrix, nan);
+
+    matrix
 }
 
 pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
@@ -137,7 +170,7 @@ pub mod fixtures {
 
     pub(crate) static XS: [usize; 16] = [0, 0, 0, 0, 1, 1, 1, 1, 2, 3, 3, 3, 3, 3, 4, 4];
     pub(crate) static YS: [usize; 16] = [1, 2, 2, 4, 0, 2, 2, 3, 4, 0, 1, 2, 4, 4, 0, 3];
-    pub(crate) static WS: [Winner; 16] = [
+    pub(crate) static WINNERS: [Winner; 16] = [
         Winner::Draw,
         Winner::Y,
         Winner::Draw,
@@ -155,14 +188,16 @@ pub mod fixtures {
         Winner::X,
         Winner::X,
     ];
+    pub(crate) static WEIGHTS: [f64; 16] = [
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    ];
     pub(crate) static TOTAL: usize = 5;
 }
 
 #[cfg(test)]
 mod tests {
-    use ndarray::array;
-
     use super::{index, matrices, pairwise_scores, Winner};
+    use ndarray::array;
 
     #[test]
     fn test_index() {
@@ -183,7 +218,8 @@ mod tests {
     fn test_matrices() {
         let xs = array![0, 1, 2];
         let ys = array![1, 2, 3];
-        let ws = array![Winner::X, Winner::Y, Winner::Draw];
+        let winners = array![Winner::X, Winner::Y, Winner::Draw];
+        let weights = array![1, 1, 1];
 
         let expected_wins = array![
             [0, 1, 0, 0, 0],
@@ -201,7 +237,8 @@ mod tests {
             [0, 0, 0, 0, 0],
         ];
 
-        let (wins, ties) = matrices(&xs.view(), &ys.view(), &ws.view(), 5, 1, 1).unwrap();
+        let (wins, ties) =
+            matrices(&xs.view(), &ys.view(), &winners.view(), &weights.view(), 5).unwrap();
 
         assert_eq!(wins, expected_wins);
         assert_eq!(ties, expected_ties);

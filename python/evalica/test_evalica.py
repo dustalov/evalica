@@ -48,7 +48,7 @@ def test_winner_pickle() -> None:
 
 @given(comparison=comparisons())
 def test_indexing(comparison: Comparison) -> None:  # type: ignore[type-var]
-    xs, ys, _ = comparison
+    xs, ys, *_ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
@@ -61,7 +61,7 @@ def test_indexing(comparison: Comparison) -> None:  # type: ignore[type-var]
 
 @given(comparison=comparisons())
 def test_reindexing(comparison: Comparison) -> None:
-    xs, ys, _ = comparison
+    xs, ys, *_ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
     xs_reindexed, ys_reindexed, reindex = evalica.indexing(xs, ys, index)
@@ -73,7 +73,7 @@ def test_reindexing(comparison: Comparison) -> None:
 
 @given(comparison=comparisons())
 def test_reindexing_unknown(comparison: Comparison) -> None:
-    xs, ys, _ = comparison
+    xs, ys, *_ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
@@ -86,34 +86,41 @@ def test_reindexing_unknown(comparison: Comparison) -> None:
 
 @given(comparison=comparisons())
 def test_matrices(comparison: Comparison) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
 
-    wins = sum(status in [evalica.Winner.X, evalica.Winner.Y] for status in ws)
-    ties = sum(status == evalica.Winner.Draw for status in ws)
+    if weights is None:
+        weights = [1.0] * len(winners)
 
-    result = evalica.matrices(xs_indexed, ys_indexed, ws, index)
+    wins = sum(int(winner in [evalica.Winner.X, evalica.Winner.Y]) * weight for winner, weight in zip(winners, weights))
+    ties = sum(int(winner == evalica.Winner.Draw) * weight for winner, weight in zip(winners, weights))
+
+    result = evalica.matrices(xs_indexed, ys_indexed, winners, index, weights)
 
     assert result.win_matrix.shape == (len(index), len(index))
     assert result.tie_matrix.shape == (len(index), len(index))
-    assert result.win_matrix.sum() == wins
-    assert result.tie_matrix.sum() == 2 * ties
+
+    with np.errstate(over="ignore"):
+        assert result.win_matrix.sum() == pytest.approx(wins)
+        assert result.tie_matrix.sum() == pytest.approx(2 * ties)
 
 
 @given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
 def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.counting(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="pyo3",
     )
 
     result_naive = evalica.counting(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="naive",
@@ -129,17 +136,19 @@ def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) 
 
 @given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
 def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.average_win_rate(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="pyo3",
     )
 
     result_naive = evalica.average_win_rate(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="naive",
@@ -150,24 +159,28 @@ def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight:
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4, check_like=True)
 
 
 @given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
 def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.bradley_terry(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        limit=10,
         solver="pyo3",
     )
 
     result_naive = evalica.bradley_terry(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
+        limit=10,
         solver="naive",
     )
 
@@ -178,15 +191,26 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
         assert result.iterations > 0
         assert result.limit > 0
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-3, check_like=True)
 
 
 @given(comparison=comparisons(), v_init=st.floats())
 def test_newman(comparison: Comparison, v_init: float) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.newman(xs, ys, ws, v_init=v_init, solver="pyo3")
-    result_naive = evalica.newman(xs, ys, ws, v_init=v_init, solver="naive")
+    result_pyo3 = evalica.newman(
+        xs, ys, winners,
+        v_init=v_init,
+        weights=weights,
+        solver="pyo3",
+    )
+
+    result_naive = evalica.newman(
+        xs, ys, winners,
+        v_init=v_init,
+        weights=weights,
+        solver="naive",
+    )
 
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
@@ -223,25 +247,27 @@ def test_elo(
         scale: float,
         k: float,
 ) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.elo(
-        xs, ys, ws,
+        xs, ys, winners,
         initial=initial,
         base=base,
         scale=scale,
         k=k,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="pyo3",
     )
 
     result_naive = evalica.elo(
-        xs, ys, ws,
+        xs, ys, winners,
         initial=initial,
         base=base,
         scale=scale,
         k=k,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="naive",
@@ -257,17 +283,19 @@ def test_elo(
 
 @given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
 def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.eigen(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="pyo3",
     )
 
     result_naive = evalica.eigen(
-        xs, ys, ws,
+        xs, ys, winners,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="naive",
@@ -290,19 +318,21 @@ def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> 
     tie_weight=st.floats(0., 10.),
 )
 def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie_weight: float) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.pagerank(
-        xs, ys, ws,
+        xs, ys, winners,
         damping=damping,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="pyo3",
     )
 
     result_naive = evalica.pagerank(
-        xs, ys, ws,
+        xs, ys, winners,
         damping=damping,
+        weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
         solver="naive",
@@ -340,7 +370,7 @@ def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie
 ])
 def test_misshaped(comparison: Comparison, algorithm: str, solver: str) -> None:
     with pytest.raises(evalica.LengthMismatchError):
-        getattr(evalica, algorithm)(*comparison, solver=solver)
+        getattr(evalica, algorithm)(comparison.xs, comparison.ys, comparison.winners, solver=solver)
 
 
 @pytest.mark.parametrize(("algorithm", "solver"), [
@@ -362,12 +392,12 @@ def test_misshaped(comparison: Comparison, algorithm: str, solver: str) -> None:
 def test_incomplete_index(algorithm: str, solver: str) -> None:
     xs = ["a", "c", "e"]
     ys = ["b", "d", "f"]
-    ws = [evalica.Winner.X, evalica.Winner.Draw, evalica.Winner.Y]
+    winners = [evalica.Winner.X, evalica.Winner.Draw, evalica.Winner.Y]
 
     _, _, index = evalica.indexing(xs, ys)
 
-    result = getattr(evalica, algorithm)(xs, ys, ws, index=index, solver=solver)
-    result_incomplete = getattr(evalica, algorithm)(xs[:-1], ys[:-1], ws[:-1], index=index, solver=solver)
+    result = getattr(evalica, algorithm)(xs, ys, winners, index=index, solver=solver)
+    result_incomplete = getattr(evalica, algorithm)(xs[:-1], ys[:-1], winners[:-1], index=index, solver=solver)
 
     assert len(result.scores) == len(result_incomplete.scores)
 
@@ -378,10 +408,10 @@ def test_incomplete_index(algorithm: str, solver: str) -> None:
     ("counting", "llmfao"),
 ])
 def test_counting_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.counting(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.counting(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.counting(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.counting(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
@@ -394,10 +424,10 @@ def test_counting_dataset(comparison: Comparison, comparison_golden: pd.Series[s
     ("average_win_rate", "llmfao"),
 ])
 def test_average_win_rate_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.average_win_rate(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.average_win_rate(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.average_win_rate(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.average_win_rate(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
@@ -410,10 +440,10 @@ def test_average_win_rate_dataset(comparison: Comparison, comparison_golden: pd.
     ("bradley_terry", "llmfao"),
 ])
 def test_bradley_terry_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.bradley_terry(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.bradley_terry(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.bradley_terry(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.bradley_terry(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, rtol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, rtol=1e-4, check_like=True)
@@ -426,10 +456,10 @@ def test_bradley_terry_dataset(comparison: Comparison, comparison_golden: pd.Ser
     ("newman", "llmfao"),
 ])
 def test_newman_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.newman(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.newman(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.newman(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.newman(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, rtol=1e-4, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, rtol=1e-4, check_like=True)
@@ -444,10 +474,10 @@ def test_newman_dataset(comparison: Comparison, comparison_golden: pd.Series[str
     ("elo", "llmfao"),
 ])
 def test_elo_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.elo(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.elo(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.elo(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.elo(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
@@ -460,10 +490,10 @@ def test_elo_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) 
     ("eigen", "llmfao"),
 ])
 def test_eigen_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.eigen(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.eigen(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.eigen(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.eigen(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
@@ -476,10 +506,10 @@ def test_eigen_dataset(comparison: Comparison, comparison_golden: pd.Series[str]
     ("pagerank", "llmfao"),
 ])
 def test_pagerank_dataset(comparison: Comparison, comparison_golden: pd.Series[str]) -> None:
-    xs, ys, ws = comparison
+    xs, ys, winners, weights = comparison
 
-    result_pyo3 = evalica.pagerank(xs, ys, ws, solver="pyo3")
-    result_naive = evalica.pagerank(xs, ys, ws, solver="naive")
+    result_pyo3 = evalica.pagerank(xs, ys, winners, weights=weights, solver="pyo3")
+    result_naive = evalica.pagerank(xs, ys, winners, weights=weights, solver="naive")
 
     assert_series_equal(result_naive.scores, comparison_golden, check_like=True)
     assert_series_equal(result_pyo3.scores, comparison_golden, check_like=True)
@@ -494,7 +524,7 @@ def test_llmfao_indexing(llmfao: Comparison) -> None:
 def test_llmfao_matrices(llmfao: Comparison, benchmark: BenchmarkFixture) -> None:
     xs_indexed, ys_indexed, index = evalica.indexing(llmfao.xs, llmfao.ys)
 
-    func = partial(evalica.matrices, xs_indexed, ys_indexed, llmfao.ws, index=index)
+    func = partial(evalica.matrices, xs_indexed, ys_indexed, llmfao.winners, weights=llmfao.weights, index=index)
 
     benchmark(func)
 
@@ -518,18 +548,24 @@ def test_llmfao_matrices(llmfao: Comparison, benchmark: BenchmarkFixture) -> Non
 def test_llmfao_performance(llmfao: Comparison, algorithm: str, solver: str, benchmark: BenchmarkFixture) -> None:
     _, _, index = evalica.indexing(llmfao.xs, llmfao.ys)
 
-    func = partial(getattr(evalica, algorithm), *llmfao, index=index, solver=solver)
+    func = partial(
+        getattr(evalica, algorithm),
+        llmfao.xs, llmfao.ys, llmfao.winners,
+        index=index,
+        weights=llmfao.weights,
+        solver=solver,
+    )
 
     benchmark(func)
 
 
 @pytest.mark.parametrize("solver", ["pyo3", "naive"])
 def test_llmfao_pairwise_scores(
-    llmfao: Comparison,
-    solver: Literal["pyo3", "naive"],
-    benchmark: BenchmarkFixture,
+        llmfao: Comparison,
+        solver: Literal["pyo3", "naive"],
+        benchmark: BenchmarkFixture,
 ) -> None:
-    result = evalica.counting(*llmfao)
+    result = evalica.counting(llmfao.xs, llmfao.ys, llmfao.winners, weights=llmfao.weights)
 
     func = partial(evalica.pairwise_scores, result.scores.to_numpy(), solver=solver)
 

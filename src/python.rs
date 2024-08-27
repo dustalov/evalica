@@ -7,7 +7,7 @@ use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
-use crate::utils::{matrices, pairwise_scores};
+use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
 use crate::Winner;
 
 #[pymethods]
@@ -47,10 +47,17 @@ fn matrices_pyo3<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
-) -> PyResult<(Py<PyArray2<i64>>, Py<PyArray2<i64>>)> {
-    match matrices(&xs.as_array(), &ys.as_array(), &ws.as_array(), total, 1, 1) {
+) -> PyResult<(Py<PyArray2<f64>>, Py<PyArray2<f64>>)> {
+    match matrices(
+        &xs.as_array(),
+        &ys.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
+        total,
+    ) {
         Ok((wins, ties)) => Ok((
             wins.into_pyarray_bound(py).unbind(),
             ties.into_pyarray_bound(py).unbind(),
@@ -74,7 +81,8 @@ fn counting_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
@@ -82,7 +90,8 @@ fn counting_pyo3<'py>(
     match counting(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
         win_weight,
         tie_weight,
@@ -97,7 +106,8 @@ fn average_win_rate_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
@@ -105,7 +115,8 @@ fn average_win_rate_pyo3<'py>(
     match average_win_rate(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
         win_weight,
         tie_weight,
@@ -120,7 +131,8 @@ fn bradley_terry_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
@@ -130,13 +142,18 @@ fn bradley_terry_pyo3<'py>(
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
-        win_weight,
-        tie_weight,
     ) {
         Ok((win_matrix, tie_matrix)) => {
-            let matrix = &win_matrix + &tie_matrix;
+            let matrix = win_plus_tie_matrix(
+                &win_matrix.view(),
+                &tie_matrix.view(),
+                win_weight,
+                tie_weight,
+                tolerance,
+            );
 
             match bradley_terry(&matrix.view(), tolerance, limit) {
                 Ok((scores, iterations)) => {
@@ -154,7 +171,8 @@ fn newman_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     v_init: f64,
     win_weight: f64,
@@ -165,12 +183,17 @@ fn newman_pyo3<'py>(
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
-        win_weight,
-        tie_weight,
     ) {
-        Ok((win_matrix, tie_matrix)) => {
+        Ok((mut win_matrix, mut tie_matrix)) => {
+            nan_to_num(&mut win_matrix, tolerance);
+            win_matrix *= win_weight;
+
+            nan_to_num(&mut tie_matrix, tolerance);
+            tie_matrix *= tie_weight;
+
             match newman(
                 &win_matrix.view(),
                 &tie_matrix.view(),
@@ -193,7 +216,8 @@ fn elo_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     initial: f64,
     base: f64,
@@ -205,7 +229,8 @@ fn elo_pyo3<'py>(
     match elo(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
         initial,
         base,
@@ -224,7 +249,8 @@ fn eigen_pyo3<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
@@ -234,13 +260,18 @@ fn eigen_pyo3<'py>(
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
-        win_weight,
-        tie_weight,
     ) {
         Ok((win_matrix, tie_matrix)) => {
-            let matrix = &win_matrix + &tie_matrix;
+            let matrix = win_plus_tie_matrix(
+                &win_matrix.view(),
+                &tie_matrix.view(),
+                win_weight,
+                tie_weight,
+                tolerance,
+            );
 
             match eigen(&matrix.view(), tolerance, limit) {
                 Ok((scores, iterations)) => {
@@ -258,7 +289,8 @@ fn pagerank_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    ws: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, Winner>,
+    weights: PyArrayLike1<'py, f64>,
     total: usize,
     damping: f64,
     win_weight: f64,
@@ -269,13 +301,18 @@ fn pagerank_pyo3<'py>(
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &ws.as_array(),
+        &winners.as_array(),
+        &weights.as_array(),
         total,
-        win_weight,
-        tie_weight,
     ) {
         Ok((win_matrix, tie_matrix)) => {
-            let matrix = &win_matrix + &tie_matrix;
+            let matrix = win_plus_tie_matrix(
+                &win_matrix.view(),
+                &tie_matrix.view(),
+                win_weight,
+                tie_weight,
+                tolerance,
+            );
 
             match pagerank(&matrix.view(), damping, tolerance, limit) {
                 Ok((scores, iterations)) => {

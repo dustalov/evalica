@@ -44,6 +44,30 @@ WINNERS = [
 T = TypeVar("T", bound=Hashable)
 
 
+def _wrap_weights(weights: Collection[float] | None, n: int) -> Collection[float]:
+    if weights is None:
+        return np.repeat(1., n)
+
+    assert np.isfinite(weights).all(), "weights must be finite"  # type: ignore[call-overload]
+
+    return weights
+
+
+def _make_matrix(
+        win_matrix: npt.NDArray[np.float64],
+        tie_matrix: npt.NDArray[np.float64],
+        win_weight: float = 1.,
+        tie_weight: float = 0.,
+        nan: float = 0.0,
+) -> npt.NDArray[np.float64]:
+    with np.errstate(all="ignore"):
+        return np.nan_to_num(
+            win_weight * np.nan_to_num(win_matrix, nan=nan) +
+            tie_weight * np.nan_to_num(tie_matrix, nan=nan),
+            nan=nan,
+        )
+
+
 def indexing(
         xs: Collection[T],
         ys: Collection[T],
@@ -91,16 +115,17 @@ class MatricesResult(Generic[T]):
 
     """
 
-    win_matrix: npt.NDArray[np.int64]
-    tie_matrix: npt.NDArray[np.int64]
+    win_matrix: npt.NDArray[np.float64]
+    tie_matrix: npt.NDArray[np.float64]
     index: dict[T, int]
 
 
 def matrices(
-        xs_indexed: npt.ArrayLike,
-        ys_indexed: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs_indexed: Collection[int],
+        ys_indexed: Collection[int],
+        winners: Collection[Winner],
         index: dict[T, int],
+        weights: Collection[float] | None = None,
 ) -> MatricesResult[T]:
     """
     Build win and tie matrices from the given elements.
@@ -108,14 +133,23 @@ def matrices(
     Args:
         xs_indexed: The left-hand side elements.
         ys_indexed: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
+        weights: The element weights.
 
     Returns:
         The win and tie matrices.
 
     """
-    win_matrix, tie_matrix = matrices_pyo3(xs_indexed, ys_indexed, ws, len(index))
+    weights = _wrap_weights(weights, len(xs_indexed))
+
+    win_matrix, tie_matrix = matrices_pyo3(
+        xs=xs_indexed,
+        ys=ys_indexed,
+        winners=winners,
+        weights=weights,
+        total=len(index),
+    )
 
     return MatricesResult(
         win_matrix=win_matrix,
@@ -148,8 +182,9 @@ class CountingResult(Generic[T]):
 def counting(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -160,8 +195,9 @@ def counting(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -177,10 +213,28 @@ def counting(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
-        scores = counting_pyo3(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
+        scores = counting_pyo3(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+        )
     else:
-        scores = counting_naive(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
+        scores = counting_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+        )
 
     return CountingResult(
         scores=pd.Series(scores, index=index, name=counting.__name__).sort_values(ascending=False, kind="stable"),
@@ -215,8 +269,9 @@ class AverageWinRateResult(Generic[T]):
 def average_win_rate(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -227,8 +282,9 @@ def average_win_rate(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -244,15 +300,34 @@ def average_win_rate(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
-        scores = average_win_rate_pyo3(xs_indexed, ys_indexed, ws, len(index), win_weight, tie_weight)
+        scores = average_win_rate_pyo3(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+        )
+
     else:
-        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+        _matrices = matrices(
+            xs_indexed=xs_indexed,
+            ys_indexed=ys_indexed,
+            winners=winners,
+            index=index,
+            weights=weights,
+        )
 
-        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight)
 
-        with np.errstate(invalid="ignore"):
-            matrix /= matrix + matrix.T
+        with np.errstate(all="ignore"):
+            denominator = np.nan_to_num(matrix + matrix.T)
+
+            matrix /= denominator
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "Mean of empty slice")
@@ -299,8 +374,9 @@ class BradleyTerryResult(Generic[T]):
 def bradley_terry(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -318,8 +394,9 @@ def bradley_terry(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -337,23 +414,36 @@ def bradley_terry(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
         scores, iterations = bradley_terry_pyo3(
-            xs_indexed,
-            ys_indexed,
-            ws,
-            len(index),
-            win_weight,
-            tie_weight,
-            tolerance,
-            limit,
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+            tolerance=tolerance,
+            limit=limit,
         )
     else:
-        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+        _matrices = matrices(
+            xs_indexed=xs_indexed,
+            ys_indexed=ys_indexed,
+            winners=winners,
+            index=index,
+            weights=weights,
+        )
 
-        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
 
-        scores, iterations = bradley_terry_naive(matrix, tolerance, limit)
+        scores, iterations = bradley_terry_naive(
+            matrix=matrix,
+            tolerance=tolerance,
+            limit=limit,
+        )
 
     return BradleyTerryResult(
         scores=pd.Series(scores, index=index, name=bradley_terry.__name__).sort_values(ascending=False, kind="stable"),
@@ -401,9 +491,10 @@ class NewmanResult(Generic[T]):
 def newman(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
         v_init: float = .5,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = 1.,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -421,9 +512,10 @@ def newman(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
         v_init: The initial tie parameter.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -441,25 +533,41 @@ def newman(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
         scores, v, iterations = newman_pyo3(
-            xs_indexed,
-            ys_indexed,
-            ws,
-            len(index),
-            v_init,
-            win_weight,
-            tie_weight,
-            tolerance,
-            limit,
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            v_init=v_init,
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+            tolerance=tolerance,
+            limit=limit,
         )
+
     else:
-        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+        _matrices = matrices(
+            xs_indexed=xs_indexed,
+            ys_indexed=ys_indexed,
+            winners=winners,
+            index=index,
+            weights=weights,
+        )
 
-        win_matrix = win_weight * _matrices.win_matrix.astype(float)
-        tie_matrix = tie_weight * _matrices.tie_matrix.astype(float)
+        win_matrix = np.nan_to_num(win_weight * np.nan_to_num(_matrices.win_matrix, nan=tolerance), nan=tolerance)
+        tie_matrix = np.nan_to_num(tie_weight * np.nan_to_num(_matrices.tie_matrix, nan=tolerance), nan=tolerance)
 
-        scores, v, iterations = newman_naive(win_matrix, tie_matrix, v_init, tolerance, limit)
+        scores, v, iterations = newman_naive(
+            win_matrix=win_matrix,
+            tie_matrix=tie_matrix,
+            v=v_init,
+            tolerance=tolerance,
+            limit=limit,
+        )
 
     return NewmanResult(
         scores=pd.Series(scores, index=index, name=newman.__name__).sort_values(ascending=False, kind="stable"),
@@ -507,12 +615,13 @@ class EloResult(Generic[T]):
 def elo(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
         k: float = 4.,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.0,
         tie_weight: float = 0.5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -526,12 +635,13 @@ def elo(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
         initial: The initial score of each element.
         base: The base of the exponent.
         scale: The scale factor.
         k: The K-factor.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -544,10 +654,36 @@ def elo(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
-        scores = elo_pyo3(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k, win_weight, tie_weight)
+        scores = elo_pyo3(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            initial=initial,
+            base=base,
+            scale=scale,
+            k=k,
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+        )
     else:
-        scores = elo_naive(xs_indexed, ys_indexed, ws, len(index), initial, base, scale, k, win_weight, tie_weight)
+        scores = elo_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            initial=initial,
+            base=base,
+            scale=scale,
+            k=k,
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+        )
 
     return EloResult(
         scores=pd.Series(scores, index=index, name=elo.__name__).sort_values(ascending=False, kind="stable"),
@@ -592,8 +728,9 @@ class EigenResult(Generic[T]):
 def eigen(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -606,8 +743,9 @@ def eigen(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -625,23 +763,36 @@ def eigen(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
         scores, iterations = eigen_pyo3(
-            xs_indexed,
-            ys_indexed,
-            ws,
-            len(index),
-            win_weight,
-            tie_weight,
-            tolerance,
-            limit,
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+            tolerance=tolerance,
+            limit=limit,
         )
     else:
-        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+        _matrices = matrices(
+            xs_indexed=xs_indexed,
+            ys_indexed=ys_indexed,
+            winners=winners,
+            index=index,
+            weights=weights,
+        )
 
-        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
 
-        scores, iterations = eigen_naive(matrix, tolerance, limit)
+        scores, iterations = eigen_naive(
+            matrix=matrix,
+            tolerance=tolerance,
+            limit=limit,
+        )
 
     return EigenResult(
         scores=pd.Series(scores, index=index, name=eigen.__name__).sort_values(ascending=False, kind="stable"),
@@ -687,9 +838,10 @@ class PageRankResult(Generic[T]):
 def pagerank(
         xs: Collection[T],
         ys: Collection[T],
-        ws: Collection[Winner],
+        winners: Collection[Winner],
         index: dict[T, int] | None = None,
         damping: float = .85,
+        weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
@@ -707,9 +859,10 @@ def pagerank(
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        ws: The winner elements.
+        winners: The winner elements.
         index: The index.
         damping: The damping (alpha) factor.
+        weights: The element weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -727,24 +880,38 @@ def pagerank(
 
     assert index is not None, "index is None"
 
+    weights = _wrap_weights(weights, len(xs_indexed))
+
     if solver == "pyo3":
         scores, iterations = pagerank_pyo3(
-            xs_indexed,
-            ys_indexed,
-            ws,
-            len(index),
-            damping,
-            win_weight,
-            tie_weight,
-            tolerance,
-            limit,
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+            damping=damping,
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+            tolerance=tolerance,
+            limit=limit,
         )
     else:
-        _matrices = matrices(xs_indexed, ys_indexed, ws, index)
+        _matrices = matrices(
+            xs_indexed=xs_indexed,
+            ys_indexed=ys_indexed,
+            winners=winners,
+            index=index,
+            weights=weights,
+        )
 
-        matrix = (win_weight * _matrices.win_matrix + tie_weight * _matrices.tie_matrix).astype(float)
+        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
 
-        scores, iterations = pagerank_naive(matrix, damping, tolerance, limit)
+        scores, iterations = pagerank_naive(
+            matrix=matrix,
+            damping=damping,
+            tolerance=tolerance,
+            limit=limit,
+        )
 
     return PageRankResult(
         scores=pd.Series(scores, index=index, name=pagerank.__name__).sort_values(ascending=False, kind="stable"),
@@ -774,8 +941,8 @@ class ScoreDimensionError(ValueError):
 
 
 def pairwise_scores(
-    scores: npt.NDArray[np.float64],
-    solver: Literal["naive", "pyo3"] = "pyo3",
+        scores: npt.NDArray[np.float64],
+        solver: Literal["naive", "pyo3"] = "pyo3",
 ) -> npt.NDArray[np.float64]:
     """
     Estimate the pairwise scores.

@@ -1,11 +1,11 @@
-use std::ops::DivAssign;
+use std::ops::{AddAssign, DivAssign};
 
 use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
 use num_traits::Float;
 
 use crate::utils::{nan_to_num, one_nan_to_num};
 
-pub fn bradley_terry<A: Float + ScalarOperand + DivAssign>(
+pub fn bradley_terry<A: Float + ScalarOperand + AddAssign + DivAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
     limit: usize,
@@ -40,8 +40,16 @@ pub fn bradley_terry<A: Float + ScalarOperand + DivAssign>(
             normalized[[i, j]] = v / (scores[i] + scores[j]);
         }
 
-        let mut scores_new = &wins / &normalized.sum_axis(Axis(1));
-        scores_new /= scores_new.sum();
+        let mut scores_new = &wins / &normalized.sum_axis(Axis(0));
+
+        // Otherwise the result is different from what is computed by NumPy
+        let mut scores_new_sum = A::zero();
+        for &score in scores_new.iter() {
+            scores_new_sum += score;
+        }
+
+        scores_new /= scores_new_sum;
+
         nan_to_num(&mut scores_new, tolerance);
 
         let difference = &scores_new - &scores;
@@ -116,7 +124,7 @@ mod tests {
     use ndarray::{array, ArrayView1};
 
     use crate::utils;
-    use crate::utils::matrices;
+    use crate::utils::{matrices, win_plus_tie_matrix};
 
     use super::{bradley_terry, newman};
 
@@ -126,12 +134,14 @@ mod tests {
 
         let xs = ArrayView1::from(&utils::fixtures::XS);
         let ys = ArrayView1::from(&utils::fixtures::YS);
-        let ws = ArrayView1::from(&utils::fixtures::WS);
+        let winners = ArrayView1::from(&utils::fixtures::WINNERS);
+        let weights = ArrayView1::from(&utils::fixtures::WEIGHTS);
 
         let (win_matrix, tie_matrix) =
-            matrices(&xs, &ys, &ws, utils::fixtures::TOTAL, 1.0, 0.5).unwrap();
+            matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix = win_matrix + &tie_matrix;
+        let matrix =
+            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.050799672530389396,
@@ -157,10 +167,11 @@ mod tests {
 
         let xs = ArrayView1::from(&utils::fixtures::XS);
         let ys = ArrayView1::from(&utils::fixtures::YS);
-        let ws = ArrayView1::from(&utils::fixtures::WS);
+        let winners = ArrayView1::from(&utils::fixtures::WINNERS);
+        let weights = ArrayView1::from(&utils::fixtures::WEIGHTS);
 
         let (win_matrix, tie_matrix) =
-            matrices(&xs, &ys, &ws, utils::fixtures::TOTAL, 1.0, 1.0).unwrap();
+            matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
         let expected_v = 3.4609664512240546;
         let v_init = 0.5;
@@ -180,7 +191,7 @@ mod tests {
             tolerance,
             100,
         )
-        .unwrap();
+            .unwrap();
 
         assert_eq!(actual.len(), win_matrix.shape()[0]);
         assert_eq!(actual.len(), tie_matrix.shape()[0]);

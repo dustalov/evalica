@@ -23,20 +23,22 @@ class LengthMismatchError(ValueError):
 
 
 def matrices_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
-) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.int64]]: ...
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
 
 
 def pairwise_scores_pyo3(scores: npt.ArrayLike) -> npt.NDArray[np.float64]: ...
 
 
 def counting_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         win_weight: float,
         tie_weight: float,
@@ -44,9 +46,10 @@ def counting_pyo3(
 
 
 def average_win_rate_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         win_weight: float,
         tie_weight: float,
@@ -54,9 +57,10 @@ def average_win_rate_pyo3(
 
 
 def bradley_terry_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         win_weight: float,
         tie_weight: float,
@@ -66,9 +70,10 @@ def bradley_terry_pyo3(
 
 
 def newman_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         v_init: float,
         win_weight: float,
@@ -79,9 +84,10 @@ def newman_pyo3(
 
 
 def elo_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         initial: float,
         base: float,
@@ -93,9 +99,10 @@ def elo_pyo3(
 
 
 def eigen_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         win_weight: float,
         tie_weight: float,
@@ -105,9 +112,10 @@ def eigen_pyo3(
 
 
 def pagerank_pyo3(
-        xs: npt.ArrayLike,
-        ys: npt.ArrayLike,
-        ws: Collection[Winner],
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
         total: int,
         damping: float,
         win_weight: float,

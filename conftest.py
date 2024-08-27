@@ -20,7 +20,8 @@ class Comparison(NamedTuple):
 
     xs: list[str] | pd.Series[str]
     ys: list[str] | pd.Series[str]
-    ws: list[evalica.Winner] | pd.Series[evalica.Winner]  # type: ignore[type-var]
+    winners: list[evalica.Winner] | pd.Series[evalica.Winner]  # type: ignore[type-var]
+    weights: list[float] | None = None
 
 
 def enumerate_sizes(n: int) -> list[tuple[int, ...]]:
@@ -37,7 +38,9 @@ def comparisons(
     if shape == "good":
         xs = st.lists(st.text(max_size=length), min_size=length, max_size=length)
         ys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
-        ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+        winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+        weights = st.lists(st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+                           min_size=length, max_size=length)
     else:
         min_x, min_y, min_z = draw(st.sampled_from(enumerate_sizes(3)))
 
@@ -45,9 +48,13 @@ def comparisons(
 
         xs = st.lists(st.text(max_size=length_x), min_size=length_x, max_size=length_x)
         ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
-        ws = st.lists(st.sampled_from(evalica.WINNERS), min_size=length_z, max_size=length_z)
+        winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length_z, max_size=length_z)
+        weights = st.lists(st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+                           min_size=length_z, max_size=length_z)
 
-    return Comparison(xs=draw(xs), ys=draw(ys), ws=draw(ws))
+    has_weights = draw(st.booleans())
+
+    return Comparison(xs=draw(xs), ys=draw(ys), winners=draw(winners), weights=draw(weights) if has_weights else None)
 
 
 @pytest.fixture
@@ -56,13 +63,13 @@ def simple() -> Comparison:
 
     xs = df_simple["left"]
     ys = df_simple["right"]
-    ws = df_simple["winner"].map({  # type: ignore[type-var]
+    winners = df_simple["winner"].map({  # type: ignore[type-var]
         "left": evalica.Winner.X,
         "right": evalica.Winner.Y,
         "tie": evalica.Winner.Draw,
     })
 
-    return Comparison(xs=xs, ys=ys, ws=ws)
+    return Comparison(xs=xs, ys=ys, winners=winners)
 
 
 @pytest.fixture
@@ -80,13 +87,13 @@ def food() -> Comparison:
 
     xs = df_food["left"]
     ys = df_food["right"]
-    ws = df_food["winner"].map({  # type: ignore[type-var]
+    winners = df_food["winner"].map({  # type: ignore[type-var]
         "left": evalica.Winner.X,
         "right": evalica.Winner.Y,
         "tie": evalica.Winner.Draw,
     })
 
-    return Comparison(xs=xs, ys=ys, ws=ws)
+    return Comparison(xs=xs, ys=ys, winners=winners)
 
 
 @pytest.fixture
@@ -104,13 +111,13 @@ def llmfao() -> Comparison:
 
     xs = df_llmfao["left"]
     ys = df_llmfao["right"]
-    ws = df_llmfao["winner"].map({  # type: ignore[type-var]
+    winners = df_llmfao["winner"].map({  # type: ignore[type-var]
         "left": evalica.Winner.X,
         "right": evalica.Winner.Y,
         "tie": evalica.Winner.Draw,
     })
 
-    return Comparison(xs=xs, ys=ys, ws=ws)
+    return Comparison(xs=xs, ys=ys, winners=winners)
 
 
 @pytest.fixture

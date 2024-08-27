@@ -97,7 +97,7 @@ mod tests {
     use ndarray::{array, ArrayView1};
 
     use crate::utils;
-    use crate::utils::matrices;
+    use crate::utils::{matrices, win_plus_tie_matrix};
 
     use super::*;
 
@@ -107,12 +107,14 @@ mod tests {
 
         let xs = ArrayView1::from(&utils::fixtures::XS);
         let ys = ArrayView1::from(&utils::fixtures::YS);
-        let ws = ArrayView1::from(&utils::fixtures::WS);
+        let winners = ArrayView1::from(&utils::fixtures::WINNERS);
+        let weights = ArrayView1::from(&utils::fixtures::WEIGHTS);
 
         let (win_matrix, tie_matrix) =
-            matrices(&xs, &ys, &ws, utils::fixtures::TOTAL, 1.0, 0.5).unwrap();
+            matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix = &win_matrix + &tie_matrix;
+        let matrix =
+            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.6955953825629276,
@@ -138,12 +140,14 @@ mod tests {
 
         let xs = ArrayView1::from(&utils::fixtures::XS);
         let ys = ArrayView1::from(&utils::fixtures::YS);
-        let ws = ArrayView1::from(&utils::fixtures::WS);
+        let winners = ArrayView1::from(&utils::fixtures::WINNERS);
+        let weights = ArrayView1::from(&utils::fixtures::WEIGHTS);
 
         let (win_matrix, tie_matrix) =
-            matrices(&xs, &ys, &ws, utils::fixtures::TOTAL, 1.0, 0.5).unwrap();
+            matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix = &win_matrix + &tie_matrix;
+        let matrix =
+            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.13280040999661397,
