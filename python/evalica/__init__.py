@@ -135,7 +135,7 @@ def matrices(
         ys_indexed: The right-hand side elements.
         winners: The winner elements.
         index: The index.
-        weights: The element weights.
+        weights: The example weights.
 
     Returns:
         The win and tie matrices.
@@ -197,7 +197,7 @@ def counting(
         ys: The right-hand side elements.
         winners: The winner elements.
         index: The index.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -284,7 +284,7 @@ def average_win_rate(
         ys: The right-hand side elements.
         winners: The winner elements.
         index: The index.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -396,7 +396,7 @@ def bradley_terry(
         ys: The right-hand side elements.
         winners: The winner elements.
         index: The index.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -515,7 +515,7 @@ def newman(
         winners: The winner elements.
         index: The index.
         v_init: The initial tie parameter.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -641,7 +641,7 @@ def elo(
         base: The base of the exponent.
         scale: The scale factor.
         k: The K-factor.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -745,7 +745,7 @@ def eigen(
         ys: The right-hand side elements.
         winners: The winner elements.
         index: The index.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
@@ -862,7 +862,7 @@ def pagerank(
         winners: The winner elements.
         index: The index.
         damping: The damping (alpha) factor.
-        weights: The element weights.
+        weights: The example weights.
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
