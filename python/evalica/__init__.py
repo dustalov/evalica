@@ -57,7 +57,7 @@ def _make_matrix(
         win_matrix: npt.NDArray[np.float64],
         tie_matrix: npt.NDArray[np.float64],
         win_weight: float = 1.,
-        tie_weight: float = 0.,
+        tie_weight: float = .5,
         nan: float = 0.0,
 ) -> npt.NDArray[np.float64]:
     with np.errstate(all="ignore"):
@@ -390,6 +390,11 @@ def bradley_terry(
         Bradley, R.A., Terry, M.E.: Rank Analysis of Incomplete Block Designs: I.
         The Method of Paired Comparisons. Biometrika. 39, 324&ndash;345 (1952).
         <https://doi.org/10.2307/2334029>.
+
+    Quote:
+        Newman, M.E.J.: Efficient Computation of Rankings from Pairwise Comparisons.
+        Journal of Machine Learning Research. 24, 1&ndash;25 (2023).
+        <https://www.jmlr.org/papers/v24/22-1086.html>.
 
     Args:
         xs: The left-hand side elements.

@@ -85,7 +85,7 @@ mod tests {
             1.0,
             0.5,
         )
-            .unwrap();
+        .unwrap();
 
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def pairwise_scores(scores: npt.NDArray[np.number[Any]]) -> npt.NDArray[np.float64]:
-    if not scores.shape[0]:
+    if not scores.size:
         return np.zeros((0, 0))
 
     return np.nan_to_num(scores[:, np.newaxis] / (scores + scores[:, np.newaxis]))
@@ -63,31 +63,30 @@ def bradley_terry(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
-    with np.errstate(all="ignore"):
-        totals = matrix.T + matrix
-
-    active = totals > 0
-
-    wins = matrix.sum(axis=1)
-
-    normalized = np.zeros_like(matrix, dtype=float)
-
     scores = np.ones(matrix.shape[0])
-    scores_new = scores.copy()
 
     converged, iterations = False, 0
+
+    if not matrix.size:
+        return scores, iterations
+
+    scores_new = scores.copy()
 
     while not converged and iterations < limit:
         iterations += 1
 
         with np.errstate(all="ignore"):
-            sums = np.add.outer(scores, scores)
+            for i in range(matrix.shape[0]):
+                sums = scores_new[i] + scores_new
 
-            normalized[active] = totals[active] / sums[active]
+                numerator = np.sum(matrix[i] * scores_new / sums)
+                denominator = np.sum(matrix[:, i] / sums)
 
-            scores_new[:] = wins
-            scores_new /= normalized.sum(axis=0)
-            scores_new /= scores_new.sum()
+                scores_new[i] = numerator / denominator
+
+            geometric_mean = np.exp(np.mean(np.log(scores_new)))
+
+            scores_new /= geometric_mean
 
         scores_new[:] = np.nan_to_num(scores_new, nan=tolerance)
 
@@ -105,13 +104,17 @@ def newman(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], float, int]:
-    win_tie_half = win_matrix + tie_matrix / 2
+    win_tie_half = np.nan_to_num(win_matrix + tie_matrix / 2, nan=tolerance)
 
     scores = np.ones(win_matrix.shape[0])
-    scores_new = scores.copy()
-    v_new = v
 
     converged, iterations = False, 0
+
+    if not win_matrix.size and not tie_matrix.size:
+        return scores, v, iterations
+
+    scores_new = scores.copy()
+    v_new = v
 
     while not converged and iterations < limit:
         iterations += 1
@@ -199,7 +202,7 @@ def eigen(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
-    if not matrix.shape[0]:
+    if not matrix.size:
         return np.zeros(0, dtype=np.float64), 0
 
     n = matrix.shape[0]
@@ -227,7 +230,7 @@ def pagerank_matrix(
         matrix: npt.NDArray[np.float64],
         damping: float,
 ) -> npt.NDArray[np.float64]:
-    if not matrix.shape[0]:
+    if not matrix.size:
         return np.zeros(0, dtype=np.float64)
 
     p = 1. / int(matrix.shape[0])

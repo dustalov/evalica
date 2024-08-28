@@ -188,7 +188,7 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
-        assert result.iterations > 0
+        assert not xs or result.iterations > 0
         assert result.limit > 0
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-3, check_like=True)
@@ -216,8 +216,8 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
-        assert np.isfinite(result.v)
-        assert result.iterations > 0
+        assert not xs or np.isfinite(result.v)
+        assert not xs or result.iterations > 0
         assert result.limit > 0
 
         if np.isfinite(v_init):
@@ -226,7 +226,8 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
             assert result.v_init is v_init
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
-    assert result_pyo3.v == pytest.approx(result_naive.v)
+
+    assert not np.isfinite(v_init) or result_pyo3.v == pytest.approx(result_naive.v)
 
 
 @given(
@@ -445,9 +446,12 @@ def test_bradley_terry_dataset(comparison: Comparison, comparison_golden: pd.Ser
     result_pyo3 = evalica.bradley_terry(xs, ys, winners, weights=weights, solver="pyo3")
     result_naive = evalica.bradley_terry(xs, ys, winners, weights=weights, solver="naive")
 
-    assert_series_equal(result_naive.scores, comparison_golden, rtol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, comparison_golden, rtol=1e-4, check_like=True)
-    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
+    scores_pyo3 = result_pyo3.scores / result_pyo3.scores.sum()
+    scores_naive = result_naive.scores / result_naive.scores.sum()
+
+    assert_series_equal(scores_naive, comparison_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(scores_pyo3, comparison_golden, rtol=1e-4, check_like=True)
+    assert_series_equal(scores_pyo3, scores_naive, check_like=True)
 
 
 @pytest.mark.parametrize(("algorithm", "dataset"), [

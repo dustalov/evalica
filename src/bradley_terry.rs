@@ -1,11 +1,11 @@
 use std::ops::{AddAssign, DivAssign};
 
-use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
-use num_traits::Float;
+use ndarray::{Array1, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
+use num_traits::{Float, FromPrimitive};
 
-use crate::utils::{nan_to_num, one_nan_to_num};
+use crate::utils::{nan_to_num, one_nan_to_num, win_plus_tie_matrix};
 
-pub fn bradley_terry<A: Float + ScalarOperand + AddAssign + DivAssign>(
+pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
     limit: usize,
@@ -14,41 +14,35 @@ pub fn bradley_terry<A: Float + ScalarOperand + AddAssign + DivAssign>(
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let totals = &matrix.t().clone() + matrix;
-
-    let active = totals
-        .indexed_iter()
-        .filter(|((_, _), &total)| total > A::zero())
-        .collect::<Vec<((usize, usize), &A)>>();
-
-    let wins = matrix.sum_axis(Axis(1));
-
-    let mut normalized = Array2::zeros(matrix.raw_dim());
-
     let mut scores = Array1::ones(matrix.shape()[0]);
 
     let mut converged = false;
     let mut iterations = 0;
 
+    if matrix.is_empty() {
+        return Ok((scores, iterations));
+    }
+
     while !converged && iterations < limit {
         iterations += 1;
 
-        for ((i, j), &v) in active.iter() {
-            let i = *i;
-            let j = *j;
+        let mut scores_new = scores.clone();
 
-            normalized[[i, j]] = v / (scores[i] + scores[j]);
+        for i in 0..matrix.nrows() {
+            let mut numerator = A::zero();
+            let mut denominator = A::zero();
+
+            for j in 0..matrix.ncols() {
+                let sum_scores = scores_new[i] + scores_new[j];
+                numerator += matrix[[i, j]] * scores_new[j] / sum_scores;
+                denominator += matrix[[j, i]] / sum_scores;
+            }
+
+            scores_new[i] = numerator / denominator;
         }
 
-        let mut scores_new = &wins / &normalized.sum_axis(Axis(0));
-
-        // Otherwise the result is different from what is computed by NumPy
-        let mut scores_new_sum = A::zero();
-        for &score in scores_new.iter() {
-            scores_new_sum += score;
-        }
-
-        scores_new /= scores_new_sum;
+        let geometric_mean = scores_new.mapv(|x| x.ln()).mean().unwrap().exp();
+        scores_new /= geometric_mean;
 
         nan_to_num(&mut scores_new, tolerance);
 
@@ -72,14 +66,19 @@ pub fn newman(
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let win_tie_half = win_matrix + &(tie_matrix / 2.0);
-
     let mut scores = Array1::<f64>::ones(win_matrix.shape()[0]);
     let mut v = v_init;
-    let mut v_new = v;
 
     let mut converged = false;
     let mut iterations = 0;
+
+    if win_matrix.is_empty() && tie_matrix.is_empty() {
+        return Ok((scores, v, iterations));
+    }
+
+    let win_tie_half = win_plus_tie_matrix(&win_matrix, &tie_matrix, 1.0, 0.5, tolerance);
+
+    let mut v_new = v;
 
     while !converged && iterations < limit {
         iterations += 1;
@@ -156,7 +155,9 @@ mod tests {
         assert_eq!(actual.len(), matrix.shape()[0]);
         assert_ne!(iterations, 0);
 
-        for (left, right) in actual.iter().zip(expected.iter()) {
+        let actual_normalized = actual.clone() / actual.sum();
+
+        for (left, right) in actual_normalized.iter().zip(expected.iter()) {
             assert_abs_diff_eq!(left, right, epsilon = tolerance * 1e1);
         }
     }
@@ -191,7 +192,7 @@ mod tests {
             tolerance,
             100,
         )
-            .unwrap();
+        .unwrap();
 
         assert_eq!(actual.len(), win_matrix.shape()[0]);
         assert_eq!(actual.len(), tie_matrix.shape()[0]);
