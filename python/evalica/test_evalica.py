@@ -171,7 +171,6 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
-        limit=10,
         solver="pyo3",
     )
 
@@ -180,7 +179,6 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
-        limit=10,
         solver="naive",
     )
 
@@ -191,7 +189,7 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
         assert not xs or result.iterations > 0
         assert result.limit > 0
 
-    assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-3, check_like=True)
+    assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
 
 @given(comparison=comparisons(), v_init=st.floats())
