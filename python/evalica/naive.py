@@ -52,8 +52,6 @@ def counting(
             elif w == Winner.Draw:
                 scores[x] += weight * tie_weight
                 scores[y] += weight * tie_weight
-            else:
-                continue
 
     return np.nan_to_num(scores)
 
