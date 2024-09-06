@@ -54,6 +54,10 @@ docs = [
     "mkdocs-material",
     "mkdocstrings-python"
 ]
+gradio = [
+    "gradio",
+    "plotly",
+]
 
 [project.readme]
 file = "README.md"

@@ -53,7 +53,7 @@ jobs:
     - name: Set up Maturin
       run: |
         uv pip install maturin
-        maturin develop --uv --extras dev,docs
+        maturin develop --uv --extras dev,docs,gradio
     - if: matrix.python-version != '3.8'
       name: Lint with Mypy
       run: mypy .
@@ -67,7 +67,9 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
     - name: Run Module
-      run: python3 -m evalica --input=food.csv counting
+      run: |
+        python3 -m evalica.gradio --version
+        python3 -m evalica --input=food.csv counting
     - name: Run CLI
       run: evalica --input=food.csv counting
     - name: Lint Jupyter with Mypy

@@ -63,3 +63,7 @@ Pizza,0.0989799795360731,5
 ```
 
 Refer to the [food.csv](https://github.com/dustalov/evalica/blob/master/food.csv) file as an input example.
+
+## Web Application
+
+Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be launched as `python3 -m evalica.gradio`. Please ensure that the library was installed as `pip install evalica[gradio]`.
