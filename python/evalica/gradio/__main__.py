@@ -20,7 +20,7 @@ __author__ = "Dmitry Ustalov"
 __license__ = "Apache 2.0"
 
 import argparse
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 import evalica
 import gradio as gr
@@ -56,15 +56,21 @@ WINNERS = {
 }
 
 
-class ResultScoresProtocol(Protocol):
-    scores: pd.Series[str]
-
-
 class CallableAlgorithm(Protocol):
-    def __call__(self, *args: Any, **kwargs: Any) -> ResultScoresProtocol: ...  # noqa: ANN401
+    def __call__(
+            self,
+            xs: pd.Series[str],
+            ys: pd.Series[str],
+            winners: pd.Series[Winner],  # type: ignore[type-var]
+    ) -> evalica.ResultProtocol[str]: ...
 
 
-def invoke(algorithm: str, xs: pd.Series[str], ys: pd.Series[str], winners: pd.Series[str]) -> pd.Series[str]:
+def invoke(
+        algorithm: str,
+        xs: pd.Series[str],
+        ys: pd.Series[str],
+        winners: pd.Series[Winner],  # type: ignore[type-var]
+) -> pd.Series[float]:
     algorithm_impl = cast("CallableAlgorithm", ALGORITHMS[algorithm])
 
     return algorithm_impl(xs=xs, ys=ys, winners=winners).scores

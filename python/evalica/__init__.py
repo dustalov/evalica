@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Generic, Literal, TypeVar
+from typing import Generic, Literal, Protocol, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -156,6 +156,20 @@ def matrices(
         tie_matrix=tie_matrix,
         index=index,
     )
+
+
+class ResultProtocol(Protocol[T]):
+    """
+    The result protocol.
+
+    Attributes:
+        scores: The element scores.
+        index: The index.
+
+    """
+
+    scores: pd.Series[float]
+    index: dict[T, int]
 
 
 @dataclass(frozen=True)
@@ -969,7 +983,7 @@ def pairwise_scores(
     return pairwise_scores_pyo3(scores)
 
 
-def pairwise_frame(scores: pd.Series[T]) -> pd.DataFrame:  # type: ignore[type-var]
+def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
     """
     Create a data frame out of the estimated pairwise scores.
 
