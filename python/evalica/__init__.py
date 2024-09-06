@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Generic, Literal, Protocol, TypeVar
+from typing import Generic, Literal, Protocol, TypeVar, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -158,6 +158,7 @@ def matrices(
     )
 
 
+@runtime_checkable
 class Result(Protocol[T]):
     """
     The result protocol.

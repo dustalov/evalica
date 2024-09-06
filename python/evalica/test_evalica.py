@@ -126,10 +126,12 @@ def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) 
         solver="naive",
     )
 
+
     for result in (result_pyo3, result_naive):
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
@@ -158,6 +160,7 @@ def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight:
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, rtol=1e-4, check_like=True)
 
@@ -188,6 +191,7 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
         assert result.scores.is_monotonic_decreasing
         assert not xs or result.iterations > 0
         assert result.limit > 0
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
@@ -222,6 +226,8 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
             assert result.v_init == v_init
         else:
             assert result.v_init is v_init
+
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
@@ -276,6 +282,7 @@ def test_elo(
         assert len(result.scores) == len(set(xs) | set(ys))
         assert np.isfinite(result.scores).all()
         assert result.scores.is_monotonic_decreasing
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
@@ -306,6 +313,7 @@ def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> 
         assert result.scores.is_monotonic_decreasing
         assert not xs or result.iterations > 0
         assert result.limit > 0
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
@@ -346,6 +354,7 @@ def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie
         assert np.isfinite(result.tie_weight)
         assert not xs or result.iterations > 0
         assert result.limit > 0
+        assert isinstance(result, evalica.Result)
 
     assert_series_equal(result_pyo3.scores, result_naive.scores, check_like=True)
 
