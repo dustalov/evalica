@@ -26,7 +26,7 @@ import evalica
 import gradio as gr
 import pandas as pd
 import plotly.express as px
-from evalica import Winner
+from evalica import Result, Winner
 
 if TYPE_CHECKING:
     from plotly.graph_objects import Figure
@@ -62,7 +62,7 @@ class CallableAlgorithm(Protocol):
             xs: pd.Series[str],
             ys: pd.Series[str],
             winners: pd.Series[Winner],  # type: ignore[type-var]
-    ) -> evalica.ResultProtocol[str]: ...
+    ) -> Result[str]: ...
 
 
 def invoke(

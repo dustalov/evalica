@@ -158,7 +158,7 @@ def matrices(
     )
 
 
-class ResultProtocol(Protocol[T]):
+class Result(Protocol[T]):
     """
     The result protocol.
 
@@ -1006,6 +1006,7 @@ __all__ = [
     "MatricesResult",
     "NewmanResult",
     "PageRankResult",
+    "Result",
     "ScoreDimensionError",
     "WINNERS",
     "Winner",
