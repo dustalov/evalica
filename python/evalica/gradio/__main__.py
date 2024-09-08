@@ -20,16 +20,14 @@ __author__ = "Dmitry Ustalov"
 __license__ = "Apache 2.0"
 
 import argparse
-from typing import TYPE_CHECKING, Protocol, cast
+from typing import Protocol, cast
 
 import evalica
 import gradio as gr
 import pandas as pd
 import plotly.express as px
 from evalica import Result, Winner
-
-if TYPE_CHECKING:
-    from plotly.graph_objects import Figure
+from plotly.graph_objects import Figure  # noqa: TCH002
 
 
 def visualize(df_pairwise: pd.DataFrame) -> Figure:
