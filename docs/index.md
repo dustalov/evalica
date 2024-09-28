@@ -52,14 +52,14 @@ As a result, we obtain [Elo scores](https://en.wikipedia.org/wiki/Elo_rating_sys
 
 Evalica also provides a simple command-line interface, allowing the use of these methods in shell scripts and for prototyping.
 
-```
-$ evalica -i food.csv bradley-terry
+```console
+$ evalica -i food.csv bradley-terry                
 item,score,rank
-Tacos,0.43428827947351706,1
-Sushi,0.19060105855071743,2
-Burger,0.14797720376982199,3
-Pasta,0.12815347866987045,4
-Pizza,0.0989799795360731,5
+Tacos,2.509025136024378,1
+Sushi,1.1011561298265815,2
+Burger,0.8549063627182466,3
+Pasta,0.7403814336665869,4
+Pizza,0.5718366915548537,5
 ```
 
 Refer to the [food.csv](https://github.com/dustalov/evalica/blob/master/food.csv) file as an input example.
