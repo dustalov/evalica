@@ -14,10 +14,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 approx = "^0.5.1"
-ndarray = "^0.15.6"
+ndarray = "^0.16.1"
 num-traits = "^0.2.19"
-pyo3 = { version = "^0.21.1", features = ["extension-module", "abi3-py38"], optional = true }
-numpy = { version = "^0.21.0", optional = true }
+pyo3 = { version = "^0.22.3", features = ["extension-module", "abi3-py38"], optional = true }
+numpy = { git = "https://github.com/PyO3/rust-numpy.git", revision = "ca3299fe260ff247fe45bd667eb4b0fe5cb1acc8", optional = true }
 
 [features]
 python = ["dep:pyo3", "dep:numpy"]

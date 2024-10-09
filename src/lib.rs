@@ -9,7 +9,7 @@ mod linalg;
 mod python;
 mod utils;
 
-#[cfg_attr(feature = "python", pyclass(module = "evalica"))]
+#[cfg_attr(feature = "python", pyclass(module = "evalica", eq, eq_int))]
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq, Hash)]
 pub enum Winner {

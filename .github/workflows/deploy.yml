@@ -64,11 +64,11 @@ jobs:
         # windows
         - os: windows
           target: x86_64
-          interpreter: 3.8 3.9 3.10 3.11 3.12
+          interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
         - os: windows
           target: i686
           python-architecture: x86
-          interpreter: 3.8 3.9 3.10 3.11 3.12
+          interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
         exclude:
         - os: windows
           target: aarch64
@@ -78,7 +78,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: "3.13"
         architecture: ${{ matrix.python-architecture || 'x64' }}
     - name: Install dependencies
       run: |
@@ -89,7 +89,7 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 pypy3.9 pypy3.10' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 pypy3.9 pypy3.10' }}
         rust-toolchain: stable
         docker-options: -e CI
     - name: List wheels

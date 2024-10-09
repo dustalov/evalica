@@ -35,6 +35,10 @@ impl Winner {
 unsafe impl Element for Winner {
     const IS_COPY: bool = true;
 
+    fn clone_ref(&self, _py: Python<'_>) -> Self {
+        Clone::clone(self)
+    }
+
     fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
         numpy::dtype_bound::<u8>(py)
     }
