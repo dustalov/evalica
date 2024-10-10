@@ -31,7 +31,8 @@ except ModuleNotFoundError:
     from pathlib import Path
 
     if (pydub_spec := importlib.util.find_spec("pydub")) is not None:
-        sys.path.append(str(Path(pydub_spec.origin).parent))
+        if (pydub_origin := pydub_spec.origin) is not None:
+            sys.path.append(str(Path(pydub_origin).parent))
 
     import gradio as gr
 
