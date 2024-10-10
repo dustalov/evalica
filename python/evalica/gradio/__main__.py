@@ -22,8 +22,17 @@ __license__ = "Apache 2.0"
 import argparse
 from typing import Protocol, cast
 
+try:
+    import gradio as gr
+except ModuleNotFoundError:
+    # ModuleNotFoundError: No module named 'pyaudioop'
+    import importlib
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(importlib.util.find_spec("pydub").origin).parent))
+    import gradio as gr
+
 import evalica
-import gradio as gr
 import pandas as pd
 import plotly.express as px
 from evalica import Result, Winner
