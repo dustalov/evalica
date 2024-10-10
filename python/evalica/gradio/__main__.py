@@ -29,7 +29,10 @@ except ModuleNotFoundError:
     import importlib
     import sys
     from pathlib import Path
-    sys.path.append(str(Path(importlib.util.find_spec("pydub").origin).parent))
+
+    if (pydub_spec := importlib.util.find_spec("pydub")) is not None:
+        sys.path.append(str(Path(pydub_spec.origin).parent))
+
     import gradio as gr
 
 import evalica
