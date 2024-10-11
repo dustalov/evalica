@@ -17,7 +17,7 @@ approx = "^0.5.1"
 ndarray = "^0.16.1"
 num-traits = "^0.2.19"
 pyo3 = { version = "^0.22.3", features = ["extension-module", "abi3-py38"], optional = true }
-numpy = { git = "https://github.com/PyO3/rust-numpy.git", rev = "340433a4d70f4f54531d04155f44510c9ecd286b", optional = true }
+numpy = { version = "^0.22.0", optional = true }
 
 [features]
 python = ["dep:pyo3", "dep:numpy"]

@@ -11,6 +11,7 @@ env:
   CARGO_TERM_COLOR: always
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+  UV_SYSTEM_PYTHON: 1
 
 jobs:
   rust:
@@ -44,12 +45,8 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Create virtual environment
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv venv
-        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
-        echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> $GITHUB_ENV
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
     - name: Set up Maturin
       run: |
         uv pip install maturin

@@ -80,10 +80,10 @@ jobs:
       with:
         python-version: "3.13"
         architecture: ${{ matrix.python-architecture || 'x64' }}
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
     - name: Install dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install twine
+      run: uv pip install twine
     - name: Build
       uses: PyO3/maturin-action@v1
       with:
