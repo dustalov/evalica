@@ -49,6 +49,7 @@ jobs:
       uses: astral-sh/setup-uv@v3
     - name: Set up Maturin
       run: |
+        uv venv
         uv pip install maturin
         maturin develop --uv --extras dev,docs,gradio
     - if: matrix.python-version != '3.8'

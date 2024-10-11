@@ -9,6 +9,7 @@ env:
   CARGO_TERM_COLOR: always
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+  UV_SYSTEM_PYTHON: 1
 
 # Heavily inspired by https://github.com/pydantic/pydantic-core/blob/main/.github/workflows/ci.yml
 jobs:
