@@ -40,7 +40,7 @@ import evalica
 import pandas as pd
 import plotly.express as px
 from evalica import Result, Winner
-from plotly.graph_objects import Figure  # noqa: TCH002
+from plotly.graph_objects import Figure  # noqa: TC002
 
 
 def visualize(df_pairwise: pd.DataFrame) -> Figure:

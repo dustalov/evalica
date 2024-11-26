@@ -999,6 +999,7 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
 
 
 __all__ = [
+    "WINNERS",
     "BradleyTerryResult",
     "CountingResult",
     "EigenResult",
@@ -1009,7 +1010,6 @@ __all__ = [
     "PageRankResult",
     "Result",
     "ScoreDimensionError",
-    "WINNERS",
     "Winner",
     "__version__",
     "average_win_rate",
