@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: Evalica
+message: If you use this software, please cite the article from preferred-citation.
+type: software
+authors:
+- family-names: Ustalov
+  given-names: Dmitry
+  orcid: "https://orcid.org/0000-0002-9979-2188"
+license: Apache-2.0
+repository-artifact: https://pypi.org/project/evalica/
+repository-code: https://github.com/dustalov/evalica
+preferred-citation:
+  type: conference-paper
+  authors:
+  - family-names: Ustalov
+    given-names: Dmitry
+    orcid: "https://orcid.org/0000-0002-9979-2188"
+  title: "Reliable, Reproducible, and Really Fast Leaderboards with Evalica"
+  year: 2025
+  conference:
+    name: "31st International Conference on Computational Linguistics"
+    date-start: 2025-01-19
+    date-end: 2025-01-24
+date-released: 2024-07-09

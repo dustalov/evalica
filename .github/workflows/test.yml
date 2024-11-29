@@ -97,6 +97,11 @@ jobs:
       with:
         token: ${{ secrets.CODSPEED_TOKEN }}
         run: pytest --codspeed
+    - if: matrix.python-version == '3.13'
+      name: Validate CITATION.cff
+      uses: citation-file-format/cffconvert-github-action@2.0.0
+      with:
+        args: "--validate"
   pages:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     environment:
