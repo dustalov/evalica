@@ -35,6 +35,9 @@
 
 The logo was created using [Recraft](https://www.recraft.ai/).
 
+> [!NOTE]
+> The demonstration paper describing Evalica has been accepted at the [COLING&nbsp;2025](https://coling2025.org/) conference in Abu Dhabi!
+
 ## Installation
 
 - [pip](https://pip.pypa.io/): `pip install evalica`
@@ -113,6 +116,10 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 [Eigenvalue]: https://doi.org/10.1086/228631
 [PageRank]: https://doi.org/10.1016/S0169-7552(98)00110-X
 [Newman]: https://jmlr.org/papers/v24/22-1086.html
+
+## Citation
+
+Coming soon.
 
 ## Copyright
 
