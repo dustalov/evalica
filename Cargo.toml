@@ -16,7 +16,7 @@ crate-type = ["cdylib"]
 approx = "^0.5.1"
 ndarray = "^0.16.1"
 num-traits = "^0.2.19"
-pyo3 = { version = "^0.22.3", features = ["extension-module", "abi3-py38"], optional = true }
+pyo3 = { version = "^0.23.2", features = ["extension-module", "abi3-py38"], optional = true }
 numpy = { version = "^0.22.0", optional = true }
 
 [features]
