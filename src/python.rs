@@ -39,13 +39,12 @@ unsafe impl Element for Winner {
         Clone::clone(self)
     }
 
-    fn get_dtype_bound(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
-        numpy::dtype_bound::<u8>(py)
+    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
+        numpy::dtype::<u8>(py)
     }
 }
 
 create_exception!(evalica, LengthMismatchError, PyValueError);
-
 #[pyfunction]
 fn matrices_pyo3<'py>(
     py: Python<'py>,
@@ -63,8 +62,8 @@ fn matrices_pyo3<'py>(
         total,
     ) {
         Ok((wins, ties)) => Ok((
-            wins.into_pyarray_bound(py).unbind(),
-            ties.into_pyarray_bound(py).unbind(),
+            wins.into_pyarray(py).unbind(),
+            ties.into_pyarray(py).unbind(),
         )),
         Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
     }
@@ -77,7 +76,7 @@ fn pairwise_scores_pyo3<'py>(
 ) -> PyResult<Py<PyArray2<f64>>> {
     let pairwise = pairwise_scores(&scores.as_array());
 
-    Ok(pairwise.into_pyarray_bound(py).unbind())
+    Ok(pairwise.into_pyarray(py).unbind())
 }
 
 #[pyfunction]
@@ -100,7 +99,7 @@ fn counting_pyo3<'py>(
         win_weight,
         tie_weight,
     ) {
-        Ok(scores) => Ok(scores.into_pyarray_bound(py).unbind()),
+        Ok(scores) => Ok(scores.into_pyarray(py).unbind()),
         Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
     }
 }
@@ -125,7 +124,7 @@ fn average_win_rate_pyo3<'py>(
         win_weight,
         tie_weight,
     ) {
-        Ok(scores) => Ok(scores.into_pyarray_bound(py).unbind()),
+        Ok(scores) => Ok(scores.into_pyarray(py).unbind()),
         Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
     }
 }
@@ -160,9 +159,7 @@ fn bradley_terry_pyo3<'py>(
             );
 
             match bradley_terry(&matrix.view(), tolerance, limit) {
-                Ok((scores, iterations)) => {
-                    Ok((scores.into_pyarray_bound(py).unbind(), iterations))
-                }
+                Ok((scores, iterations)) => Ok((scores.into_pyarray(py).into(), iterations)),
                 Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
             }
         }
@@ -206,7 +203,7 @@ fn newman_pyo3<'py>(
                 limit,
             ) {
                 Ok((scores, v, iterations)) => {
-                    Ok((scores.into_pyarray_bound(py).unbind(), v, iterations))
+                    Ok((scores.into_pyarray(py).unbind(), v, iterations))
                 }
                 Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
             }
@@ -243,7 +240,7 @@ fn elo_pyo3<'py>(
         win_weight,
         tie_weight,
     ) {
-        Ok(scores) => Ok(scores.into_pyarray_bound(py).unbind()),
+        Ok(scores) => Ok(scores.into_pyarray(py).unbind()),
         Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
     }
 }
@@ -278,9 +275,7 @@ fn eigen_pyo3<'py>(
             );
 
             match eigen(&matrix.view(), tolerance, limit) {
-                Ok((scores, iterations)) => {
-                    Ok((scores.into_pyarray_bound(py).unbind(), iterations))
-                }
+                Ok((scores, iterations)) => Ok((scores.into_pyarray(py).unbind(), iterations)),
                 Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
             }
         }
@@ -319,9 +314,7 @@ fn pagerank_pyo3<'py>(
             );
 
             match pagerank(&matrix.view(), damping, tolerance, limit) {
-                Ok((scores, iterations)) => {
-                    Ok((scores.into_pyarray_bound(py).unbind(), iterations))
-                }
+                Ok((scores, iterations)) => Ok((scores.into_pyarray(py).unbind(), iterations)),
                 Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
             }
         }
@@ -332,10 +325,7 @@ fn pagerank_pyo3<'py>(
 #[pymodule]
 fn evalica(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add(
-        "LengthMismatchError",
-        py.get_type_bound::<LengthMismatchError>(),
-    )?;
+    m.add("LengthMismatchError", py.get_type::<LengthMismatchError>())?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;
