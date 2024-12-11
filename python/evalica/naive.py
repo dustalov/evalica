@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -9,17 +9,19 @@ from evalica import LengthMismatchError, Winner
 
 if TYPE_CHECKING:
     from collections.abc import Collection
-    from typing import Any
+
+    S = TypeVar("S", bound=npt.NBitBase)
+    T = TypeVar("T")
 
 
-def pairwise_scores(scores: npt.NDArray[np.number[Any]]) -> npt.NDArray[np.float64]:
+def pairwise_scores(scores: npt.NDArray[np.number[S]]) -> npt.NDArray[np.number[S]]:
     if not scores.size:
-        return np.zeros((0, 0))
+        return np.zeros((0, 0), dtype=scores.dtype)
 
     return np.nan_to_num(scores[:, np.newaxis] / (scores + scores[:, np.newaxis]))
 
 
-def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
+def _check_lengths(xs: Collection[T], *rest: Collection[T]) -> None:
     length = len(xs)
 
     for collection in rest:
@@ -225,9 +227,9 @@ def eigen(
 
 
 def pagerank_matrix(
-        matrix: npt.NDArray[np.floating[Any]],
+        matrix: npt.NDArray[np.floating[S]],
         damping: float,
-) -> npt.NDArray[np.floating[Any]]:
+) -> npt.NDArray[np.floating[S]]:
     if not matrix.size:
         return np.zeros(0, dtype=matrix.dtype)
 

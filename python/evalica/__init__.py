@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Generic, Literal, Protocol, TypeVar, runtime_checkable
+from typing import Generic, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -979,7 +979,7 @@ def pairwise_scores(
         raise ScoreDimensionError(scores.ndim)
 
     if solver == "naive":
-        return pairwise_scores_naive(scores)
+        return cast("npt.NDArray[np.float64]", pairwise_scores_naive(scores))
 
     return pairwise_scores_pyo3(scores)
 
