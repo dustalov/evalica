@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -205,7 +205,7 @@ def eigen(
 
     n = matrix.shape[0]
 
-    scores = np.ones(n) / n
+    scores = np.ones(n, dtype=np.float64) / n
     scores_new = scores.copy()
 
     converged, iterations = False, 0
@@ -221,15 +221,15 @@ def eigen(
 
         scores[:] = scores_new
 
-    return scores, iterations
+    return cast("npt.NDArray[np.float64]", scores), iterations
 
 
 def pagerank_matrix(
-        matrix: npt.NDArray[np.float64],
+        matrix: npt.NDArray[np.floating[Any]],
         damping: float,
-) -> npt.NDArray[np.float64]:
+) -> npt.NDArray[np.floating[Any]]:
     if not matrix.size:
-        return np.zeros(0, dtype=np.float64)
+        return np.zeros(0, dtype=matrix.dtype)
 
     p = 1. / int(matrix.shape[0])
 
@@ -246,7 +246,7 @@ def pagerank(
         tolerance: float,
         limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]:
-    matrix = pagerank_matrix(matrix, damping)
+    matrix = cast("npt.NDArray[np.float64]", pagerank_matrix(matrix, damping))
 
     scores, iterations = eigen(matrix, tolerance=tolerance, limit=limit)
     scores /= np.linalg.norm(scores, ord=1)
