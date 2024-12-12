@@ -46,7 +46,7 @@ T = TypeVar("T", bound=Hashable)
 
 def _wrap_weights(weights: Collection[float] | None, n: int) -> Collection[float]:
     if weights is None:
-        return np.repeat(1., n)
+        return [1.] * n
 
     assert np.isfinite(weights).all(), "weights must be finite"  # type: ignore[call-overload]
 
