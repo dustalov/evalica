@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Generic, Literal, Protocol, TypeVar, cast, runtime_checkable, Callable
+from typing import Callable, Generic, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -1000,21 +1000,23 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
 
 @dataclass
 class BootstrapConfidenceInterval:
-    score_method: Literal['elo', 'bradley-terry', 'newman']  # TODO: more?
+    """Generate confidence interval by bootstrap."""
+
+    score_method: Literal["elo", "bradley-terry", "newman"]  # TODO: more?
     num_rounds: int = 100
     sample_rate: float = 1.0
     with_replace: bool = True
 
     def fit(self,
             df: pd.DataFrame,
-            left_column: str = 'left',
-            right_column: str = 'right',
-            winner_colum: str = 'winner',
+            left_column: str = "left",
+            right_column: str = "right",
+            winner_colum: str = "winner",
             weights: Collection[float] | None = None,
             win_weight: float = 1.0,
             tie_weight: float = 0.5,
             solver: Literal["naive", "pyo3"] = "pyo3",
-            **kwargs,
+            **kwargs: float,  # TODO: change to Unpack?
             ) -> pd.DataFrame:
         """
         Calculate confidence interval by bootstrap.
@@ -1032,15 +1034,15 @@ class BootstrapConfidenceInterval:
 
         Returns:
             The dataframe with scores from all bootstrap rounds.
-        """
 
+        """
         score_function = self._get_score_method()
         *_, index = indexing(
             xs=df[left_column],
             ys=df[right_column],
         )
 
-        bootstrap: list["pd.Series[float]"] = []
+        bootstrap: list[pd.Series[float]] = []
         for r in range(self.num_rounds):
             df_sample = df.sample(frac=self.sample_rate, replace=self.with_replace, random_state=r)
             result_sample = score_function(
@@ -1052,31 +1054,33 @@ class BootstrapConfidenceInterval:
                 win_weight=win_weight,
                 tie_weight=tie_weight,
                 solver=solver,
-                **kwargs
+                **kwargs,
             )
 
             bootstrap.append(result_sample.scores)
 
-        df_bootstrap = pd.DataFrame(bootstrap)
         # TODO: calculate the quantiles in here?
-        return df_bootstrap
+        return pd.DataFrame(bootstrap)
 
-    def plot(self, df: pd.DataFrame):
-        pass
+    def plot(self, df: pd.DataFrame) -> None:
+        """Plot confidence interval by plotly."""
+        raise NotImplementedError
 
-    def _get_score_method(self) -> Callable[..., Generic[T]]:
+    def _get_score_method(self) -> Callable[..., EloResult[T] | BradleyTerryResult[T] | NewmanResult[T]]:
         score_method_map = {
-            'elo': elo,
-            'bradley-terry': bradley_terry,
-            'newman': newman,
+            "elo": elo,
+            "bradley-terry": bradley_terry,
+            "newman": newman,
         }
         if (score_method := score_method_map.get(self.score_method)) is None:
-            ValueError(f"{self.score_method=}, which is not supported!")
+            error_msg = f"Unsupported score method: {self.score_method}!"
+            raise ValueError(error_msg)
         return score_method
 
 
 __all__ = [
     "WINNERS",
+    "BootstrapConfidenceInterval",
     "BradleyTerryResult",
     "CountingResult",
     "EigenResult",
@@ -1100,5 +1104,4 @@ __all__ = [
     "pagerank",
     "pairwise_frame",
     "pairwise_scores",
-    "BootstrapConfidenceInterval",
 ]
