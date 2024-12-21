@@ -18,6 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }} }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests (Rust)
@@ -31,25 +40,15 @@ jobs:
         python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          .venv/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-python-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
     - name: Set up uv
       uses: astral-sh/setup-uv@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache-dependency-glob: |
+          **/Cargo.toml
+          **/pyproject.toml
     - name: Set up Maturin
       run: |
-        uv venv
         uv pip install maturin
         maturin develop --uv --extras dev,docs,gradio
     - if: matrix.python-version != '3.8'
