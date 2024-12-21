@@ -47,6 +47,7 @@ jobs:
         cache-dependency-glob: |
           **/Cargo.toml
           **/pyproject.toml
+    - run: ls -lahR .venv/
     - name: Set up Maturin
       run: |
         uv pip install maturin
