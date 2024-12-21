@@ -79,6 +79,8 @@ jobs:
         architecture: ${{ matrix.python-architecture || 'x64' }}
     - name: Set up uv
       uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: false
     - name: Install dependencies
       run: uv pip install twine
     - name: Build
