@@ -133,6 +133,8 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 }
 ```
 
+The code for replicating the experiments is available in the [`coling2025`](coling2025/) directory.
+
 ## Copyright
 
 Copyright (c) 2024 [Dmitry Ustalov](https://github.com/dustalov). See [LICENSE](LICENSE) for details.
