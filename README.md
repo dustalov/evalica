@@ -119,7 +119,7 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 
 ## Citation
 
-- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://arxiv.org/abs/2412.11314). 2024. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314). 
+- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://arxiv.org/abs/2412.11314). 2024. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
 
 ```bibtex
 @misc{Ustalov:25,
