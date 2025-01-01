@@ -6,7 +6,7 @@
 
 - [`requirements.txt`](requirements.txt)
 - Chatbot Arena's Dump (August 2024): <https://storage.googleapis.com/arena_external_data/public/clean_battle_20240814_public.json>
-- LLMFAO Dataset: <https://raw.githubusercontent.com/dustalov/llmfao/refs/heads/master/crowd-comparisons.csv>
+- LLMFAO Dataset: <https://raw.githubusercontent.com/dustalov/llmfao/refs/heads/master/crowd-comparisons.csv> &rarr; `llmfao.csv`
 
 ## Table 1: [chatbot_arena.csv](chatbot_arena.csv)
 
@@ -20,7 +20,7 @@ python3 -m chatbot_arena
 python3 -m rust_python
 ```
 
-## Table 3: [scale.csv](scale.csv)
+## Figure 3: [scale.csv](scale.csv)
 
 ```shell
 python3 -m scale_data
