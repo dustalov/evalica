@@ -119,7 +119,21 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 
 ## Citation
 
-Coming soon.
+- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://arxiv.org/abs/2412.11314). 2024. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
+
+```bibtex
+@misc{Ustalov:25,
+  author    = {Ustalov, Dmitry},
+  title     = {{Reliable, Reproducible, and Really Fast Leaderboards with Evalica}},
+  year      = {2025},
+  eprint    = {2412.11314},
+  eprinttype = {arxiv},
+  eprintclass = {cs.CL},
+  language  = {english},
+}
+```
+
+The code for replicating the experiments is available in the [`coling2025`](coling2025/) directory.
 
 ## Copyright
 

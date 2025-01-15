@@ -7,8 +7,13 @@ authors:
   given-names: Dmitry
   orcid: "https://orcid.org/0000-0002-9979-2188"
 license: Apache-2.0
-repository-artifact: https://pypi.org/project/evalica/
-repository-code: https://github.com/dustalov/evalica
+identifiers:
+  - type: url
+    value: "https://github.com/dustalov/evalica"
+  - type: other
+    value: "arXiv:2412.11314"
+repository-artifact: "https://pypi.org/project/evalica/"
+repository-code: "https://github.com/dustalov/evalica"
 preferred-citation:
   type: conference-paper
   authors:

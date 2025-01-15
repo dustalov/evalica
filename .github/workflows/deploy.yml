@@ -78,7 +78,9 @@ jobs:
         python-version: "3.13"
         architecture: ${{ matrix.python-architecture || 'x64' }}
     - name: Set up uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: false
     - name: Install dependencies
       run: uv pip install twine
     - name: Build
@@ -86,7 +88,7 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 pypy3.9 pypy3.10' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13' }}
         rust-toolchain: stable
         docker-options: -e CI
     - name: List wheels
@@ -117,7 +119,7 @@ jobs:
         path: dist
     - run: ls -lh dist/
     - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@v1.12.3
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
@@ -139,4 +141,4 @@ jobs:
         path: dist
     - run: ls -lh dist/
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@v1.12.3

@@ -38,6 +38,7 @@ dynamic = ["version"]
 dev = [
     "abi3audit",
     "hypothesis[numpy]",
+    "ipywidgets",
     "mypy",
     "nbqa",
     "notebook",
