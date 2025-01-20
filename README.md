@@ -35,9 +35,6 @@
 
 The logo was created using [Recraft](https://www.recraft.ai/).
 
-> [!NOTE]
-> The demonstration paper describing Evalica has been accepted at the [COLING&nbsp;2025](https://coling2025.org/) conference in Abu Dhabi!
-
 ## Installation
 
 - [pip](https://pip.pypa.io/): `pip install evalica`
@@ -119,16 +116,21 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 
 ## Citation
 
-- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://arxiv.org/abs/2412.11314). 2024. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
+- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://aclanthology.org/2025.coling-demos.6). 2025. Proceedings of the 31st International Conference on Computational Linguistics: System Demonstrations. 46&ndash;53. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
 
 ```bibtex
-@misc{Ustalov:25,
+@inproceedings{Ustalov:25,
   author    = {Ustalov, Dmitry},
   title     = {{Reliable, Reproducible, and Really Fast Leaderboards with Evalica}},
   year      = {2025},
+  booktitle = {Proceedings of the 31st International Conference on Computational Linguistics: System Demonstrations},
+  pages     = {46--53},
+  address   = {Abu Dhabi, UAE},
+  publisher = {Association for Computational Linguistics},
   eprint    = {2412.11314},
   eprinttype = {arxiv},
   eprintclass = {cs.CL},
+  url       = {https://aclanthology.org/2025.coling-demos.6},
   language  = {english},
 }
 ```
@@ -137,4 +139,4 @@ The code for replicating the experiments is available in the [`coling2025`](coli
 
 ## Copyright
 
-Copyright (c) 2024 [Dmitry Ustalov](https://github.com/dustalov). See [LICENSE](LICENSE) for details.
+Copyright (c) 2024&ndash;2025 [Dmitry Ustalov](https://github.com/dustalov). See [LICENSE](LICENSE) for details.

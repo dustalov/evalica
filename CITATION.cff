@@ -9,6 +9,8 @@ authors:
 license: Apache-2.0
 identifiers:
   - type: url
+    value: "https://aclanthology.org/2025.coling-demos.6"
+  - type: url
     value: "https://github.com/dustalov/evalica"
   - type: other
     value: "arXiv:2412.11314"
@@ -22,8 +24,10 @@ preferred-citation:
     orcid: "https://orcid.org/0000-0002-9979-2188"
   title: "Reliable, Reproducible, and Really Fast Leaderboards with Evalica"
   year: 2025
+  collection-title: "Proceedings of the 31st International Conference on Computational Linguistics: System Demonstrations"
   conference:
     name: "31st International Conference on Computational Linguistics"
     date-start: 2025-01-19
     date-end: 2025-01-24
+  url: "https://aclanthology.org/2025.coling-demos.6"
 date-released: 2024-07-09
