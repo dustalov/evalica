@@ -119,7 +119,7 @@ jobs:
         path: dist
     - run: ls -lh dist/
     - name: Publish to TestPyPI
-      uses: pypa/gh-action-pypi-publish@v1.12.3
+      uses: pypa/gh-action-pypi-publish@v1.12.4
       with:
         repository-url: https://test.pypi.org/legacy/
         skip-existing: true
@@ -141,4 +141,4 @@ jobs:
         path: dist
     - run: ls -lh dist/
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.12.3
+      uses: pypa/gh-action-pypi-publish@v1.12.4
