@@ -114,6 +114,29 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 [PageRank]: https://doi.org/10.1016/S0169-7552(98)00110-X
 [Newman]: https://jmlr.org/papers/v24/22-1086.html
 
+## Contributing
+
+Evalica is a mixed Rust/Python project that uses [PyO3](https://pyo3.rs/), so it requires setting up the [Maturin](https://www.maturin.rs/) build system.
+
+To set up the environment, we recommend using the [uv](https://github.com/astral-sh/uv) package manager, as demonstrated in [our test suite](.github/workflows/test.yml):
+
+```console
+$ uv venv
+$ uv pip install maturin
+$ maturin develop --uv --extras dev,docs,gradio
+```
+
+In case `uv` is not available, you can use the following workaround:
+
+```console
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install maturin
+$ maturin develop --extras dev,docs,gradio
+```
+
+We welcome pull requests on GitHub: <https://github.com/dustalov/evalica>. To contribute, fork the repository, create a separate branch for your changes, and submit a pull request.
+
 ## Citation
 
 - Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://aclanthology.org/2025.coling-demos.6). 2025. Proceedings of the 31st International Conference on Computational Linguistics: System Demonstrations. 46&ndash;53. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
