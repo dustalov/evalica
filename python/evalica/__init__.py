@@ -6,13 +6,12 @@ import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Callable, Generic, Literal, Protocol, TypeVar, cast, runtime_checkable
+from typing import Any, Callable, Generic, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-import evalica
 from .evalica import (
     LengthMismatchError,
     Winner,
@@ -1005,13 +1004,33 @@ def bootstrap(
         ys: Collection[T],
         winners: Collection[Winner],
         weights: Collection[float] | None = None,
-        n_resamples=1000,
-        confidence_level=0.95,
-        **kwargs,
-):
+        n_resamples: int = 1000,
+        confidence_level: float =0.95,
+        seed: int = 42,
+        **kwargs: dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Perform bootstrap sampling.
+
+    Args:
+        method: The rank method, use `bradley_terry` for example.
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        winners: The winner elements.
+        weights: The example weights.
+        n_resamples: The number of resamples.
+        confidence_level: The confidence level.
+        seed: The random seed.
+        **kwargs: The keyword arguments.
+
+    Returns:
+        The bootstrap results with `low` and `up` columns for lower and upper bounds of confidence intervals.
+
+    """
+    rng = np.random.RandomState(seed)
     rows = []
-    for r in range(n_resamples):
-        indices = np.random.choice(len(xs), size=len(xs), replace=True)
+    for _ in range(n_resamples):
+        indices = rng.choice(len(xs), size=len(xs), replace=True)
         resamples_result = method(
             xs=xs[indices],
             ys=ys[indices],
@@ -1020,11 +1039,11 @@ def bootstrap(
             **kwargs,
         )
         rows.append(resamples_result.scores)
-    df = pd.DataFrame(rows)
+    bootstrap_scores = pd.DataFrame(rows)
     # calculate confidence interval
     ci_df = pd.DataFrame()
-    ci_df['low'] = df.apply(lambda col: np.quantile(col, (1 - confidence_level) / 2), axis=0)
-    ci_df['up'] = df.apply(lambda col: np.quantile(col, 1 - (1 - confidence_level) / 2), axis=0)
+    ci_df["low"] = bootstrap_scores.apply(lambda col: np.quantile(col, (1 - confidence_level) / 2), axis=0)
+    ci_df["up"] = bootstrap_scores.apply(lambda col: np.quantile(col, 1 - (1 - confidence_level) / 2), axis=0)
     return ci_df
 
 
@@ -1043,8 +1062,8 @@ __all__ = [
     "Winner",
     "__version__",
     "average_win_rate",
-    "bradley_terry",
     "bootstrap",
+    "bradley_terry",
     "counting",
     "eigen",
     "elo",
@@ -1055,22 +1074,3 @@ __all__ = [
     "pairwise_frame",
     "pairwise_scores",
 ]
-
-if __name__ == "__main__":
-    df_food = pd.read_csv("food.csv", dtype=str)
-
-    df_food["winner"] = df_food["winner"].map({
-        "left": Winner.X,
-        "right": Winner.Y,
-        "tie": Winner.Draw,
-    })
-
-    bt_result = bootstrap(
-        method=bradley_terry,
-        xs = df_food["left"],
-        ys = df_food["right"],
-        winners=df_food["winner"],
-        n_resamples=10,
-        confidence_level=0.95,
-    )
-    print(bt_result)
