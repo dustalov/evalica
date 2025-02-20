@@ -1,6 +1,6 @@
 # Code to Reproduce Experiments from the COLING 2025 Paper
 
-- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://arxiv.org/abs/2412.11314). 2024. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
+- Ustalov, D. [Reliable, Reproducible, and Really Fast Leaderboards with Evalica](https://aclanthology.org/2025.coling-demos.6). 2025. Proceedings of the 31st International Conference on Computational Linguistics: System Demonstrations. 46&ndash;53. arXiv: [2412.11314 [cs.CL]](https://arxiv.org/abs/2412.11314).
 
 ## Prerequisites
 

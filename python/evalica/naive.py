@@ -229,11 +229,11 @@ def eigen(
 def pagerank_matrix(
         matrix: npt.NDArray[np.floating[S]],
         damping: float,
-) -> npt.NDArray[np.floating[S]]:
+) -> npt.NDArray[np.float64]:
     if not matrix.size:
         return np.zeros(0, dtype=matrix.dtype)
 
-    p = 1. / int(matrix.shape[0])
+    p = 1 / int(matrix.shape[0])
 
     matrix = matrix.T
     matrix[matrix.sum(axis=1) == 0] = p
