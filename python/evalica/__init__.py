@@ -12,6 +12,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
+import evalica
 from .evalica import (
     LengthMismatchError,
     Winner,
@@ -998,89 +999,37 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
     return pd.DataFrame(pairwise_scores(scores.to_numpy()), index=scores.index, columns=scores.index)
 
 
-@dataclass
-class BootstrapConfidenceInterval:
-    """Generate confidence interval by bootstrap."""
-
-    score_method: Literal["elo", "bradley-terry", "newman"]  # TODO: more?
-    num_rounds: int = 100
-    sample_rate: float = 1.0
-    with_replace: bool = True
-
-    def fit(self,
-            df: pd.DataFrame,
-            left_column: str = "left",
-            right_column: str = "right",
-            winner_colum: str = "winner",
-            weights: Collection[float] | None = None,
-            win_weight: float = 1.0,
-            tie_weight: float = 0.5,
-            solver: Literal["naive", "pyo3"] = "pyo3",
-            **kwargs: float,  # TODO: change to Unpack?
-            ) -> pd.DataFrame:
-        """
-        Calculate confidence interval by bootstrap.
-
-        Args:
-            df: The dataset with all the records.
-            left_column: The column name of left role.
-            right_column: The column name of right role.
-            winner_colum: The column name of winner role.
-            weights: The example weights.
-            win_weight: The win weight.
-            tie_weight: The tie weight.
-            solver: The solver.
-            kwargs: The method specific parameters(Like the `initial`, `base`, `scale`, `k` in elo method).
-
-        Returns:
-            The dataframe with scores from all bootstrap rounds.
-
-        """
-        score_function = self._get_score_method()
-        *_, index = indexing(
-            xs=df[left_column],
-            ys=df[right_column],
+def bootstrap(
+        method: Callable[..., T],
+        xs: Collection[T],
+        ys: Collection[T],
+        winners: Collection[Winner],
+        weights: Collection[float] | None = None,
+        n_resamples=1000,
+        confidence_level=0.95,
+        **kwargs,
+):
+    rows = []
+    for r in range(n_resamples):
+        indices = np.random.choice(len(xs), size=len(xs), replace=True)
+        resamples_result = method(
+            xs=xs[indices],
+            ys=ys[indices],
+            winners=winners[indices],
+            weights=weights[indices] if weights is not None else None,
+            **kwargs,
         )
-
-        bootstrap: list[pd.Series[float]] = []
-        for r in range(self.num_rounds):
-            df_sample = df.sample(frac=self.sample_rate, replace=self.with_replace, random_state=r)
-            result_sample = score_function(
-                xs=df_sample[left_column],
-                ys=df_sample[right_column],
-                winners=df_sample[winner_colum],
-                index=index,
-                weights=weights,
-                win_weight=win_weight,
-                tie_weight=tie_weight,
-                solver=solver,
-                **kwargs,
-            )
-
-            bootstrap.append(result_sample.scores)
-
-        # TODO: calculate the quantiles in here?
-        return pd.DataFrame(bootstrap)
-
-    def plot(self, df: pd.DataFrame) -> None:
-        """Plot confidence interval by plotly."""
-        raise NotImplementedError
-
-    def _get_score_method(self) -> Callable[..., EloResult[T] | BradleyTerryResult[T] | NewmanResult[T]]:
-        score_method_map = {
-            "elo": elo,
-            "bradley-terry": bradley_terry,
-            "newman": newman,
-        }
-        if (score_method := score_method_map.get(self.score_method)) is None:
-            error_msg = f"Unsupported score method: {self.score_method}!"
-            raise ValueError(error_msg)
-        return score_method
+        rows.append(resamples_result.scores)
+    df = pd.DataFrame(rows)
+    # calculate confidence interval
+    ci_df = pd.DataFrame()
+    ci_df['low'] = df.apply(lambda col: np.quantile(col, (1 - confidence_level) / 2), axis=0)
+    ci_df['up'] = df.apply(lambda col: np.quantile(col, 1 - (1 - confidence_level) / 2), axis=0)
+    return ci_df
 
 
 __all__ = [
     "WINNERS",
-    "BootstrapConfidenceInterval",
     "BradleyTerryResult",
     "CountingResult",
     "EigenResult",
@@ -1095,6 +1044,7 @@ __all__ = [
     "__version__",
     "average_win_rate",
     "bradley_terry",
+    "bootstrap",
     "counting",
     "eigen",
     "elo",
@@ -1105,3 +1055,22 @@ __all__ = [
     "pairwise_frame",
     "pairwise_scores",
 ]
+
+if __name__ == "__main__":
+    df_food = pd.read_csv("food.csv", dtype=str)
+
+    df_food["winner"] = df_food["winner"].map({
+        "left": Winner.X,
+        "right": Winner.Y,
+        "tie": Winner.Draw,
+    })
+
+    bt_result = bootstrap(
+        method=bradley_terry,
+        xs = df_food["left"],
+        ys = df_food["right"],
+        winners=df_food["winner"],
+        n_resamples=10,
+        confidence_level=0.95,
+    )
+    print(bt_result)
