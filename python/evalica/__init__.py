@@ -999,7 +999,7 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
 
 
 def bootstrap(
-        method: Callable[..., T],
+        method: Callable[..., Any],
         xs: Collection[T],
         ys: Collection[T],
         winners: Collection[Winner],
@@ -1027,8 +1027,12 @@ def bootstrap(
         The bootstrap results with `low` and `up` columns for lower and upper bounds of confidence intervals.
 
     """
-    rng = np.random.RandomState(seed)
+    if weights is None:
+        weights = np.ones(len(xs))
+    xs, ys, winners, weights = np.array(xs), np.array(ys), np.array(winners), np.array(weights)
+
     rows = []
+    rng = np.random.RandomState(seed)
     for _ in range(n_resamples):
         indices = rng.choice(len(xs), size=len(xs), replace=True)
         resamples_result = method(
