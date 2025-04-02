@@ -7,7 +7,7 @@
 - Chatbot Arena's Dump (August 2024): <https://storage.googleapis.com/arena_external_data/public/clean_battle_20240814_public.json>
 - LLMFAO Dataset: <https://raw.githubusercontent.com/dustalov/llmfao/refs/heads/master/crowd-comparisons.csv> &rarr; `llmfao.csv`
 
-Please use the following requrements to install the dependencies:
+### `requirements.txt`
 
 ```
 evalica==0.3.2
