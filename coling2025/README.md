@@ -4,9 +4,19 @@
 
 ## Prerequisites
 
-- [`requirements.txt`](requirements.txt)
 - Chatbot Arena's Dump (August 2024): <https://storage.googleapis.com/arena_external_data/public/clean_battle_20240814_public.json>
 - LLMFAO Dataset: <https://raw.githubusercontent.com/dustalov/llmfao/refs/heads/master/crowd-comparisons.csv> &rarr; `llmfao.csv`
+
+Please use the following requrements to install the dependencies:
+
+```
+evalica==0.3.2
+numpy==2.2.0
+pandas==2.2.3
+pyarrow==18.1.0
+scikit-learn==1.6.0
+tqdm==4.67.1
+```
 
 ## Table 1: [chatbot_arena.csv](chatbot_arena.csv)
 

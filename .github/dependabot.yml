@@ -13,10 +13,3 @@ updates:
       - "/"
     schedule:
       interval: "monthly"
-  - package-ecosystem: "pip"
-    directories:
-      - "/coling2025"
-    schedule:
-      interval: "monthly"
-    ignore:
-      - dependency-name: "*"
