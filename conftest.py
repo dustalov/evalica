@@ -136,14 +136,14 @@ DATASETS = frozenset(("simple", "food", "llmfao"))
 def comparison(request: TopRequest, dataset: str) -> Comparison:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
-    return cast(Comparison, request.getfixturevalue(dataset))
+    return cast("Comparison", request.getfixturevalue(dataset))
 
 
 @pytest.fixture
 def comparison_golden(request: TopRequest, dataset: str, algorithm: str) -> pd.Series[str]:
     assert dataset in DATASETS, f"unknown dataset: {dataset}"
 
-    df_golden = cast(pd.DataFrame, request.getfixturevalue(f"{dataset}_golden"))
+    df_golden = cast("pd.DataFrame", request.getfixturevalue(f"{dataset}_golden"))
 
     df_slice = df_golden[df_golden["algorithm"] == algorithm][["item", "score"]].set_index("item")
 
