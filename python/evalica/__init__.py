@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Collection, Hashable
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Generic, Literal, Protocol, TypeVar, cast, runtime_checkable
+from typing import Any, Callable, Generic, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -998,6 +998,59 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
     return pd.DataFrame(pairwise_scores(scores.to_numpy()), index=scores.index, columns=scores.index)
 
 
+def bootstrap(
+        method: Callable[..., Any],
+        xs: Collection[T],
+        ys: Collection[T],
+        winners: Collection[Winner],
+        weights: Collection[float] | None = None,
+        n_resamples: int = 1000,
+        confidence_level: float =0.95,
+        seed: int = 42,
+        **kwargs: dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Perform bootstrap sampling.
+
+    Args:
+        method: The rank method, use `bradley_terry` for example.
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        winners: The winner elements.
+        weights: The example weights.
+        n_resamples: The number of resamples.
+        confidence_level: The confidence level.
+        seed: The random seed.
+        **kwargs: The keyword arguments.
+
+    Returns:
+        The bootstrap results with `low` and `up` columns for lower and upper bounds of confidence intervals.
+
+    """
+    if weights is None:
+        weights = np.ones(len(xs))
+    xs, ys, winners, weights = np.array(xs), np.array(ys), np.array(winners), np.array(weights)
+
+    rows = []
+    rng = np.random.RandomState(seed)
+    for _ in range(n_resamples):
+        indices = rng.choice(len(xs), size=len(xs), replace=True)
+        resamples_result = method(
+            xs=xs[indices],
+            ys=ys[indices],
+            winners=winners[indices],
+            weights=weights[indices] if weights is not None else None,
+            **kwargs,
+        )
+        rows.append(resamples_result.scores)
+    bootstrap_scores = pd.DataFrame(rows)
+    # calculate confidence interval
+    ci_df = pd.DataFrame()
+    ci_df["low"] = bootstrap_scores.apply(lambda col: np.quantile(col, (1 - confidence_level) / 2), axis=0)
+    ci_df["up"] = bootstrap_scores.apply(lambda col: np.quantile(col, 1 - (1 - confidence_level) / 2), axis=0)
+    return ci_df
+
+
 __all__ = [
     "WINNERS",
     "BradleyTerryResult",
@@ -1013,6 +1066,7 @@ __all__ = [
     "Winner",
     "__version__",
     "average_win_rate",
+    "bootstrap",
     "bradley_terry",
     "counting",
     "eigen",
