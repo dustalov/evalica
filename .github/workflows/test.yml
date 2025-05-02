@@ -11,6 +11,9 @@ env:
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
 
+permissions:
+  contents: read
+
 jobs:
   rust:
     runs-on: ubuntu-latest
