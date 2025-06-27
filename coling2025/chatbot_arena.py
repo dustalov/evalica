@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# ruff: noqa: E501, EM101, F401, N803
+# ruff: noqa: EM101, F401, N803
 
 from __future__ import annotations
 
