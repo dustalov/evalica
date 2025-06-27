@@ -63,7 +63,7 @@ def simple() -> Comparison:
 
     xs = df_simple["left"]
     ys = df_simple["right"]
-    winners = df_simple["winner"].map({  # type: ignore[type-var]
+    winners = df_simple["winner"].map({
         "left": evalica.Winner.X,
         "right": evalica.Winner.Y,
         "tie": evalica.Winner.Draw,
@@ -87,7 +87,7 @@ def food() -> Comparison:
 
     xs = df_food["left"]
     ys = df_food["right"]
-    winners = df_food["winner"].map({  # type: ignore[type-var]
+    winners = df_food["winner"].map({
         "left": evalica.Winner.X,
         "right": evalica.Winner.Y,
         "tie": evalica.Winner.Draw,
@@ -111,7 +111,7 @@ def llmfao() -> Comparison:
 
     xs = df_llmfao["left"]
     ys = df_llmfao["right"]
-    winners = df_llmfao["winner"].map({  # type: ignore[type-var]
+    winners = df_llmfao["winner"].map({
         "left": evalica.Winner.X,
         "right": evalica.Winner.Y,
         "tie": evalica.Winner.Draw,
