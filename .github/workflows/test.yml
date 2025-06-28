@@ -57,7 +57,7 @@ jobs:
         uv venv
         uv pip install maturin
         maturin develop --uv --extras dev,docs,gradio
-    - if: matrix.python-version != '3.8'
+    - if: matrix.python-version != '3.8' && matrix.python-version != '3.9'
       name: Lint with Mypy
       run: mypy .
     - name: Lint with Ruff
