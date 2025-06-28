@@ -18,7 +18,7 @@ keywords = [
     "rating",
     "statistics",
 ]
-requires-python = "~= 3.8"
+requires-python = ">=3.8,<4.0"
 dependencies = ["numpy>=1.16.0", "pandas"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -86,8 +86,12 @@ python-source = "python"
 
 [tool.mypy]
 ignore_missing_imports = true
-plugins = ["numpy.typing.mypy_plugin"]
 strict = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error::RuntimeWarning"
+]
 
 [tool.ruff]
 line-length = 120

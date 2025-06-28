@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -14,11 +14,16 @@ if TYPE_CHECKING:
     T = TypeVar("T")
 
 
-def pairwise_scores(scores: npt.NDArray[np.number[S]]) -> npt.NDArray[np.number[S]]:
+def pairwise_scores(scores: npt.NDArray[np.number[S]]) -> npt.NDArray[np.float64]:
     if not scores.size:
-        return np.zeros((0, 0), dtype=scores.dtype)
+        return np.zeros((0, 0))
 
-    return np.nan_to_num(scores[:, np.newaxis] / (scores + scores[:, np.newaxis]))
+    matrix = np.nan_to_num(
+        scores[:, np.newaxis] / (scores + scores[:, np.newaxis]),
+        copy=False,
+    ).astype(np.float64, copy=False)
+
+    return cast("npt.NDArray[np.float64]", matrix)
 
 
 def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
@@ -55,7 +60,7 @@ def counting(
                 scores[x] += weight * tie_weight
                 scores[y] += weight * tie_weight
 
-    return np.nan_to_num(scores)
+    return np.nan_to_num(scores, copy=False)
 
 
 def bradley_terry(
@@ -88,9 +93,10 @@ def bradley_terry(
 
             scores_new /= geometric_mean
 
-        scores_new[:] = np.nan_to_num(scores_new, nan=tolerance)
+        scores_new[:] = np.nan_to_num(scores_new, nan=tolerance, copy=False)
 
-        converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
+        with np.errstate(all="ignore"):
+            converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
         scores[:] = scores_new
 
@@ -104,7 +110,8 @@ def newman(
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], float, int]:
-    win_tie_half = np.nan_to_num(win_matrix + tie_matrix / 2, nan=tolerance)
+    with np.errstate(all="ignore"):
+        win_tie_half = np.nan_to_num(win_matrix + tie_matrix / 2, nan=tolerance, copy=False)
 
     scores = np.ones(win_matrix.shape[0])
 
@@ -138,14 +145,14 @@ def newman(
                 win_tie_half.T * (1 + v * sqrt_div_scores_outer_t) / common_denominator,
                 axis=1,
             )
-            scores_new[:] = np.nan_to_num(scores_numerator / scores_denominator, nan=tolerance)
+            scores_new[:] = np.nan_to_num(scores_numerator / scores_denominator, nan=tolerance, copy=False)
 
         with np.errstate(all="ignore"):
             v_numerator = np.sum(tie_matrix * sum_scores / common_denominator) / 2
             v_denominator = np.sum(win_matrix * sqrt_scores_outer / common_denominator) * 2
             v_new = v_numerator / v_denominator
 
-        converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
+            converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
         scores[:] = scores_new
 
@@ -194,7 +201,7 @@ def elo(
             scores[x] += k * (scored_x - expected_x)
             scores[y] += k * (scored_y - expected_y)
 
-    return np.nan_to_num(scores)
+    return np.nan_to_num(scores, copy=False)
 
 
 def eigen(
@@ -216,10 +223,14 @@ def eigen(
         iterations += 1
 
         scores_new[:] = matrix.T @ scores
-        scores_new /= np.linalg.norm(scores_new) or 1
-        scores_new[:] = np.nan_to_num(scores_new, nan=tolerance)
 
-        converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
+        with np.errstate(all="ignore"):
+            scores_new /= np.linalg.norm(scores_new) or 1
+
+        scores_new[:] = np.nan_to_num(scores_new, nan=tolerance, copy=False)
+
+        with np.errstate(all="ignore"):
+            converged = bool(np.linalg.norm(scores_new - scores) < tolerance)
 
         scores[:] = scores_new
 
