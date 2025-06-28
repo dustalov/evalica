@@ -20,7 +20,7 @@ __author__ = "Dmitry Ustalov"
 __license__ = "Apache 2.0"
 
 import argparse
-from typing import Protocol, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 try:
     import gradio as gr
@@ -41,6 +41,9 @@ import pandas as pd
 import plotly.express as px
 from evalica import Result, Winner
 from plotly.graph_objects import Figure  # noqa: TC002
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 
 def visualize(df_pairwise: pd.DataFrame) -> Figure:
@@ -72,7 +75,7 @@ class CallableAlgorithm(Protocol):
             self,
             xs: pd.Series[str],
             ys: pd.Series[str],
-            winners: pd.Series[Winner],  # type: ignore[type-var]
+            winners: Collection[Winner],
     ) -> Result[str]: ...
 
 
@@ -80,7 +83,7 @@ def invoke(
         algorithm: str,
         xs: pd.Series[str],
         ys: pd.Series[str],
-        winners: pd.Series[Winner],  # type: ignore[type-var]
+        winners: Collection[Winner],
 ) -> pd.Series[float]:
     algorithm_impl = cast("CallableAlgorithm", ALGORITHMS[algorithm])
 
@@ -113,7 +116,7 @@ def handler(
 
     df_pairs = df_pairs.dropna(axis=0)
 
-    df_pairs["winner"] = df_pairs["winner"].str.lower().map(WINNERS)
+    df_pairs["winner"] = list(map(WINNERS.__getitem__, df_pairs["winner"].str.lower()))
 
     scores = invoke(algorithm, df_pairs["left"], df_pairs["right"], df_pairs["winner"])
 

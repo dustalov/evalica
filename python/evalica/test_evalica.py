@@ -47,7 +47,7 @@ def test_winner_pickle() -> None:
 
 
 @given(comparison=comparisons())
-def test_indexing(comparison: Comparison) -> None:  # type: ignore[type-var]
+def test_indexing(comparison: Comparison) -> None:
     xs, ys, *_ = comparison
 
     xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)

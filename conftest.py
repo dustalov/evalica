@@ -4,13 +4,15 @@ from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, NamedTuple, cast
 
-import evalica
 import pandas as pd
 import pytest
+from evalica import WINNERS, Winner
 from hypothesis import strategies as st
 from hypothesis.strategies import composite
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from _pytest.fixtures import TopRequest
     from hypothesis.strategies import DrawFn
 
@@ -20,25 +22,32 @@ class Comparison(NamedTuple):
 
     xs: list[str] | pd.Series[str]
     ys: list[str] | pd.Series[str]
-    winners: list[evalica.Winner] | pd.Series[evalica.Winner]  # type: ignore[type-var]
-    weights: list[float] | None = None
+    winners: Collection[Winner]
+    weights: Collection[float] | None = None
 
 
 def enumerate_sizes(n: int) -> list[tuple[int, ...]]:
     return [xs for xs in product([0, 1], repeat=n) if 0 < sum(xs) < n]
 
 
+MAPPING = {
+    "left": Winner.X,
+    "right": Winner.Y,
+    "tie": Winner.Draw,
+}
+
+
 @composite
 def comparisons(
         draw: DrawFn,
         shape: Literal["good", "bad"] = "good",
-) -> Comparison:  # type: ignore[type-var]
+) -> Comparison:
     length = draw(st.integers(0, 5))
 
     if shape == "good":
         xs = st.lists(st.text(max_size=length), min_size=length, max_size=length)
         ys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
-        winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length, max_size=length)
+        winners = st.lists(st.sampled_from(WINNERS), min_size=length, max_size=length)
         weights = st.lists(st.floats(min_value=0, allow_nan=False, allow_infinity=False),
                            min_size=length, max_size=length)
     else:
@@ -48,7 +57,7 @@ def comparisons(
 
         xs = st.lists(st.text(max_size=length_x), min_size=length_x, max_size=length_x)
         ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
-        winners = st.lists(st.sampled_from(evalica.WINNERS), min_size=length_z, max_size=length_z)
+        winners = st.lists(st.sampled_from(WINNERS), min_size=length_z, max_size=length_z)
         weights = st.lists(st.floats(min_value=0, allow_nan=False, allow_infinity=False),
                            min_size=length_z, max_size=length_z)
 
@@ -63,11 +72,7 @@ def simple() -> Comparison:
 
     xs = df_simple["left"]
     ys = df_simple["right"]
-    winners = df_simple["winner"].map({
-        "left": evalica.Winner.X,
-        "right": evalica.Winner.Y,
-        "tie": evalica.Winner.Draw,
-    })
+    winners = list(map(MAPPING.__getitem__, df_simple["winner"]))
 
     return Comparison(xs=xs, ys=ys, winners=winners)
 
@@ -87,11 +92,7 @@ def food() -> Comparison:
 
     xs = df_food["left"]
     ys = df_food["right"]
-    winners = df_food["winner"].map({
-        "left": evalica.Winner.X,
-        "right": evalica.Winner.Y,
-        "tie": evalica.Winner.Draw,
-    })
+    winners = list(map(MAPPING.__getitem__, df_food["winner"]))
 
     return Comparison(xs=xs, ys=ys, winners=winners)
 
@@ -111,11 +112,7 @@ def llmfao() -> Comparison:
 
     xs = df_llmfao["left"]
     ys = df_llmfao["right"]
-    winners = df_llmfao["winner"].map({
-        "left": evalica.Winner.X,
-        "right": evalica.Winner.Y,
-        "tie": evalica.Winner.Draw,
-    })
+    winners = list(map(MAPPING.__getitem__, df_llmfao["winner"]))
 
     return Comparison(xs=xs, ys=ys, winners=winners)
 
