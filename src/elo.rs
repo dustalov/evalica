@@ -6,6 +6,27 @@ use num_traits::Float;
 use crate::utils::nan_to_num;
 use crate::{check_lengths, check_total, utils::one_nan_to_num, Winner};
 
+/// Implements the Elo rating system.
+///
+/// The Elo rating system is a method for calculating the relative skill levels of players in zero-sum games.
+///
+/// # Arguments
+///
+/// * `xs` - A 1D array of the first items in each comparison.
+/// * `ys` - A 1D array of the second items in each comparison.
+/// * `winners` - A 1D array of the winners of each comparison.
+/// * `weights` - A 1D array of weights for each comparison.
+/// * `total` - The total number of items.
+/// * `initial` - The initial rating for each item.
+/// * `base` - The base of the logarithm for the Elo formula.
+/// * `scale` - The scale factor for the Elo formula.
+/// * `k` - The K-factor for the Elo formula.
+/// * `win_weight` - The weight of a win.
+/// * `tie_weight` - The weight of a tie.
+///
+/// # Returns
+///
+/// A 1D array of scores for each item.
 pub fn elo<A: Float + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,

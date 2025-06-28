@@ -6,6 +6,21 @@ use num_traits::Float;
 use crate::utils::{matrices, nan_mean, nan_to_num, win_plus_tie_matrix};
 use crate::{check_lengths, check_total, Winner};
 
+/// Counts the number of wins and ties for each item.
+///
+/// # Arguments
+///
+/// * `xs` - A 1D array of the first items in each comparison.
+/// * `ys` - A 1D array of the second items in each comparison.
+/// * `winners` - A 1D array of the winners of each comparison.
+/// * `weights` - A 1D array of weights for each comparison.
+/// * `total` - The total number of items.
+/// * `win_weight` - The weight of a win.
+/// * `tie_weight` - The weight of a tie.
+///
+/// # Returns
+///
+/// A 1D array of scores for each item.
 pub fn counting<A: Float + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
@@ -41,6 +56,23 @@ pub fn counting<A: Float + AddAssign>(
     Ok(scores)
 }
 
+/// Calculates the average win rate for each item.
+///
+/// The average win rate is the number of wins divided by the number of games played.
+///
+/// # Arguments
+///
+/// * `xs` - A 1D array of the first items in each comparison.
+/// * `ys` - A 1D array of the second items in each comparison.
+/// * `winners` - A 1D array of the winners of each comparison.
+/// * `weights` - A 1D array of weights for each comparison.
+/// * `total` - The total number of items.
+/// * `win_weight` - The weight of a win.
+/// * `tie_weight` - The weight of a tie.
+///
+/// # Returns
+///
+/// A 1D array of scores for each item.
 pub fn average_win_rate<A: Float + AddAssign + MulAssign + ScalarOperand>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,

@@ -5,6 +5,19 @@ use num_traits::Float;
 
 use crate::utils::nan_to_num;
 
+/// Calculates the eigenvector of a matrix.
+///
+/// # Arguments
+///
+/// * `matrix` - A 2D array representing the matrix.
+/// * `tolerance` - The tolerance for checking convergence.
+/// * `limit` - The maximum number of iterations.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * A 1D array of scores for each item.
+/// * The number of iterations performed.
 pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
@@ -67,6 +80,22 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
     damping * matrix + (1.0 - damping) * p
 }
 
+/// Implements the PageRank algorithm.
+///
+/// PageRank is an algorithm used by Google Search to rank web pages in their search engine results.
+///
+/// # Arguments
+///
+/// * `matrix` - A 2D array representing the pairwise comparison matrix.
+/// * `damping` - The damping factor.
+/// * `tolerance` - The tolerance for checking convergence.
+/// * `limit` - The maximum number of iterations.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * A 1D array of scores for each item.
+/// * The number of iterations performed.
 pub fn pagerank(
     matrix: &ArrayView2<f64>,
     damping: f64,

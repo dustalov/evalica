@@ -10,6 +10,7 @@ use num_traits::{Float, Num};
 
 use crate::Winner;
 
+/// Checks if all the given arrays have the same length.
 #[macro_export]
 macro_rules! check_lengths {
     ($first:expr, $($rest:expr),+) => {
@@ -21,6 +22,7 @@ macro_rules! check_lengths {
     };
 }
 
+/// Checks if the total number of items is consistent with the maximum value in the given arrays.
 #[macro_export]
 macro_rules! check_total {
     ($total:expr, $($xs:expr),+ $(,)?) => {{
@@ -39,6 +41,16 @@ macro_rules! check_total {
     }};
 }
 
+/// Creates a mapping from unique items to integer indices.
+///
+/// # Arguments
+///
+/// * `xs` - A 1D array of the first items in each comparison.
+/// * `ys` - A 1D array of the second items in each comparison.
+///
+/// # Returns
+///
+/// A `HashMap` where keys are the unique items and values are their assigned indices.
 #[allow(dead_code)]
 pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
     let mut index: HashMap<I, usize> = HashMap::new();
@@ -51,6 +63,16 @@ pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> Ha
     index
 }
 
+/// Replaces NaN values with a specified number, and infinite values with the max/min value of the type.
+///
+/// # Arguments
+///
+/// * `x` - The float value to check.
+/// * `nan` - The value to replace NaN with.
+///
+/// # Returns
+///
+/// The original value if it's not NaN or infinite, otherwise the replacement value.
 pub fn one_nan_to_num<A: Float>(x: A, nan: A) -> A {
     match x.classify() {
         FpCategory::Nan => nan,
@@ -67,10 +89,25 @@ pub fn one_nan_to_num<A: Float>(x: A, nan: A) -> A {
     }
 }
 
+/// Replaces NaN values in an array with a specified number.
+///
+/// # Arguments
+///
+/// * `xs` - The array to modify in-place.
+/// * `nan` - The value to replace NaN with.
 pub fn nan_to_num<A: Float, D: Dimension>(xs: &mut Array<A, D>, nan: A) {
     xs.map_inplace(|x| *x = one_nan_to_num(*x, nan));
 }
 
+/// Calculates the mean of an array, ignoring NaN values.
+///
+/// # Arguments
+///
+/// * `xs` - The array to calculate the mean of.
+///
+/// # Returns
+///
+/// The mean of the array, ignoring NaN values.
 pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
     let mut sum = A::zero();
     let mut count = A::zero();
@@ -89,6 +126,21 @@ pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
     }
 }
 
+/// Creates the win and tie matrices from the pairwise comparison data.
+///
+/// # Arguments
+///
+/// * `xs` - A 1D array of the first items in each comparison.
+/// * `ys` - A 1D array of the second items in each comparison.
+/// * `winners` - A 1D array of the winners of each comparison.
+/// * `weights` - A 1D array of weights for each comparison.
+/// * `total` - The total number of items.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * The win matrix.
+/// * The tie matrix.
 pub fn matrices<A: Num + Copy + AddAssign>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
@@ -125,6 +177,19 @@ pub fn matrices<A: Num + Copy + AddAssign>(
     Ok((wins, ties))
 }
 
+/// Creates a combined win+tie matrix from separate win and tie matrices.
+///
+/// # Arguments
+///
+/// * `win_matrix` - The matrix of wins.
+/// * `tie_matrix` - The matrix of ties.
+/// * `win_weight` - The weight to apply to wins.
+/// * `tie_weight` - The weight to apply to ties.
+/// * `nan` - The value to replace NaN with.
+///
+/// # Returns
+///
+/// A combined win+tie matrix.
 pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
     win_matrix: &ArrayView2<A>,
     tie_matrix: &ArrayView2<A>,
@@ -146,6 +211,17 @@ pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
     matrix
 }
 
+/// Calculates the pairwise scores from a 1D array of scores.
+///
+/// The pairwise score between item `i` and item `j` is the probability that item `i` wins against item `j`.
+///
+/// # Arguments
+///
+/// * `scores` - A 1D array of scores for each item.
+///
+/// # Returns
+///
+/// A 2D array of pairwise scores.
 pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
     if scores.is_empty() {
         return Array2::zeros((0, 0));

@@ -5,6 +5,23 @@ use num_traits::{Float, FromPrimitive};
 
 use crate::utils::{nan_to_num, one_nan_to_num, win_plus_tie_matrix};
 
+/// Implements the Bradley–Terry model for pairwise comparisons.
+///
+/// The Bradley–Terry model is a probabilistic model that predicts the outcome of a pairwise comparison.
+/// It assigns a score to each item, and the probability of item `i` winning against item `j` is
+/// proportional to the ratio of their scores.
+///
+/// # Arguments
+///
+/// * `matrix` - A 2D array representing the pairwise comparison matrix. `matrix[i][j]` is the number of times item `i` won against item `j`.
+/// * `tolerance` - The tolerance for checking convergence.
+/// * `limit` - The maximum number of iterations.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * A 1D array of scores for each item.
+/// * The number of iterations performed.
 pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
@@ -55,6 +72,25 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
     Ok((scores, iterations))
 }
 
+/// Implements the Newman model for pairwise comparisons.
+///
+/// The Newman model is an extension of the Bradley–Terry model that accounts for ties.
+/// It introduces a parameter `v` that represents the probability of a draw.
+///
+/// # Arguments
+///
+/// * `win_matrix` - A 2D array representing the pairwise win matrix. `win_matrix[i][j]` is the number of times item `i` won against item `j`.
+/// * `tie_matrix` - A 2D array representing the pairwise tie matrix. `tie_matrix[i][j]` is the number of times item `i` tied with item `j`.
+/// * `v_init` - The initial value for the `v` parameter.
+/// * `tolerance` - The tolerance for checking convergence.
+/// * `limit` - The maximum number of iterations.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * A 1D array of scores for each item.
+/// * The final value of the `v` parameter.
+/// * The number of iterations performed.
 pub fn newman(
     win_matrix: &ArrayView2<f64>,
     tie_matrix: &ArrayView2<f64>,
