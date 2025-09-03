@@ -100,7 +100,7 @@ jobs:
       run: maturin develop --uv --release --extras dev,docs
     - if: matrix.python-version == '3.13'
       name: Run benchmarks
-      uses: CodSpeedHQ/action@v3
+      uses: CodSpeedHQ/action@v4
       with:
         token: ${{ secrets.CODSPEED_TOKEN }}
         run: pytest --codspeed
