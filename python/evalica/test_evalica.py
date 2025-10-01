@@ -75,7 +75,7 @@ def test_reindexing(comparison: Comparison) -> None:
 def test_reindexing_unknown(comparison: Comparison) -> None:
     xs, ys, *_ = comparison
 
-    xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
+    *_, index = evalica.indexing(xs, ys)
 
     xs += [" ".join(xs) + "_unknown"]
     ys += [" ".join(ys) + "_unknown"]
