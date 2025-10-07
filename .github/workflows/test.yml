@@ -10,6 +10,7 @@ env:
   CARGO_TERM_COLOR: always
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
 
 permissions:
   contents: read
@@ -40,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14.0-rc.3" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14" ]
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python

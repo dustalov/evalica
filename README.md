@@ -123,6 +123,7 @@ To set up the environment, we recommend using the [uv](https://github.com/astral
 ```console
 $ uv venv
 $ uv pip install maturin
+$ source .venv/bin/activate
 $ maturin develop --uv --extras dev,docs,gradio
 ```
 
