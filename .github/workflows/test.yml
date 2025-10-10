@@ -37,7 +37,7 @@ jobs:
       run: cargo doc --verbose --no-deps
   python:
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.python-version != '3.14' }}
+    continue-on-error: ${{ matrix.python-version == '3.14' }}
     needs: rust
     strategy:
       fail-fast: false
