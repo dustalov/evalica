@@ -49,11 +49,9 @@ pub fn elo<A: Float + AddAssign>(
     check_total!(total, xs, ys);
 
     let mut scores = Array1::from_elem(total, initial);
-    let ln_base_div_scale = base.ln() / scale;
-
     for (((&x, &y), &ref w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        let q_x = one_nan_to_num((scores[x] * ln_base_div_scale).exp(), A::zero());
-        let q_y = one_nan_to_num((scores[y] * ln_base_div_scale).exp(), A::zero());
+        let q_x = one_nan_to_num(base.powf(scores[x] / scale), A::zero());
+        let q_y = one_nan_to_num(base.powf(scores[y] / scale), A::zero());
 
         let q = one_nan_to_num(q_x + q_y, A::zero());
 
