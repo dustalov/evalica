@@ -1,6 +1,6 @@
 use std::ops::DivAssign;
 
-use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
+use ndarray::{Array1, Array2, ArrayView2, ErrorKind, ScalarOperand, ShapeError};
 use num_traits::Float;
 
 use crate::utils::nan_to_num;
@@ -71,11 +71,10 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
 
         if sum == 0.0 {
             row.fill(p);
+        } else {
+            row /= sum;
         }
     }
-
-    let row_sums = matrix.sum_axis(Axis(1)).insert_axis(Axis(1));
-    matrix /= &row_sums;
 
     damping * matrix + (1.0 - damping) * p
 }
