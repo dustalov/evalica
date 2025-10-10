@@ -86,13 +86,8 @@ def indexing(
 
     """
     if index is None:
-        # Build new index preserving first appearance order; robust to strings with NUL bytes
-        xs_series = pd.Series(list(xs), dtype=object)
-        ys_series = pd.Series(list(ys), dtype=object)
-
-        labels = pd.concat([xs_series, ys_series], ignore_index=True).drop_duplicates().tolist()
-
-        index = pd.Index(labels, dtype=object)
+        labels = list(dict.fromkeys([*xs, *ys]))
+        index = pd.Index(labels)
 
     if not index.is_unique:
         msg = "Non-unique or invalid index for element lookup"
