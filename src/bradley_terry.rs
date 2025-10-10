@@ -121,10 +121,7 @@ pub fn newman(
 
         v = one_nan_to_num(v_new, tolerance);
 
-        let broadcast_scores_t = scores
-            .clone()
-            .into_shape_with_order((1, scores.len()))
-            .unwrap();
+        let broadcast_scores_t = scores.view().insert_axis(Axis(0));
         let sqrt_scores_outer =
             (&broadcast_scores_t * &broadcast_scores_t.t()).mapv_into(f64::sqrt);
         let sum_scores = &broadcast_scores_t + &broadcast_scores_t.t();
