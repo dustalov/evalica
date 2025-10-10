@@ -89,10 +89,6 @@ def indexing(
         labels = list(dict.fromkeys([*xs, *ys]))
         index = pd.Index(labels)
 
-    if not index.is_unique:
-        msg = "Non-unique or invalid index for element lookup"
-        raise TypeError(msg)
-
     xi = index.get_indexer(xs)
     yi = index.get_indexer(ys)
 
