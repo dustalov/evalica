@@ -4,7 +4,8 @@ use std::num::FpCategory;
 use std::ops::{AddAssign, MulAssign};
 
 use ndarray::{
-    Array, Array2, ArrayView1, ArrayView2, Dimension, ErrorKind, ScalarOperand, ShapeError,
+    Array, Array2, ArrayView1, ArrayView2, Axis, Dimension, ErrorKind, ScalarOperand, ShapeError,
+    Zip,
 };
 use num_traits::{Float, Num};
 
@@ -26,16 +27,15 @@ macro_rules! check_lengths {
 #[macro_export]
 macro_rules! check_total {
     ($total:expr, $($xs:expr),+ $(,)?) => {{
-        let mut max_value = 0;
+        let max_value = std::iter::empty()
+            $(
+                .chain($xs.iter())
+            )+
+            .max()
+            .map(|&x| x)
+            .unwrap_or(0);
 
-        $(
-            let iter_max = $xs.iter().max().unwrap();
-            if *iter_max > max_value {
-                max_value = *iter_max;
-            }
-        )+
-
-        if max_value > $total {
+        if max_value >= $total {
             return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
         }
     }};
@@ -197,17 +197,15 @@ pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
     tie_weight: A,
     nan: A,
 ) -> Array2<A> {
-    let mut win_matrix = win_matrix.to_owned();
-    nan_to_num(&mut win_matrix, nan);
-    win_matrix *= win_weight;
+    let mut matrix = Array2::zeros(win_matrix.raw_dim());
 
-    let mut tie_matrix = tie_matrix.to_owned();
-    nan_to_num(&mut tie_matrix, nan);
-    tie_matrix *= tie_weight;
-
-    let mut matrix = &win_matrix + &tie_matrix;
-    nan_to_num(&mut matrix, nan);
-
+    Zip::from(&mut matrix)
+        .and(win_matrix)
+        .and(tie_matrix)
+        .for_each(|r, &w, &t| {
+            let val = one_nan_to_num(w, nan) * win_weight + one_nan_to_num(t, nan) * tie_weight;
+            *r = one_nan_to_num(val, nan);
+        });
     matrix
 }
 
@@ -227,13 +225,10 @@ pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
         return Array2::zeros((0, 0));
     }
 
-    let len = scores.len();
+    let scores_col = scores.view().insert_axis(Axis(1));
+    let scores_row = scores.view().insert_axis(Axis(0));
 
-    let mut pairwise = Array2::zeros((len, len));
-
-    for ((i, j), value) in pairwise.indexed_iter_mut() {
-        *value = scores[i] / (scores[i] + scores[j]);
-    }
+    let mut pairwise = &scores_col / (&scores_col + &scores_row);
 
     nan_to_num(&mut pairwise, A::zero());
 

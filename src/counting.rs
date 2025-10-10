@@ -103,11 +103,7 @@ pub fn average_win_rate<A: Float + AddAssign + MulAssign + ScalarOperand>(
 
     matrix = &matrix / &denominator;
 
-    let mut scores = Array1::zeros(matrix.shape()[0]);
-
-    for (i, row) in matrix.axis_iter(Axis(0)).enumerate() {
-        scores[i] = nan_mean(&row);
-    }
+    let mut scores = matrix.map_axis(Axis(1), |row| nan_mean(&row));
 
     nan_to_num(&mut scores, A::zero());
 
