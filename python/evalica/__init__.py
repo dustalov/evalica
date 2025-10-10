@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, TypeVar, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -33,7 +34,7 @@ from .naive import pagerank as pagerank_naive
 from .naive import pairwise_scores as pairwise_scores_naive
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Hashable
+    from collections.abc import Collection
 
 WINNERS = [
     Winner.X,
@@ -42,6 +43,7 @@ WINNERS = [
 ]
 """Known values of Winner."""
 
+T_co = TypeVar("T_co", bound=Hashable, covariant=True)
 
 
 def _wrap_weights(weights: Collection[float] | None, n: int) -> Collection[float]:
@@ -69,8 +71,8 @@ def _make_matrix(
 
 
 def indexing(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         index: pd.Index | None = None,
 ) -> tuple[list[int], list[int], pd.Index]:
     """
@@ -191,8 +193,8 @@ class CountingResult:
 
 
 def counting(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         weights: Collection[float] | None = None,
@@ -278,8 +280,8 @@ class AverageWinRateResult:
 
 
 def average_win_rate(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         weights: Collection[float] | None = None,
@@ -384,8 +386,8 @@ class BradleyTerryResult:
 
 
 def bradley_terry(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         weights: Collection[float] | None = None,
@@ -508,8 +510,8 @@ class NewmanResult:
 
 
 def newman(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         v_init: float = .5,
@@ -632,8 +634,8 @@ class EloResult:
 
 
 def elo(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         initial: float = 1000.,
@@ -745,8 +747,8 @@ class EigenResult:
 
 
 def eigen(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         weights: Collection[float] | None = None,
@@ -855,8 +857,8 @@ class PageRankResult:
 
 
 def pagerank(
-        xs: Collection[Hashable],
-        ys: Collection[Hashable],
+        xs: Collection[T_co],
+        ys: Collection[T_co],
         winners: Collection[Winner],
         index: pd.Index | None = None,
         damping: float = .85,
