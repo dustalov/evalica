@@ -111,8 +111,8 @@ class MatricesResult:
 
     """
 
-    win_matrix: npt.NDArray[np.float64]
-    tie_matrix: npt.NDArray[np.float64]
+    win_matrix: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+    tie_matrix: np.ndarray[tuple[int, int], np.dtype[np.float64]]
     index: pd.Index
 
 
