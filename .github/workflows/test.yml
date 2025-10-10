@@ -105,6 +105,7 @@ jobs:
       with:
         token: ${{ secrets.CODSPEED_TOKEN }}
         run: pytest --codspeed
+        mode: instrumentation
     - if: matrix.python-version == '3.13'
       name: Validate CITATION.cff
       uses: citation-file-format/cffconvert-github-action@2.0.0
