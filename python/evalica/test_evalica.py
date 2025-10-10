@@ -221,12 +221,8 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
         assert result.scores.is_monotonic_decreasing
         assert not xs or np.isfinite(result.v)
         assert not xs or result.iterations > 0
+        assert result.v_init is v_init
         assert result.limit > 0
-
-        if np.isfinite(v_init):
-            assert result.v_init == v_init
-        else:
-            assert result.v_init is v_init
 
         assert isinstance(result, evalica.Result)
 
