@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Collection, Hashable
 from dataclasses import dataclass
-from types import MappingProxyType
-from typing import Generic, Literal, Protocol, TypeVar, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -34,6 +32,9 @@ from .naive import newman as newman_naive
 from .naive import pagerank as pagerank_naive
 from .naive import pairwise_scores as pairwise_scores_naive
 
+if TYPE_CHECKING:
+    from collections.abc import Collection, Hashable
+
 WINNERS = [
     Winner.X,
     Winner.Y,
@@ -41,7 +42,6 @@ WINNERS = [
 ]
 """Known values of Winner."""
 
-T = TypeVar("T", bound=Hashable)
 
 
 def _wrap_weights(weights: Collection[float] | None, n: int) -> Collection[float]:
@@ -69,42 +69,47 @@ def _make_matrix(
 
 
 def indexing(
-        xs: Collection[T],
-        ys: Collection[T],
-        index: dict[T, int] | None = None,
-) -> tuple[list[int], list[int], dict[T, int]]:
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
+        index: pd.Index | None = None,
+) -> tuple[list[int], list[int], pd.Index]:
     """
     Map the input elements into their numerical representations.
 
     Args:
         xs: The left-hand side elements.
         ys: The right-hand side elements.
-        index: The pre-computed index.
+        index: The index; if provided, all elements in xs and ys must be present in it.
 
     Returns:
         The tuple containing the numerical representations of the input elements and the corresponding index.
 
     """
     if index is None:
-        index = {}
-        xy_index = index
-    else:
-        xy_index = MappingProxyType(index)  # type: ignore[assignment]
+        # Build new index preserving first appearance order; robust to strings with NUL bytes
+        xs_series = pd.Series(list(xs), dtype=object)
+        ys_series = pd.Series(list(ys), dtype=object)
 
-    def get_index(x: T) -> int:
-        if (idx := xy_index.get(x)) is None:
-            idx = xy_index[x] = len(xy_index)
+        labels = pd.concat([xs_series, ys_series], ignore_index=True).drop_duplicates().tolist()
 
-        return idx
+        index = pd.Index(labels, dtype=object)
 
-    xs_indexed = [get_index(x) for x in xs]
-    ys_indexed = [get_index(y) for y in ys]
+    if not index.is_unique:
+        msg = "Non-unique or invalid index for element lookup"
+        raise TypeError(msg)
 
-    return xs_indexed, ys_indexed, index
+    xi = index.get_indexer(xs)
+    yi = index.get_indexer(ys)
+
+    if (xi < 0).any() or (yi < 0).any():
+        msg = "Unknown element in reindexing"
+        raise TypeError(msg)
+
+    return xi.tolist(), yi.tolist(), index
 
 
 @dataclass(frozen=True)
-class MatricesResult(Generic[T]):
+class MatricesResult:
     """
     The win and tie matrices.
 
@@ -117,16 +122,16 @@ class MatricesResult(Generic[T]):
 
     win_matrix: npt.NDArray[np.float64]
     tie_matrix: npt.NDArray[np.float64]
-    index: dict[T, int]
+    index: pd.Index
 
 
 def matrices(
         xs_indexed: Collection[int],
         ys_indexed: Collection[int],
         winners: Collection[Winner],
-        index: dict[T, int],
+        index: pd.Index,
         weights: Collection[float] | None = None,
-) -> MatricesResult[T]:
+) -> MatricesResult:
     """
     Build win and tie matrices from the given elements.
 
@@ -159,7 +164,7 @@ def matrices(
 
 
 @runtime_checkable
-class Result(Protocol[T]):
+class Result(Protocol):
     """
     The result protocol.
 
@@ -170,11 +175,11 @@ class Result(Protocol[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
 
 
 @dataclass(frozen=True)
-class CountingResult(Generic[T]):
+class CountingResult:
     """
     The counting result.
 
@@ -188,22 +193,22 @@ class CountingResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     win_weight: float
     tie_weight: float
     solver: str
 
 
 def counting(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
-) -> CountingResult[T]:
+) -> CountingResult:
     """
     Count individual elements.
 
@@ -261,7 +266,7 @@ def counting(
 
 
 @dataclass(frozen=True)
-class AverageWinRateResult(Generic[T]):
+class AverageWinRateResult:
     """
     The average win rate result.
 
@@ -275,22 +280,22 @@ class AverageWinRateResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     win_weight: float
     tie_weight: float
     solver: str
 
 
 def average_win_rate(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
-) -> AverageWinRateResult[T]:
+) -> AverageWinRateResult:
     """
     Count pairwise win rates between the elements and average per element.
 
@@ -361,7 +366,7 @@ def average_win_rate(
 
 
 @dataclass(frozen=True)
-class BradleyTerryResult(Generic[T]):
+class BradleyTerryResult:
     """
     The Bradley-Terry result.
 
@@ -378,7 +383,7 @@ class BradleyTerryResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     win_weight: float
     tie_weight: float
     solver: str
@@ -388,17 +393,17 @@ class BradleyTerryResult(Generic[T]):
 
 
 def bradley_terry(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
-) -> BradleyTerryResult[T]:
+) -> BradleyTerryResult:
     """
     Compute the Bradley-Terry scores for the given pairwise comparison.
 
@@ -481,7 +486,7 @@ def bradley_terry(
 
 
 @dataclass(frozen=True)
-class NewmanResult(Generic[T]):
+class NewmanResult:
     """
     The Newman's algorithm result.
 
@@ -500,7 +505,7 @@ class NewmanResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     v: float
     v_init: float
     win_weight: float
@@ -512,10 +517,10 @@ class NewmanResult(Generic[T]):
 
 
 def newman(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         v_init: float = .5,
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
@@ -523,7 +528,7 @@ def newman(
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
-) -> NewmanResult[T]:
+) -> NewmanResult:
     """
     Compute the scores for the given pairwise comparison using the Newman's algorithm.
 
@@ -607,7 +612,7 @@ def newman(
 
 
 @dataclass(frozen=True)
-class EloResult(Generic[T]):
+class EloResult:
     """
     The Elo result.
 
@@ -625,7 +630,7 @@ class EloResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     initial: float
     base: float
     scale: float
@@ -636,10 +641,10 @@ class EloResult(Generic[T]):
 
 
 def elo(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         initial: float = 1000.,
         base: float = 10.,
         scale: float = 400.,
@@ -648,7 +653,7 @@ def elo(
         win_weight: float = 1.0,
         tie_weight: float = 0.5,
         solver: Literal["naive", "pyo3"] = "pyo3",
-) -> EloResult[T]:
+) -> EloResult:
     """
     Compute the Elo scores.
 
@@ -722,7 +727,7 @@ def elo(
 
 
 @dataclass(frozen=True)
-class EigenResult(Generic[T]):
+class EigenResult:
     """
     The eigenvalue result.
 
@@ -739,7 +744,7 @@ class EigenResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     win_weight: float
     tie_weight: float
     solver: str
@@ -749,17 +754,17 @@ class EigenResult(Generic[T]):
 
 
 def eigen(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
-) -> EigenResult[T]:
+) -> EigenResult:
     """
     Compute the eigenvalue-based scores.
 
@@ -830,7 +835,7 @@ def eigen(
 
 
 @dataclass(frozen=True)
-class PageRankResult(Generic[T]):
+class PageRankResult:
     """
     The PageRank result.
 
@@ -848,7 +853,7 @@ class PageRankResult(Generic[T]):
     """
 
     scores: pd.Series[float]
-    index: dict[T, int]
+    index: pd.Index
     damping: float
     win_weight: float
     tie_weight: float
@@ -859,10 +864,10 @@ class PageRankResult(Generic[T]):
 
 
 def pagerank(
-        xs: Collection[T],
-        ys: Collection[T],
+        xs: Collection[Hashable],
+        ys: Collection[Hashable],
         winners: Collection[Winner],
-        index: dict[T, int] | None = None,
+        index: pd.Index | None = None,
         damping: float = .85,
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
@@ -870,7 +875,7 @@ def pagerank(
         solver: Literal["naive", "pyo3"] = "pyo3",
         tolerance: float = 1e-6,
         limit: int = 100,
-) -> PageRankResult[T]:
+) -> PageRankResult:
     """
     Compute the PageRank scores.
 

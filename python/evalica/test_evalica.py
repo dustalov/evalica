@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import hypothesis.strategies as st
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import pytest
 from hypothesis import given
 from hypothesis.extra._array_helpers import array_shapes
@@ -21,7 +22,6 @@ from conftest import Comparison, comparisons
 if TYPE_CHECKING:
     from typing import Literal
 
-    import pandas as pd
     from pytest_codspeed import BenchmarkFixture
 
 
@@ -54,9 +54,10 @@ def test_indexing(comparison: Comparison) -> None:
 
     assert len(xs_indexed) == len(xs)
     assert len(ys_indexed) == len(ys)
-    assert isinstance(index, dict)
+    assert isinstance(index, pd.Index)
     assert len(index) == len(set(xs) | set(ys))
-    assert set(index.values()) == (set(xs_indexed) | set(ys_indexed))
+    assert set(index.tolist()) == (set(xs) | set(ys))
+    assert set(xs_indexed) | set(ys_indexed) == set(index.get_indexer(index.tolist()))
 
 
 @given(comparison=comparisons())

@@ -76,7 +76,7 @@ class CallableAlgorithm(Protocol):
             xs: pd.Series[str],
             ys: pd.Series[str],
             winners: Collection[Winner],
-    ) -> Result[str]: ...
+    ) -> Result: ...
 
 
 def invoke(
