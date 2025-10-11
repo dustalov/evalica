@@ -250,7 +250,7 @@ def counting(
         )
 
     return CountingResult(
-        scores=pd.Series(scores, index=list(index), name=counting.__name__).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(scores, index=index, name=counting.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -349,7 +349,7 @@ def average_win_rate(
 
     return AverageWinRateResult(
         scores=pd.Series(
-            scores, index=list(index), name=average_win_rate.__name__,
+            scores, index=index, name=average_win_rate.__name__,
         ).sort_values(ascending=False, kind="stable"),
         index=index,
         win_weight=win_weight,
@@ -465,9 +465,7 @@ def bradley_terry(
         )
 
     return BradleyTerryResult(
-        scores=pd.Series(
-            scores, index=list(index), name=bradley_terry.__name__,
-        ).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(scores, index=index, name=bradley_terry.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -591,7 +589,7 @@ def newman(
         )
 
     return NewmanResult(
-        scores=pd.Series(scores, index=list(index), name=newman.__name__).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(scores, index=index, name=newman.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
         v=v,
         v_init=v_init,
@@ -707,7 +705,7 @@ def elo(
         )
 
     return EloResult(
-        scores=pd.Series(scores, index=list(index), name=elo.__name__).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(scores, index=index, name=elo.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
         initial=initial,
         base=base,
@@ -816,7 +814,7 @@ def eigen(
         )
 
     return EigenResult(
-        scores=pd.Series(scores, index=list(index), name=eigen.__name__).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(scores, index=index, name=eigen.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -935,9 +933,7 @@ def pagerank(
         )
 
     return PageRankResult(
-        scores=pd.Series(
-            data=scores, index=list(index), name=pagerank.__name__,
-        ).sort_values(ascending=False, kind="stable"),
+        scores=pd.Series(data=scores, index=index, name=pagerank.__name__).sort_values(ascending=False, kind="stable"),
         index=index,
         damping=damping,
         win_weight=win_weight,
