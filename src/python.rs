@@ -322,7 +322,7 @@ fn pagerank_pyo3<'py>(
     }
 }
 
-#[pymodule(gil_used = false)] // gil_used has no effect currently due to the use of abi3
+#[pymodule]
 fn evalica(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("LengthMismatchError", py.get_type::<LengthMismatchError>())?;
