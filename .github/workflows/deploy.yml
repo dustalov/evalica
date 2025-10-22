@@ -67,7 +67,7 @@ jobs:
         # windows
         - os: windows
           target: x86_64
-          interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
+          interpreter: 3.9 3.10 3.11 3.12 3.13
         exclude:
         - os: windows
           target: aarch64
