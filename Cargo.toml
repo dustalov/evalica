@@ -5,7 +5,7 @@ edition = "2021"
 description = "Evalica, your favourite evaluation toolkit."
 repository = "https://github.com/dustalov/evalica"
 license = "Apache-2.0"
-exclude = ["*.csv", "*.ipynb", "*.svg", ".github", ".gitignore"]
+exclude = ["*.csv", "*.ipynb", "*.svg", ".github", ".gitignore", "coling2025"]
 publish = []
 
 [lib]
