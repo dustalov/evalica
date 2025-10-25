@@ -27,7 +27,7 @@ Evalica is not bound to the specific column names, reducing the potentially expe
 ...     ],
 ...     columns=['left', 'right', 'label']
 ... )
->>> scores = bradley_terry(df['left'], df['right'], df['item'], limit=100)
+>>> scores = bradley_terry(df['left'], df['right'], df['label'], limit=100)
 ```
 
 Or simply:
