@@ -81,14 +81,14 @@ jobs:
     - name: Run CLI
       run: evalica --input=food.csv counting
     - name: Lint Jupyter with Mypy
-      run: nbqa mypy *.ipynb
+      run: nbqa mypy *.ipynb docs/*.ipynb
     - name: Lint with abi3audit
       run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
     - name: Run Jupyter
       run: |
         mkdir jupyter
-        jupyter trust Tutorial.ipynb
-        jupyter nbconvert --to html --output jupyter/index.html --execute Tutorial.ipynb
+        jupyter trust docs/tutorial.ipynb
+        jupyter nbconvert --to html --output jupyter/index.html --execute docs/tutorial.ipynb
         cp Evalica.svg jupyter/
     - if: matrix.python-version == '3.13' && github.ref == 'refs/heads/master'
       name: Upload Jupyter
