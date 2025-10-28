@@ -96,9 +96,7 @@ jobs:
       with:
         path: "./jupyter"
     - name: Run MkDocs
-      run: |
-        python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs rm -fv
-        mkdocs build --strict
+      run: mkdocs build --strict
     - if: matrix.python-version == '3.13'
       name: Make a release build
       run: maturin develop --uv --release --extras dev,docs
