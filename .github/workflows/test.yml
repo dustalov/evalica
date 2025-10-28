@@ -88,7 +88,8 @@ jobs:
       run: |
         mkdir jupyter
         jupyter trust docs/tutorial.ipynb
-        jupyter nbconvert --to html --output jupyter/index.html --execute docs/tutorial.ipynb
+        jupyter nbconvert --to html --output index.html --execute docs/tutorial.ipynb
+        mv docs/index.html jupyter/
         cp Evalica.svg jupyter/
     - if: matrix.python-version == '3.13' && github.ref == 'refs/heads/master'
       name: Upload Jupyter
