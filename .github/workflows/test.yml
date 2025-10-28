@@ -96,7 +96,8 @@ jobs:
       uses: actions/upload-pages-artifact@v4
       with:
         path: "./jupyter"
-    - name: Run MkDocs
+    - if: matrix.python-version != '3.8'
+      name: Run MkDocs
       run: mkdocs build --strict
     - if: matrix.python-version == '3.13'
       name: Make a release build
