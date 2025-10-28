@@ -64,7 +64,7 @@ docs = [
     "mkdocs",
     "mkdocs-material",
     "mkdocs-jupyter",
-    "mkdocstrings-python"
+    "mkdocstrings-python",
     "plotly",
 ]
 gradio = [
