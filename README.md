@@ -26,7 +26,7 @@
 
 - [Tutorial](docs/tutorial.ipynb)
 - [Chatbot-Arena.ipynb](Chatbot-Arena.ipynb) [![Open in Colab][colab_badge]][colab_link] [![Binder][binder_badge]][binder_link]
-- [Pair2Rank](https://huggingface.co/spaces/dustalov/pair2rank)
+- [Evalica Demo](https://huggingface.co/spaces/dustalov/evalica)
 
 [colab_badge]: https://colab.research.google.com/assets/colab-badge.svg
 [colab_link]: https://colab.research.google.com/github/dustalov/evalica/blob/master/Chatbot-Arena.ipynb
