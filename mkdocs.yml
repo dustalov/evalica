@@ -6,6 +6,7 @@ repo_name: dustalov/evalica
 repo_url: https://github.com/dustalov/evalica
 nav:
 - Home: index.md
+- Tutorial: tutorial.ipynb
 - Counting: counting.md
 - Bradley-Terry: bradley-terry.md
 - Elo: elo.md
@@ -29,3 +30,8 @@ plugins:
           show_root_heading: true
           show_symbol_type_heading: true
           show_symbol_type_toc: true
+- mkdocs-jupyter:
+    include: ["tutorial.ipynb"]
+    execute: true
+    allow_errors: false
+    include_source: true
