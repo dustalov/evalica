@@ -68,7 +68,7 @@ docs = [
     "plotly",
 ]
 gradio = [
-    "gradio @ git+https://github.com/gradio-app/gradio.git@refs/pull/12124/head ; python_version >= '3.10'",
+    "gradio @ git+https://github.com/gradio-app/gradio.git@ce395687484f1c4f6a8e90d168dffdf5d83c873c ; python_version >= '3.10'",
     "gradio ; python_version < '3.10'",
     "huggingface-hub >=0.33.5,<1.0 ; python_version < '3.10'",
     "plotly",
