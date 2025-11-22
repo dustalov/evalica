@@ -4,12 +4,18 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "pip"
     directories:
       - "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
