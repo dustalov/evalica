@@ -91,8 +91,8 @@ def indexing(
         labels = list(dict.fromkeys([*xs, *ys]))
         index = pd.Index(labels)
 
-    xi = index.get_indexer(xs)
-    yi = index.get_indexer(ys)
+    xi = index.get_indexer(pd.Index(xs))
+    yi = index.get_indexer(pd.Index(ys))
 
     if (xi < 0).any() or (yi < 0).any():
         msg = "Unknown element in reindexing"
@@ -993,7 +993,7 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
         The data frame representing pairwise scores between the elements.
 
     """
-    return pd.DataFrame(pairwise_scores(scores.to_numpy()), index=scores.index, columns=scores.index)
+    return pd.DataFrame(pairwise_scores(np.asarray(scores, dtype=np.float64)), index=scores.index, columns=scores.index)
 
 
 __all__ = [
