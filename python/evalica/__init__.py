@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -91,8 +91,8 @@ def indexing(
         labels = list(dict.fromkeys([*xs, *ys]))
         index = pd.Index(labels)
 
-    xi = index.get_indexer(cast("pd.Index[Any]", xs))
-    yi = index.get_indexer(cast("pd.Index[Any]", ys))
+    xi = index.get_indexer(cast("pd.Index", xs))
+    yi = index.get_indexer(cast("pd.Index", ys))
 
     if (xi < 0).any() or (yi < 0).any():
         msg = "Unknown element in reindexing"
