@@ -15,6 +15,7 @@ env:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   rust:
@@ -72,8 +73,6 @@ jobs:
     - if: matrix.python-version == '3.13'
       name: Upload to Codecov
       uses: codecov/codecov-action@v5.5.1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Run Module
       run: |
         python3 -m evalica.gradio --version
@@ -111,7 +110,7 @@ jobs:
       with:
         token: ${{ secrets.CODSPEED_TOKEN }}
         run: pytest --codspeed
-        mode: instrumentation
+        mode: simulation
     - if: matrix.python-version == '3.13'
       name: Validate CITATION.cff
       uses: citation-file-format/cffconvert-github-action@2.0.0
