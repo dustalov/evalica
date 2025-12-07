@@ -116,7 +116,7 @@ def handler(
 
     df_pairs = df_pairs.dropna(axis=0)
 
-    df_pairs["winner"] = list(map(WINNERS.__getitem__, df_pairs["winner"].str.lower()))
+    df_pairs["winner"] = df_pairs["winner"].str.lower().map(WINNERS)
 
     scores = invoke(algorithm, df_pairs["left"], df_pairs["right"], df_pairs["winner"])
 

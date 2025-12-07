@@ -57,7 +57,7 @@ def test_indexing(comparison: Comparison) -> None:
     assert isinstance(index, pd.Index)
     assert len(index) == len(set(xs) | set(ys))
     assert set(index.tolist()) == (set(xs) | set(ys))
-    assert set(xs_indexed) | set(ys_indexed) == set(index.get_indexer(index.tolist()))
+    assert set(xs_indexed) | set(ys_indexed) == set(index.get_indexer(index))
 
 
 @given(comparison=comparisons())
@@ -575,7 +575,7 @@ def test_llmfao_pairwise_scores(
 ) -> None:
     result = evalica.counting(llmfao.xs, llmfao.ys, llmfao.winners, weights=llmfao.weights)
 
-    func = partial(evalica.pairwise_scores, result.scores.to_numpy(), solver=solver)
+    func = partial(evalica.pairwise_scores, np.asarray(result.scores.array, dtype=np.float64), solver=solver)
 
     benchmark(func)
 
