@@ -58,7 +58,7 @@ def matrices(
     """
     _check_lengths(xs, ys, winners, weights)
 
-    # Get Winner enum from parent module to ensure we use the active implementation
+    # Get Winner enum from parent module once to ensure we use the active implementation
     from . import Winner as ActiveWinner  # noqa: PLC0415
 
     win_matrix = np.zeros((total, total), dtype=np.float64)
@@ -90,7 +90,7 @@ def counting(
     if not xs:
         return np.zeros(0)
 
-    # Get Winner enum from parent module to ensure we use the active implementation
+    # Get Winner enum from parent module once to ensure we use the active implementation
     from . import Winner as ActiveWinner  # noqa: PLC0415
 
     scores = np.zeros(total)
@@ -222,7 +222,7 @@ def elo(
     if not xs:
         return np.zeros(0)
 
-    # Get Winner enum from parent module to ensure we use the active implementation
+    # Get Winner enum from parent module once to ensure we use the active implementation
     from . import Winner as ActiveWinner  # noqa: PLC0415
 
     scores = np.ones(total) * initial

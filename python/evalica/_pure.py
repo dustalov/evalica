@@ -9,7 +9,7 @@ try:
     from importlib.metadata import version
     __version__ = version("evalica")
 except Exception:  # noqa: BLE001
-    __version__ = "0.4.0"  # Fallback version
+    __version__ = "unknown"  # Fallback when package metadata unavailable
 
 
 class Winner(Enum):
