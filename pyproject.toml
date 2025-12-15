@@ -45,6 +45,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+brzo = []  # Marker extra for Rust-accelerated installation (wheels include Rust by default)
 dev = [
     "abi3audit",
     "hypothesis[numpy]",

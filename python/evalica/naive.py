@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 import numpy as np
 import numpy.typing as npt
 
-from ._pure import LengthMismatchError, Winner
+from ._pure import LengthMismatchError
 
 if TYPE_CHECKING:
     from collections.abc import Collection
+
+    from ._pure import Winner
 
     S = TypeVar("S", bound=npt.NBitBase)
     T = TypeVar("T")
@@ -56,15 +58,18 @@ def matrices(
     """
     _check_lengths(xs, ys, winners, weights)
 
+    # Get Winner enum from parent module to ensure we use the active implementation
+    from . import Winner as ActiveWinner  # noqa: PLC0415
+
     win_matrix = np.zeros((total, total), dtype=np.float64)
     tie_matrix = np.zeros((total, total), dtype=np.float64)
 
     for x, y, w, weight in zip(xs, ys, winners, weights):
-        if w == Winner.X:
+        if w == ActiveWinner.X:
             win_matrix[x, y] += weight
-        elif w == Winner.Y:
+        elif w == ActiveWinner.Y:
             win_matrix[y, x] += weight
-        elif w == Winner.Draw:
+        elif w == ActiveWinner.Draw:
             tie_matrix[x, y] += weight
             tie_matrix[y, x] += weight
 
@@ -85,15 +90,18 @@ def counting(
     if not xs:
         return np.zeros(0)
 
+    # Get Winner enum from parent module to ensure we use the active implementation
+    from . import Winner as ActiveWinner  # noqa: PLC0415
+
     scores = np.zeros(total)
 
     with np.errstate(all="ignore"):
         for x, y, w, weight in zip(xs, ys, winners, weights):
-            if w == Winner.X:
+            if w == ActiveWinner.X:
                 scores[x] += weight * win_weight
-            elif w == Winner.Y:
+            elif w == ActiveWinner.Y:
                 scores[y] += weight * win_weight
-            elif w == Winner.Draw:
+            elif w == ActiveWinner.Draw:
                 scores[x] += weight * tie_weight
                 scores[y] += weight * tie_weight
 
@@ -214,6 +222,9 @@ def elo(
     if not xs:
         return np.zeros(0)
 
+    # Get Winner enum from parent module to ensure we use the active implementation
+    from . import Winner as ActiveWinner  # noqa: PLC0415
+
     scores = np.ones(total) * initial
 
     with np.errstate(all="ignore"):
@@ -228,11 +239,11 @@ def elo(
 
             scored_x, scored_y = 0., 0.
 
-            if w == Winner.X:
+            if w == ActiveWinner.X:
                 scored_x = weight * win_weight
-            elif w == Winner.Y:
+            elif w == ActiveWinner.Y:
                 scored_y = weight * win_weight
-            elif w == Winner.Draw:
+            elif w == ActiveWinner.Draw:
                 scored_x = scored_y = weight * tie_weight
 
             scores[x] += k * (scored_x - expected_x)

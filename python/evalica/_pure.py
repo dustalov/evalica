@@ -15,11 +15,11 @@ except Exception:  # noqa: BLE001
 class Winner(Enum):
     """The outcome of the pairwise comparison."""
 
-    X = 1
+    X = 0
     """The first element won."""
-    Y = 2
+    Y = 1
     """The second element won."""
-    Draw = 0
+    Draw = 2
     """There is a tie."""
 
     def __hash__(self) -> int:

@@ -12,7 +12,9 @@ import numpy.typing as npt
 import pandas as pd
 
 # Import pure Python implementations (always available)
-from ._pure import LengthMismatchError, Winner, __version__
+from ._pure import LengthMismatchError
+from ._pure import Winner as _PureWinner
+from ._pure import __version__ as _pure_version
 from .naive import bradley_terry as bradley_terry_naive
 from .naive import counting as counting_naive
 from .naive import eigen as eigen_naive
@@ -26,6 +28,8 @@ from .naive import pairwise_scores as pairwise_scores_naive
 _RUST_AVAILABLE = False
 try:
     from .evalica import (
+        Winner as _RustWinner,
+        __version__ as _rust_version,
         average_win_rate_pyo3,
         bradley_terry_pyo3,
         counting_pyo3,
@@ -36,10 +40,15 @@ try:
         pagerank_pyo3,
         pairwise_scores_pyo3,
     )
+    from .evalica import LengthMismatchError as _RustLengthMismatchError  # noqa: F401
     _RUST_AVAILABLE = True
+    # Use Rust implementations when available
+    Winner = _RustWinner
+    __version__ = _rust_version
 except ImportError:
     # Rust extension not available, will use pure Python implementations
-    pass
+    Winner = _PureWinner
+    __version__ = _pure_version
 
 if TYPE_CHECKING:
     from collections.abc import Collection

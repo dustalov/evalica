@@ -22,7 +22,7 @@
 [codspeed_badge]: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
 [codspeed_link]: https://codspeed.io/dustalov/evalica
 
-**Evalica** [&#x025b;&#x02c8;&#x028b;alit&#x0361;sa] (eh-vah-lee-tsah) is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
+**Evalica** [&#x025b;&#x02c8;&#x028b;alit&#x0361;sa] (eh-vah-lee-tsah) is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performance Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/) for maximum speed, and automatically falls back to pure Python implementations when Rust is unavailable. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
 
 - [Tutorial](docs/tutorial.ipynb)
 - [Chatbot-Arena.ipynb](Chatbot-Arena.ipynb) [![Open in Colab][colab_badge]][colab_link] [![Binder][binder_badge]][binder_link]
@@ -37,8 +37,26 @@ The logo was created using [Recraft](https://www.recraft.ai/).
 
 ## Installation
 
-- [pip](https://pip.pypa.io/): `pip install evalica`
+Evalica can be installed with or without Rust acceleration:
+
+### Standard Installation (Recommended)
+
+When installed via pip with pre-built wheels, Evalica includes high-performance Rust implementations:
+
+- [pip](https://pip.pypa.io/): `pip install evalica` or `pip install evalica[brzo]`
 - [Anaconda](https://docs.conda.io/en/latest/): `conda install conda-forge::evalica`
+
+The pre-built wheels on PyPI include Rust-accelerated implementations by default, providing optimal performance. The `[brzo]` extra (meaning "fast" in Croatian) is available as an explicit marker for Rust-accelerated installation, though wheels include Rust by default.
+
+### Pure Python Installation
+
+If you need a pure Python installation without Rust dependencies (e.g., for compatibility or when no pre-built wheel is available for your platform), you can build from source without a Rust compiler:
+
+```bash
+pip install evalica --no-binary evalica
+```
+
+When Rust extensions are unavailable, Evalica automatically falls back to pure Python implementations. While slower than the Rust-accelerated version, the pure Python implementation provides the same API and functionality.
 
 ## Usage
 
