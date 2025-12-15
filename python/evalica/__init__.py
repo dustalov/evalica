@@ -11,27 +11,35 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from .evalica import (
-    LengthMismatchError,
-    Winner,
-    __version__,
-    average_win_rate_pyo3,
-    bradley_terry_pyo3,
-    counting_pyo3,
-    eigen_pyo3,
-    elo_pyo3,
-    matrices_pyo3,
-    newman_pyo3,
-    pagerank_pyo3,
-    pairwise_scores_pyo3,
-)
+# Import pure Python implementations (always available)
+from ._pure import LengthMismatchError, Winner, __version__
 from .naive import bradley_terry as bradley_terry_naive
 from .naive import counting as counting_naive
 from .naive import eigen as eigen_naive
 from .naive import elo as elo_naive
+from .naive import matrices as matrices_naive
 from .naive import newman as newman_naive
 from .naive import pagerank as pagerank_naive
 from .naive import pairwise_scores as pairwise_scores_naive
+
+# Try to import Rust accelerated implementations
+_RUST_AVAILABLE = False
+try:
+    from .evalica import (
+        average_win_rate_pyo3,
+        bradley_terry_pyo3,
+        counting_pyo3,
+        eigen_pyo3,
+        elo_pyo3,
+        matrices_pyo3,
+        newman_pyo3,
+        pagerank_pyo3,
+        pairwise_scores_pyo3,
+    )
+    _RUST_AVAILABLE = True
+except ImportError:
+    # Rust extension not available, will use pure Python implementations
+    pass
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -44,6 +52,21 @@ WINNERS = [
 """Known values of Winner."""
 
 T_co = TypeVar("T_co", bound=Hashable, covariant=True)
+
+
+def _normalize_solver(solver: Literal["naive", "pyo3"]) -> Literal["naive", "pyo3"]:
+    """Normalize solver parameter based on Rust availability.
+    
+    Args:
+        solver: The requested solver.
+        
+    Returns:
+        The actual solver to use (falls back to naive if pyo3 requested but unavailable).
+        
+    """
+    if solver == "pyo3" and not _RUST_AVAILABLE:
+        return "naive"
+    return solver
 
 
 def _wrap_weights(weights: Collection[float] | None, n: int) -> Collection[float]:
@@ -141,13 +164,22 @@ def matrices(
     """
     weights = _wrap_weights(weights, len(xs_indexed))
 
-    win_matrix, tie_matrix = matrices_pyo3(
-        xs=xs_indexed,
-        ys=ys_indexed,
-        winners=winners,
-        weights=weights,
-        total=len(index),
-    )
+    if _RUST_AVAILABLE:
+        win_matrix, tie_matrix = matrices_pyo3(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+        )
+    else:
+        win_matrix, tie_matrix = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+        )
 
     return MatricesResult(
         win_matrix=win_matrix,
@@ -227,6 +259,8 @@ def counting(
     assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
+
+    solver = _normalize_solver(solver)
 
     if solver == "pyo3":
         scores = counting_pyo3(
@@ -314,6 +348,8 @@ def average_win_rate(
     assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
+
+    solver = _normalize_solver(solver)
 
     if solver == "pyo3":
         scores = average_win_rate_pyo3(
@@ -435,6 +471,8 @@ def bradley_terry(
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
+    solver = _normalize_solver(solver)
+
     if solver == "pyo3":
         scores, iterations = bradley_terry_pyo3(
             xs=xs_indexed,
@@ -553,6 +591,8 @@ def newman(
     assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
+
+    solver = _normalize_solver(solver)
 
     if solver == "pyo3":
         scores, v, iterations = newman_pyo3(
@@ -675,6 +715,8 @@ def elo(
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
+    solver = _normalize_solver(solver)
+
     if solver == "pyo3":
         scores = elo_pyo3(
             xs=xs_indexed,
@@ -783,6 +825,8 @@ def eigen(
     assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
+
+    solver = _normalize_solver(solver)
 
     if solver == "pyo3":
         scores, iterations = eigen_pyo3(
@@ -901,6 +945,8 @@ def pagerank(
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
+    solver = _normalize_solver(solver)
+
     if solver == "pyo3":
         scores, iterations = pagerank_pyo3(
             xs=xs_indexed,
@@ -976,6 +1022,8 @@ def pairwise_scores(
     """
     if scores.ndim != 1:
         raise ScoreDimensionError(scores.ndim)
+
+    solver = _normalize_solver(solver)
 
     if solver == "pyo3":
         return pairwise_scores_pyo3(scores)

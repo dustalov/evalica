@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 import numpy as np
 import numpy.typing as npt
 
-from evalica import LengthMismatchError, Winner
+from ._pure import LengthMismatchError, Winner
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -32,6 +32,43 @@ def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
     for collection in rest:
         if len(collection) != length:
             raise LengthMismatchError
+
+
+def matrices(
+        xs: Collection[int],
+        ys: Collection[int],
+        winners: Collection[Winner],
+        weights: Collection[float],
+        total: int,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Build win and tie matrices from the given elements.
+    
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        winners: The winner elements.
+        weights: The example weights.
+        total: The total number of elements.
+        
+    Returns:
+        A tuple of (win_matrix, tie_matrix).
+        
+    """
+    _check_lengths(xs, ys, winners, weights)
+
+    win_matrix = np.zeros((total, total), dtype=np.float64)
+    tie_matrix = np.zeros((total, total), dtype=np.float64)
+
+    for x, y, w, weight in zip(xs, ys, winners, weights):
+        if w == Winner.X:
+            win_matrix[x, y] += weight
+        elif w == Winner.Y:
+            win_matrix[y, x] += weight
+        elif w == Winner.Draw:
+            tie_matrix[x, y] += weight
+            tie_matrix[y, x] += weight
+
+    return win_matrix, tie_matrix
 
 
 def counting(
