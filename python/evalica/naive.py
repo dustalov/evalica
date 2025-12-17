@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -17,12 +17,10 @@ def pairwise_scores(scores: npt.NDArray[np.floating]) -> npt.NDArray[np.float64]
     if not scores.size:
         return np.zeros((0, 0))
 
-    matrix = np.nan_to_num(
+    return np.nan_to_num(
         scores[:, np.newaxis] / (scores + scores[:, np.newaxis]),
         copy=False,
     ).astype(np.float64, copy=False)
-
-    return cast("npt.NDArray[np.float64]", matrix)
 
 
 def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
