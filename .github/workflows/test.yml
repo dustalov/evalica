@@ -72,7 +72,7 @@ jobs:
       run: pytest --cov
     - if: matrix.python-version == '3.13'
       name: Upload to Codecov
-      uses: codecov/codecov-action@v5.5.1
+      uses: codecov/codecov-action@v5.5.2
     - name: Run Module
       run: |
         python3 -m evalica.gradio --version
