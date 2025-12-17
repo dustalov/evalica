@@ -26,7 +26,7 @@ try:
     import gradio as gr
 except ModuleNotFoundError:
     # ModuleNotFoundError: No module named 'pyaudioop'
-    import importlib
+    import importlib.util
     import sys
     from pathlib import Path
 

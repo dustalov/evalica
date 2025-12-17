@@ -10,11 +10,10 @@ from evalica import LengthMismatchError, Winner
 if TYPE_CHECKING:
     from collections.abc import Collection
 
-    S = TypeVar("S", bound=npt.NBitBase)
     T = TypeVar("T")
 
 
-def pairwise_scores(scores: npt.NDArray[np.number[S]]) -> npt.NDArray[np.float64]:
+def pairwise_scores(scores: npt.NDArray[np.floating]) -> npt.NDArray[np.float64]:
     if not scores.size:
         return np.zeros((0, 0))
 
@@ -64,7 +63,7 @@ def counting(
 
 
 def bradley_terry(
-        matrix: npt.NDArray[np.number[S]],
+        matrix: npt.NDArray[np.floating],
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
@@ -104,8 +103,8 @@ def bradley_terry(
 
 
 def newman(
-        win_matrix: npt.NDArray[np.number[S]],
-        tie_matrix: npt.NDArray[np.number[S]],
+        win_matrix: npt.NDArray[np.floating],
+        tie_matrix: npt.NDArray[np.floating],
         v: float = .5,
         tolerance: float = 1e-6,
         limit: int = 100,
@@ -205,7 +204,7 @@ def elo(
 
 
 def eigen(
-        matrix: npt.NDArray[np.number[S]],
+        matrix: npt.NDArray[np.floating],
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
@@ -238,7 +237,7 @@ def eigen(
 
 
 def pagerank_matrix(
-        matrix: npt.NDArray[np.number[S]],
+        matrix: npt.NDArray[np.floating],
         damping: float,
 ) -> npt.NDArray[np.float64]:
     if not matrix.size:
@@ -256,9 +255,8 @@ def pagerank_matrix(
     return (damping * _matrix + (1 - damping) * p).astype(np.float64, copy=False)
 
 
-
 def pagerank(
-        matrix: npt.NDArray[np.number[S]],
+        matrix: npt.NDArray[np.floating],
         damping: float,
         tolerance: float,
         limit: int,
