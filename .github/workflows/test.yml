@@ -92,7 +92,7 @@ jobs:
         cp Evalica.svg jupyter/
     - if: matrix.python-version == '3.13'
       name: Upload Jupyter
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: jupyter
         path: jupyter
