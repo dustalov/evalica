@@ -70,7 +70,7 @@ jobs:
       run: ruff check
     - name: Run tests
       run: pytest --cov
-    - if: matrix.python-version == '3.13'
+    - if: matrix.python-version == '3.14'
       name: Upload to Codecov
       uses: codecov/codecov-action@v5.5.2
     - name: Run Module
@@ -90,7 +90,7 @@ jobs:
         jupyter nbconvert --to html --output index.html --execute docs/tutorial.ipynb
         mv docs/index.html jupyter/
         cp Evalica.svg jupyter/
-    - if: matrix.python-version == '3.13'
+    - if: matrix.python-version == '3.14'
       name: Upload Jupyter
       uses: actions/upload-artifact@v6
       with:
@@ -101,17 +101,17 @@ jobs:
     - if: matrix.python-version != '3.8'
       name: Run MkDocs
       run: mkdocs build --strict
-    - if: matrix.python-version == '3.13'
+    - if: matrix.python-version == '3.14'
       name: Make a release build
       run: maturin develop --uv --release --extras dev,docs
-    - if: matrix.python-version == '3.13'
+    - if: matrix.python-version == '3.14'
       name: Run benchmarks
       uses: CodSpeedHQ/action@v4
       with:
         token: ${{ secrets.CODSPEED_TOKEN }}
         run: pytest --codspeed
         mode: simulation
-    - if: matrix.python-version == '3.13'
+    - if: matrix.python-version == '3.14'
       name: Validate CITATION.cff
       uses: citation-file-format/cffconvert-github-action@2.0.0
       with:
