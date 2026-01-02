@@ -59,6 +59,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "twine",
+    "ty",
 ]
 docs = [
     "mkdocs",
