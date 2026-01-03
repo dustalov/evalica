@@ -4,7 +4,7 @@ import pickle
 import sys
 import unittest.mock
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import hypothesis.strategies as st
 import numpy as np
