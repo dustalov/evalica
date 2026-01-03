@@ -56,7 +56,9 @@ jobs:
     - name: Check Wasm
       run: cargo check --target wasm32-unknown-unknown --features wasm
     - name: Install wasm-bindgen-cli
-      run: cargo install wasm-bindgen-cli
+      run: |
+        curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+        cargo binstall wasm-bindgen-cli
     - name: Run Wasm tests
       run: cargo test --target wasm32-unknown-unknown --features wasm
       env:
@@ -140,5 +142,7 @@ jobs:
   cff:
     runs-on: ubuntu-slim
     steps:
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v7
     - name: Validate CITATION.cff
       run: uvx cffconvert --validate

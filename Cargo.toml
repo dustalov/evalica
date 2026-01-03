@@ -18,11 +18,11 @@ ndarray = "^0.17.1"
 num-traits = "^0.2.19"
 pyo3 = { version = "^0.27.0", features = ["abi3-py38"], optional = true }
 numpy = { git = "https://github.com/PyO3/rust-numpy.git", rev = "4149c5d10fb2fee4466227e0db2ff66a2c412e08", optional = true }
-wasm-bindgen = { version = "0.2.99", optional = true }
+wasm-bindgen = { version = "^0.2.106", optional = true }
 
 [features]
 python = ["dep:pyo3", "dep:numpy"]
 wasm = ["dep:wasm-bindgen"]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.56"
+wasm-bindgen-test = "^0.3.56"
