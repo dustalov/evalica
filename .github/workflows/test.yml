@@ -64,6 +64,21 @@ jobs:
       run: cargo test --target wasm32-unknown-unknown --features wasm
       env:
         CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
+    - name: Build Wasm package
+      run: |
+        cargo build --target wasm32-unknown-unknown --features wasm --release
+        wasm-bindgen target/wasm32-unknown-unknown/release/evalica.wasm --out-dir pkg --target web
+    - name: Prepare artifact
+      run: |
+        mkdir examples/wasm/pkg
+        cp pkg/evalica.js pkg/evalica_bg.wasm examples/wasm/pkg/
+    - name: Upload Wasm
+      uses: actions/upload-artifact@v6
+      with:
+        name: wasm
+        path: examples/wasm
+        if-no-files-found: error
+        retention-days: 5
   python:
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.python-version == '3.14' }}
