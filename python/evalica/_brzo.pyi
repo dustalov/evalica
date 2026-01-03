@@ -7,7 +7,7 @@ __version__: str = ...
 """The version of Evalica."""
 
 
-def matrices_pyo3(
+def matrices(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -16,10 +16,10 @@ def matrices_pyo3(
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
 
 
-def pairwise_scores_pyo3(scores: npt.ArrayLike) -> npt.NDArray[np.float64]: ...
+def pairwise_scores(scores: npt.ArrayLike) -> npt.NDArray[np.float64]: ...
 
 
-def counting_pyo3(
+def counting(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -30,7 +30,7 @@ def counting_pyo3(
 ) -> npt.NDArray[np.float64]: ...
 
 
-def average_win_rate_pyo3(
+def average_win_rate(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -41,7 +41,7 @@ def average_win_rate_pyo3(
 ) -> npt.NDArray[np.float64]: ...
 
 
-def bradley_terry_pyo3(
+def bradley_terry(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -54,7 +54,7 @@ def bradley_terry_pyo3(
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
-def newman_pyo3(
+def newman(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -68,7 +68,7 @@ def newman_pyo3(
 ) -> tuple[npt.NDArray[np.float64], float, int]: ...
 
 
-def elo_pyo3(
+def elo(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -83,7 +83,7 @@ def elo_pyo3(
 ) -> npt.NDArray[np.float64]: ...
 
 
-def eigen_pyo3(
+def eigen(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],
@@ -96,7 +96,7 @@ def eigen_pyo3(
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 
 
-def pagerank_pyo3(
+def pagerank(
         xs: Collection[int],
         ys: Collection[int],
         winners: Collection[int],

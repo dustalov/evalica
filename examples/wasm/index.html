@@ -2,54 +2,142 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Evalica Wasm</title>
     <style>
-        body { font-family: sans-serif; margin: 2em; line-height: 1.5; }
-        pre { background: #f4f4f4; padding: 1em; overflow-x: auto; }
-        .container { max-width: 800px; margin: 0 auto; }
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+            line-height: 1.5;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 1em;
+            overflow-x: auto;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Evalica Wasm</h1>
-        <p>This is a minimal working example of Evalica running in the browser via WebAssembly.</p>
-        
-        <h2>Counting Method</h2>
-        <div id="status">Loading Wasm...</div>
-        <pre id="output"></pre>
-    </div>
+<div class="container">
+    <h1>Evalica Wasm</h1>
+    <p>This is a minimal working example of <a href="https://github.com/dustalov/evalica">Evalica</a> running in the
+        browser via WebAssembly.</p>
 
-    <script type="module">
-        import init, { counting_wasm } from './pkg/evalica.js';
+    <h2>Input Data</h2>
+    <pre id="input-data"></pre>
 
-        async function run() {
-            try {
-                await init();
-                document.getElementById('status').innerText = 'Wasm loaded. Running counting method...';
+    <h2>Method Selection</h2>
+    <select id="method-select">
+        <option value="counting">Counting</option>
+        <option value="average_win_rate">Average Win Rate</option>
+        <option value="bradley_terry">Bradley&ndash;Terry</option>
+        <option value="newman">Newman</option>
+        <option value="eigen">Eigenvalue</option>
+        <option value="pagerank">PageRank</option>
+        <option value="elo">Elo</option>
+    </select>
+    <button id="run-button">Run</button>
 
-                // Example data: 3 items, 0 beats 1, 1 beats 2, 2 beats 0
-                const xs = new Uint32Array([0, 1, 2]);
-                const ys = new Uint32Array([1, 2, 0]);
-                const winners = new Uint8Array([1, 1, 1]); // 1 means x wins
-                const weights = new Float64Array([1.0, 1.0, 1.0]);
-                const total = 3;
+    <h2 id="method-title">Results</h2>
+    <div id="status">Loading Wasm...</div>
+    <pre id="output"></pre>
+</div>
+
+<script type="module">
+    import init, {
+        counting,
+        averageWinRate,
+        bradleyTerry,
+        newman,
+        eigen,
+        pagerank,
+        elo
+    } from './pkg/brzo.js';
+
+    async function run() {
+        try {
+            await init();
+            document.getElementById('status').innerText = 'Wasm loaded. Ready.';
+
+            // Example data from README.md
+            const items = ['pizza', 'burger', 'sushi'];
+            const xs = new Uint32Array([0, 1, 0]);
+            const ys = new Uint32Array([1, 2, 2]);
+            const winners = new Uint8Array([1, 2, 0]); // 1=X, 2=Y, 0=Draw
+            const weights = new Float64Array([1.0, 1.0, 1.0]);
+            const total = items.length;
+
+            document.getElementById('input-data').innerText = JSON.stringify({
+                items,
+                xs: Array.from(xs),
+                ys: Array.from(ys),
+                winners: Array.from(winners),
+                weights: Array.from(weights)
+            }, null, 2);
+
+            const runMethod = () => {
+                const method = document.getElementById('method-select').value;
+                document.getElementById('status').innerText = `Running ${method}...`;
+                document.getElementById('method-title').innerText = `Results: ${method}`;
+
+                let results;
                 const win_weight = 1.0;
                 const tie_weight = 0.5;
 
-                const results = counting_wasm(xs, ys, winners, weights, total, win_weight, tie_weight);
-                
-                document.getElementById('output').innerText = 
-                    'Results (Scores for items 0, 1, 2):\n' + 
-                    JSON.stringify(Array.from(results), null, 2);
-                document.getElementById('status').innerText = 'Done!';
-            } catch (e) {
-                document.getElementById('status').innerText = 'Error: ' + e;
-                console.error(e);
-            }
-        }
+                try {
+                    switch (method) {
+                        case 'counting':
+                            results = counting(xs, ys, winners, weights, total, win_weight, tie_weight);
+                            break;
+                        case 'average_win_rate':
+                            results = averageWinRate(xs, ys, winners, weights, total, win_weight, tie_weight);
+                            break;
+                        case 'bradley_terry':
+                            results = bradleyTerry(xs, ys, winners, weights, total, win_weight, tie_weight, 1e-6, 100);
+                            break;
+                        case 'newman':
+                            results = newman(xs, ys, winners, weights, total, 1.0, 1e-6, 100);
+                            break;
+                        case 'eigen':
+                            results = eigen(xs, ys, winners, weights, total, win_weight, tie_weight, 1e-6, 100);
+                            break;
+                        case 'pagerank':
+                            results = pagerank(xs, ys, winners, weights, total, win_weight, tie_weight, 0.85, 1e-6, 100);
+                            break;
+                        case 'elo':
+                            results = elo(xs, ys, winners, weights, total, 1000.0, 10.0, 400.0, 32.0, win_weight, tie_weight);
+                            break;
+                    }
 
-        run();
-    </script>
+                    const scores = Array.from(results);
+                    let outputText = 'Item scores:\n';
+                    items.forEach((item, i) => {
+                        outputText += `${item}: ${scores[i].toFixed(4)}\n`;
+                    });
+
+                    document.getElementById('output').innerText = outputText;
+                    document.getElementById('status').innerText = 'Done!';
+                } catch (err) {
+                    document.getElementById('status').innerText = 'Error: ' + err;
+                    console.error(err);
+                }
+            };
+
+            document.getElementById('run-button').onclick = runMethod;
+            runMethod();
+        } catch (e) {
+            document.getElementById('status').innerText = 'Error: ' + e;
+            console.error(e);
+        }
+    }
+
+    run();
+</script>
 </body>
 </html>

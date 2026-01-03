@@ -10,7 +10,7 @@ use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
 
 import_exception!(evalica, LengthMismatchError);
 
-#[pyfunction]
+#[pyfunction(name = "matrices")]
 fn matrices_pyo3<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
@@ -34,7 +34,7 @@ fn matrices_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "pairwise_scores")]
 fn pairwise_scores_pyo3<'py>(
     py: Python,
     scores: PyArrayLike1<'py, f64>,
@@ -44,7 +44,7 @@ fn pairwise_scores_pyo3<'py>(
     Ok(pairwise.into_pyarray(py).unbind())
 }
 
-#[pyfunction]
+#[pyfunction(name = "counting")]
 fn counting_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
@@ -69,7 +69,7 @@ fn counting_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "average_win_rate")]
 fn average_win_rate_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
@@ -94,7 +94,7 @@ fn average_win_rate_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "bradley_terry")]
 fn bradley_terry_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
@@ -132,7 +132,7 @@ fn bradley_terry_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "newman")]
 fn newman_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
@@ -177,7 +177,7 @@ fn newman_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "elo")]
 fn elo_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
@@ -210,7 +210,7 @@ fn elo_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "eigen")]
 fn eigen_pyo3<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
@@ -248,7 +248,7 @@ fn eigen_pyo3<'py>(
     }
 }
 
-#[pyfunction]
+#[pyfunction(name = "pagerank")]
 fn pagerank_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
@@ -288,7 +288,8 @@ fn pagerank_pyo3<'py>(
 }
 
 #[pymodule]
-fn evalica(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+#[pyo3(name = "_brzo")]
+fn _brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;

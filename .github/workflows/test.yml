@@ -67,7 +67,7 @@ jobs:
     - name: Build Wasm package
       run: |
         cargo build --target wasm32-unknown-unknown --features wasm --release
-        wasm-bindgen target/wasm32-unknown-unknown/release/evalica.wasm --out-dir pkg --target web
+        wasm-bindgen target/wasm32-unknown-unknown/release/brzo.wasm --out-dir pkg --target web
         ls -lahR pkg
     - name: Prepare artifact
       run: |
@@ -76,7 +76,7 @@ jobs:
     - name: Upload Wasm
       uses: actions/upload-artifact@v6
       with:
-        name: wasm
+        name: wasm-example
         path: examples/wasm
         if-no-files-found: error
         retention-days: 5
@@ -125,7 +125,7 @@ jobs:
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb docs/*.ipynb
     - name: Lint with abi3audit
-      run: python3 -c "import evalica;print(evalica.evalica.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
+      run: python3 -c "import evalica;print(evalica._brzo.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
     - name: Run Jupyter
       run: |
         mkdir jupyter

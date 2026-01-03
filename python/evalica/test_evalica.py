@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 
 def test_rust_extension_warning() -> None:
-    with unittest.mock.patch.dict(sys.modules, {"evalica.evalica": None}):
+    with unittest.mock.patch.dict(sys.modules, {"evalica._brzo": None}):
         if "evalica" in sys.modules:
             del sys.modules["evalica"]
 
@@ -51,7 +51,7 @@ def test_version() -> None:
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
 def test_version_consistency() -> None:
-    assert evalica.__version__ == cast("Any", evalica).evalica.__version__
+    assert evalica.__version__ == evalica.brzo.__version__
 
 
 def test_exports() -> None:

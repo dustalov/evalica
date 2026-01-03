@@ -6,7 +6,7 @@ use crate::utils::{matrices, win_plus_tie_matrix};
 use ndarray::Array1;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "counting")]
 pub fn counting_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -29,7 +29,7 @@ pub fn counting_wasm(
     .map_err(|e| e.to_string())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "averageWinRate")]
 pub fn average_win_rate_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -52,7 +52,7 @@ pub fn average_win_rate_wasm(
     .map_err(|e| e.to_string())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "bradleyTerry")]
 pub fn bradley_terry_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -79,7 +79,7 @@ pub fn bradley_terry_wasm(
         .map_err(|e| e.to_string())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "newman")]
 pub fn newman_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -104,7 +104,7 @@ pub fn newman_wasm(
         .map_err(|e| e.to_string())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "eigen")]
 pub fn eigen_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -131,7 +131,7 @@ pub fn eigen_wasm(
         .map_err(|e| e.to_string())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "pagerank")]
 pub fn pagerank_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -159,7 +159,7 @@ pub fn pagerank_wasm(
         .map_err(|e| e.to_string())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "elo")]
 pub fn elo_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -197,7 +197,7 @@ mod tests {
 
 
     #[wasm_bindgen_test]
-    fn test_counting_wasm() {
+    fn test_counting() {
         let xs = vec![0, 1, 2];
         let ys = vec![1, 2, 0];
         let winners = vec![1, 1, 1]; // X wins
@@ -210,7 +210,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn test_bradley_terry_wasm() {
+    fn test_bradley_terry() {
         let xs = vec![0, 1, 2];
         let ys = vec![1, 2, 0];
         let winners = vec![1, 1, 1];
@@ -221,7 +221,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn test_elo_wasm() {
+    fn test_elo() {
         let xs = vec![0, 1, 2];
         let ys = vec![1, 2, 0];
         let winners = vec![1, 1, 1];

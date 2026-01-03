@@ -97,6 +97,7 @@ exclude_also = [
 [tool.maturin]
 features = ["python"]
 python-source = "python"
+module-name = "evalica._brzo"
 
 [tool.mypy]
 ignore_missing_imports = true

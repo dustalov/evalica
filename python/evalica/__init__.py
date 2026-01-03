@@ -50,18 +50,8 @@ class RustExtensionWarning(RuntimeWarning):
 
 
 try:
-    from .evalica import (
-        __version__,
-        average_win_rate_pyo3,
-        bradley_terry_pyo3,
-        counting_pyo3,
-        eigen_pyo3,
-        elo_pyo3,
-        matrices_pyo3,
-        newman_pyo3,
-        pagerank_pyo3,
-        pairwise_scores_pyo3,
-    )
+    from . import _brzo as brzo
+    from ._brzo import __version__
 
     PYO3_AVAILABLE = True
     """The Rust extension is available and can be used for performance-critical operations."""
@@ -77,15 +67,7 @@ except ImportError:
     with contextlib.suppress(importlib.metadata.PackageNotFoundError):
         __version__ = importlib.metadata.version("evalica")
 
-    matrices_pyo3 = None  # type: ignore[assignment]
-    average_win_rate_pyo3 = None  # type: ignore[assignment]
-    bradley_terry_pyo3 = None  # type: ignore[assignment]
-    counting_pyo3 = None  # type: ignore[assignment]
-    eigen_pyo3 = None  # type: ignore[assignment]
-    elo_pyo3 = None  # type: ignore[assignment]
-    newman_pyo3 = None  # type: ignore[assignment]
-    pagerank_pyo3 = None  # type: ignore[assignment]
-    pairwise_scores_pyo3 = None  # type: ignore[assignment]
+    brzo = None  # type: ignore[assignment]
 
     PYO3_AVAILABLE = False
 
@@ -211,7 +193,7 @@ def matrices(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        win_matrix, tie_matrix = matrices_pyo3(
+        win_matrix, tie_matrix = brzo.matrices(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -310,7 +292,7 @@ def counting(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores = counting_pyo3(
+        scores = brzo.counting(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -400,7 +382,7 @@ def average_win_rate(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores = average_win_rate_pyo3(
+        scores = brzo.average_win_rate(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -524,7 +506,7 @@ def bradley_terry(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, iterations = bradley_terry_pyo3(
+        scores, iterations = brzo.bradley_terry(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -647,7 +629,7 @@ def newman(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, v, iterations = newman_pyo3(
+        scores, v, iterations = brzo.newman(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -772,7 +754,7 @@ def elo(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores = elo_pyo3(
+        scores = brzo.elo(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -884,7 +866,7 @@ def eigen(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, iterations = eigen_pyo3(
+        scores, iterations = brzo.eigen(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -1005,7 +987,7 @@ def pagerank(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, iterations = pagerank_pyo3(
+        scores, iterations = brzo.pagerank(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -1085,7 +1067,7 @@ def pairwise_scores(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        return pairwise_scores_pyo3(scores)
+        return brzo.pairwise_scores(scores)
 
     return pairwise_scores_naive(scores)
 
