@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evalica Wasm</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; line-height: 1.5; }
+        pre { background: #f4f4f4; padding: 1em; overflow-x: auto; }
+        .container { max-width: 800px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Evalica Wasm</h1>
+        <p>This is a minimal working example of Evalica running in the browser via WebAssembly.</p>
+        
+        <h2>Counting Method</h2>
+        <div id="status">Loading Wasm...</div>
+        <pre id="output"></pre>
+    </div>
+
+    <script type="module">
+        import init, { counting_wasm } from './pkg/evalica.js';
+
+        async function run() {
+            try {
+                await init();
+                document.getElementById('status').innerText = 'Wasm loaded. Running counting method...';
+
+                // Example data: 3 items, 0 beats 1, 1 beats 2, 2 beats 0
+                const xs = new Uint32Array([0, 1, 2]);
+                const ys = new Uint32Array([1, 2, 0]);
+                const winners = new Uint8Array([1, 1, 1]); // 1 means x wins
+                const weights = new Float64Array([1.0, 1.0, 1.0]);
+                const total = 3;
+                const win_weight = 1.0;
+                const tie_weight = 0.5;
+
+                const results = counting_wasm(xs, ys, winners, weights, total, win_weight, tie_weight);
+                
+                document.getElementById('output').innerText = 
+                    'Results (Scores for items 0, 1, 2):\n' + 
+                    JSON.stringify(Array.from(results), null, 2);
+                document.getElementById('status').innerText = 'Done!';
+            } catch (e) {
+                document.getElementById('status').innerText = 'Error: ' + e;
+                console.error(e);
+            }
+        }
+
+        run();
+    </script>
+</body>
+</html>
