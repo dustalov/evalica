@@ -77,7 +77,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: "3.13"
+        python-version: "3.14"
         architecture: ${{ matrix.python-architecture || 'x64' }}
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
