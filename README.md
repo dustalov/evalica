@@ -163,4 +163,4 @@ The code for replicating the experiments is available in the [`coling2025`](coli
 
 ## Copyright
 
-Copyright (c) 2024&ndash;2025 [Dmitry Ustalov](https://github.com/dustalov). See [LICENSE](LICENSE) for details.
+Copyright (c) 2024&ndash;2026 [Dmitry Ustalov](https://github.com/dustalov). See [LICENSE](LICENSE) for details.
