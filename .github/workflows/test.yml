@@ -55,10 +55,12 @@ jobs:
       run: rustup target add wasm32-unknown-unknown
     - name: Check Wasm
       run: cargo check --target wasm32-unknown-unknown --features wasm
-    - name: Install wasm-pack
-      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    - name: Install wasm-bindgen-cli
+      run: cargo install wasm-bindgen-cli
     - name: Run Wasm tests
-      run: wasm-pack test --node -- --features wasm
+      run: cargo test --target wasm32-unknown-unknown --features wasm
+      env:
+        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
   python:
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.python-version == '3.14' }}
@@ -139,6 +141,4 @@ jobs:
     runs-on: ubuntu-slim
     steps:
     - name: Validate CITATION.cff
-      uses: citation-file-format/cffconvert-github-action@2.0.0
-      with:
-        args: "--validate"
+      run: cffconvert --validate
