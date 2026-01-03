@@ -68,11 +68,11 @@ jobs:
       run: |
         cargo build --target wasm32-unknown-unknown --features wasm --release
         wasm-bindgen target/wasm32-unknown-unknown/release/evalica.wasm --out-dir pkg --target web
+        ls -lahR pkg
     - name: Prepare artifact
       run: |
-        ls -lahR pkg
         mkdir examples/wasm/pkg
-        cp pkg/evalica.js pkg/evalica.wasm examples/wasm/pkg/
+        cp pkg/* examples/wasm/pkg/
     - name: Upload Wasm
       uses: actions/upload-artifact@v6
       with:
