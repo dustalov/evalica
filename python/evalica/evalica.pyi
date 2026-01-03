@@ -1,5 +1,4 @@
 from collections.abc import Collection
-from enum import Enum
 
 import numpy as np
 import numpy.typing as npt
@@ -8,24 +7,10 @@ __version__: str = ...
 """The version of Evalica."""
 
 
-class Winner(Enum):
-    """The outcome of the pairwise comparison."""
-    X = ...
-    """The first element won."""
-    Y = ...
-    """The second element won."""
-    Draw = ...
-    """There is a tie."""
-
-
-class LengthMismatchError(ValueError):
-    """The dataset dimensions mismatched."""
-
-
 def matrices_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
 ) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.float64]], np.ndarray[tuple[int, int], np.dtype[np.float64]]]: ...
@@ -37,7 +22,7 @@ def pairwise_scores_pyo3(scores: npt.ArrayLike) -> npt.NDArray[np.float64]: ...
 def counting_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         win_weight: float,
@@ -48,7 +33,7 @@ def counting_pyo3(
 def average_win_rate_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         win_weight: float,
@@ -59,7 +44,7 @@ def average_win_rate_pyo3(
 def bradley_terry_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         win_weight: float,
@@ -72,7 +57,7 @@ def bradley_terry_pyo3(
 def newman_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         v_init: float,
@@ -86,7 +71,7 @@ def newman_pyo3(
 def elo_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         initial: float,
@@ -101,7 +86,7 @@ def elo_pyo3(
 def eigen_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         win_weight: float,
@@ -114,7 +99,7 @@ def eigen_pyo3(
 def pagerank_pyo3(
         xs: Collection[int],
         ys: Collection[int],
-        winners: Collection[Winner],
+        winners: Collection[int],
         weights: Collection[float],
         total: int,
         damping: float,

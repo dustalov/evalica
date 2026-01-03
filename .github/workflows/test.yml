@@ -116,3 +116,5 @@ jobs:
       uses: citation-file-format/cffconvert-github-action@2.0.0
       with:
         args: "--validate"
+    - name: Run tests (naïve)
+      run: find python/evalica -name "*.so" -delete -o -name "*.pyd" -delete && pytest

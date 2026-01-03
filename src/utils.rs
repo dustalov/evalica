@@ -141,13 +141,17 @@ pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
 /// A tuple containing:
 /// * The win matrix.
 /// * The tie matrix.
-pub fn matrices<A: Num + Copy + AddAssign>(
+pub fn matrices<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<Winner>,
+    winners: &ArrayView1<W>,
     weights: &ArrayView1<A>,
     total: usize,
-) -> Result<(Array2<A>, Array2<A>), ShapeError> {
+) -> Result<(Array2<A>, Array2<A>), ShapeError>
+where
+    A: Num + Copy + AddAssign,
+    W: Copy + Into<Winner>,
+{
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
@@ -159,8 +163,8 @@ pub fn matrices<A: Num + Copy + AddAssign>(
     let mut wins = Array2::zeros((total, total));
     let mut ties = wins.clone();
 
-    for (((&x, &y), &ref w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        match w {
+    for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
+        match w.into() {
             Winner::X => {
                 wins[[x, y]] += weight;
             }

@@ -104,7 +104,8 @@ strict = true
 
 [tool.pytest.ini_options]
 filterwarnings = [
-    "error::RuntimeWarning"
+    "error::RuntimeWarning",
+    "ignore:The Rust extension could not be imported",
 ]
 
 [tool.ruff]

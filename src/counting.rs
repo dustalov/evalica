@@ -21,15 +21,19 @@ use crate::{check_lengths, check_total, Winner};
 /// # Returns
 ///
 /// A 1D array of scores for each item.
-pub fn counting<A: Float + AddAssign>(
+pub fn counting<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<Winner>,
+    winners: &ArrayView1<W>,
     weights: &ArrayView1<A>,
     total: usize,
     win_weight: A,
     tie_weight: A,
-) -> Result<Array1<A>, ShapeError> {
+) -> Result<Array1<A>, ShapeError>
+where
+    A: Float + AddAssign,
+    W: Copy + Into<Winner>,
+{
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
@@ -40,8 +44,8 @@ pub fn counting<A: Float + AddAssign>(
 
     let mut scores = Array1::zeros(total);
 
-    for (((&x, &y), &ref w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        match w {
+    for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
+        match w.into() {
             Winner::X => scores[x] += weight * win_weight,
             Winner::Y => scores[y] += weight * win_weight,
             Winner::Draw => {
@@ -73,15 +77,19 @@ pub fn counting<A: Float + AddAssign>(
 /// # Returns
 ///
 /// A 1D array of scores for each item.
-pub fn average_win_rate<A: Float + AddAssign + MulAssign + ScalarOperand>(
+pub fn average_win_rate<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<Winner>,
+    winners: &ArrayView1<W>,
     weights: &ArrayView1<A>,
     total: usize,
     win_weight: A,
     tie_weight: A,
-) -> Result<Array1<A>, ShapeError> {
+) -> Result<Array1<A>, ShapeError>
+where
+    A: Float + AddAssign + MulAssign + ScalarOperand,
+    W: Copy + Into<Winner>,
+{
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {

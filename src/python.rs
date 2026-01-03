@@ -1,6 +1,5 @@
-use numpy::{Element, IntoPyArray, PyArray1, PyArray2, PyArrayDescr, PyArrayLike1};
-use pyo3::create_exception;
-use pyo3::exceptions::PyValueError;
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
+use pyo3::import_exception;
 use pyo3::prelude::*;
 
 use crate::bradley_terry::{bradley_terry, newman};
@@ -8,49 +7,15 @@ use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
-use crate::Winner;
 
-#[pymethods]
-impl Winner {
-    #[new]
-    fn new() -> Self {
-        Winner::Draw
-    }
+import_exception!(evalica, LengthMismatchError);
 
-    fn __hash__(&self) -> u64 {
-        let value: u8 = self.clone().into();
-        value.into()
-    }
-
-    fn __getstate__(&self) -> PyResult<u8> {
-        Ok(self.clone().into())
-    }
-
-    fn __setstate__(&mut self, state: u8) -> PyResult<()> {
-        *self = Winner::from(state);
-        Ok(())
-    }
-}
-
-unsafe impl Element for Winner {
-    const IS_COPY: bool = true;
-
-    fn clone_ref(&self, _py: Python<'_>) -> Self {
-        Clone::clone(self)
-    }
-
-    fn get_dtype(py: Python<'_>) -> Bound<'_, PyArrayDescr> {
-        numpy::dtype::<u8>(py)
-    }
-}
-
-create_exception!(evalica, LengthMismatchError, PyValueError);
 #[pyfunction]
 fn matrices_pyo3<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
 ) -> PyResult<(Py<PyArray2<f64>>, Py<PyArray2<f64>>)> {
@@ -84,7 +49,7 @@ fn counting_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
@@ -109,7 +74,7 @@ fn average_win_rate_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
@@ -134,7 +99,7 @@ fn bradley_terry_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
@@ -159,7 +124,7 @@ fn bradley_terry_pyo3<'py>(
             );
 
             match bradley_terry(&matrix.view(), tolerance, limit) {
-                Ok((scores, iterations)) => Ok((scores.into_pyarray(py).into(), iterations)),
+                Ok((scores, iterations)) => Ok((scores.into_pyarray(py).unbind(), iterations)),
                 Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
             }
         }
@@ -172,7 +137,7 @@ fn newman_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     v_init: f64,
@@ -217,7 +182,7 @@ fn elo_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     initial: f64,
@@ -250,7 +215,7 @@ fn eigen_pyo3<'py>(
     py: Python<'py>,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     win_weight: f64,
@@ -288,7 +253,7 @@ fn pagerank_pyo3<'py>(
     py: Python,
     xs: PyArrayLike1<'py, usize>,
     ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, Winner>,
+    winners: PyArrayLike1<'py, u8>,
     weights: PyArrayLike1<'py, f64>,
     total: usize,
     damping: f64,
@@ -323,9 +288,8 @@ fn pagerank_pyo3<'py>(
 }
 
 #[pymodule]
-fn evalica(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn evalica(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("LengthMismatchError", py.get_type::<LengthMismatchError>())?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;
@@ -335,6 +299,5 @@ fn evalica(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(elo_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(eigen_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pagerank_pyo3, m)?)?;
-    m.add_class::<Winner>()?;
     Ok(())
 }

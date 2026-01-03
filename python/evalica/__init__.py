@@ -2,45 +2,109 @@
 
 from __future__ import annotations
 
+import contextlib
 import warnings
 from collections.abc import Hashable
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import TYPE_CHECKING, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from .evalica import (
-    LengthMismatchError,
-    Winner,
-    __version__,
-    average_win_rate_pyo3,
-    bradley_terry_pyo3,
-    counting_pyo3,
-    eigen_pyo3,
-    elo_pyo3,
-    matrices_pyo3,
-    newman_pyo3,
-    pagerank_pyo3,
-    pairwise_scores_pyo3,
-)
-from .naive import bradley_terry as bradley_terry_naive
-from .naive import counting as counting_naive
-from .naive import eigen as eigen_naive
-from .naive import elo as elo_naive
-from .naive import newman as newman_naive
-from .naive import pagerank as pagerank_naive
-from .naive import pairwise_scores as pairwise_scores_naive
+
+class Winner(IntEnum):
+    """The outcome of the pairwise comparison."""
+
+    Draw = 0
+    """There is a tie."""
+
+    X = 1
+    """The first element won."""
+
+    Y = 2
+    """The second element won."""
+
+
+class LengthMismatchError(ValueError):
+    """The dataset dimensions mismatched."""
+
+
+class SolverError(RuntimeError):
+    """The requested solver is not available."""
+
+    def __init__(self, solver: str) -> None:
+        """
+        Create and return a new object.
+
+        Args:
+            solver: The solver name.
+
+        """
+        super().__init__(f"The '{solver}' solver is not available")
+
+
+class RustExtensionWarning(RuntimeWarning):
+    """The Rust extension could not be imported."""
+
+
+try:
+    from .evalica import (
+        __version__,
+        average_win_rate_pyo3,
+        bradley_terry_pyo3,
+        counting_pyo3,
+        eigen_pyo3,
+        elo_pyo3,
+        matrices_pyo3,
+        newman_pyo3,
+        pagerank_pyo3,
+        pairwise_scores_pyo3,
+    )
+
+    PYO3_AVAILABLE = True
+    """The Rust extension is available and can be used for performance-critical operations."""
+except ImportError:
+    warnings.warn(
+        "The Rust extension could not be imported; falling back to the naive implementations.",
+        RustExtensionWarning,
+        stacklevel=1,
+    )
+
+    import importlib.metadata
+
+    with contextlib.suppress(importlib.metadata.PackageNotFoundError):
+        __version__ = importlib.metadata.version("evalica")
+
+    matrices_pyo3 = None  # type: ignore[assignment]
+    average_win_rate_pyo3 = None  # type: ignore[assignment]
+    bradley_terry_pyo3 = None  # type: ignore[assignment]
+    counting_pyo3 = None  # type: ignore[assignment]
+    eigen_pyo3 = None  # type: ignore[assignment]
+    elo_pyo3 = None  # type: ignore[assignment]
+    newman_pyo3 = None  # type: ignore[assignment]
+    pagerank_pyo3 = None  # type: ignore[assignment]
+    pairwise_scores_pyo3 = None  # type: ignore[assignment]
+
+    PYO3_AVAILABLE = False
+
+SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
+"""The default solver."""
+
+from .naive import bradley_terry as bradley_terry_naive  # noqa: E402
+from .naive import counting as counting_naive  # noqa: E402
+from .naive import eigen as eigen_naive  # noqa: E402
+from .naive import elo as elo_naive  # noqa: E402
+from .naive import matrices as matrices_naive  # noqa: E402
+from .naive import newman as newman_naive  # noqa: E402
+from .naive import pagerank as pagerank_naive  # noqa: E402
+from .naive import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
 if TYPE_CHECKING:
     from collections.abc import Collection
 
-WINNERS = [
-    Winner.X,
-    Winner.Y,
-    Winner.Draw,
-]
+WINNERS = list(Winner)
 """Known values of Winner."""
 
 T_co = TypeVar("T_co", bound=Hashable, covariant=True)
@@ -124,6 +188,7 @@ def matrices(
         winners: Collection[Winner],
         index: pd.Index,
         weights: Collection[float] | None = None,
+        solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> MatricesResult:
     """
     Build win and tie matrices from the given elements.
@@ -134,6 +199,7 @@ def matrices(
         winners: The winner elements.
         index: The index.
         weights: The example weights.
+        solver: The solver.
 
     Returns:
         The win and tie matrices.
@@ -141,13 +207,25 @@ def matrices(
     """
     weights = _wrap_weights(weights, len(xs_indexed))
 
-    win_matrix, tie_matrix = matrices_pyo3(
-        xs=xs_indexed,
-        ys=ys_indexed,
-        winners=winners,
-        weights=weights,
-        total=len(index),
-    )
+    if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
+        win_matrix, tie_matrix = matrices_pyo3(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+        )
+    else:
+        win_matrix, tie_matrix = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
+            winners=winners,
+            weights=weights,
+            total=len(index),
+        )
 
     return MatricesResult(
         win_matrix=win_matrix,
@@ -200,7 +278,7 @@ def counting(
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> CountingResult:
     """
     Count individual elements.
@@ -229,6 +307,9 @@ def counting(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores = counting_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -287,7 +368,7 @@ def average_win_rate(
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> AverageWinRateResult:
     """
     Count pairwise win rates between the elements and average per element.
@@ -316,6 +397,9 @@ def average_win_rate(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores = average_win_rate_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -333,6 +417,7 @@ def average_win_rate(
             winners=winners,
             index=index,
             weights=weights,
+            solver="naive",
         )
 
         matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight)
@@ -393,7 +478,7 @@ def bradley_terry(
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> BradleyTerryResult:
@@ -436,6 +521,9 @@ def bradley_terry(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores, iterations = bradley_terry_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -454,6 +542,7 @@ def bradley_terry(
             winners=winners,
             index=index,
             weights=weights,
+            solver="naive",
         )
 
         matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
@@ -516,7 +605,7 @@ def newman(
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = 1.,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> NewmanResult:
@@ -555,6 +644,9 @@ def newman(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores, v, iterations = newman_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -575,6 +667,7 @@ def newman(
             winners=winners,
             index=index,
             weights=weights,
+            solver="naive",
         )
 
         win_matrix = np.nan_to_num(win_weight * np.nan_to_num(_matrices.win_matrix, nan=tolerance), nan=tolerance)
@@ -643,7 +736,7 @@ def elo(
         weights: Collection[float] | None = None,
         win_weight: float = 1.0,
         tie_weight: float = 0.5,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> EloResult:
     """
     Compute the Elo scores.
@@ -676,6 +769,9 @@ def elo(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores = elo_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -752,7 +848,7 @@ def eigen(
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> EigenResult:
@@ -785,6 +881,9 @@ def eigen(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores, iterations = eigen_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -803,6 +902,7 @@ def eigen(
             winners=winners,
             index=index,
             weights=weights,
+            solver="naive",
         )
 
         matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
@@ -863,7 +963,7 @@ def pagerank(
         weights: Collection[float] | None = None,
         win_weight: float = 1.,
         tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
         tolerance: float = 1e-6,
         limit: int = 100,
 ) -> PageRankResult:
@@ -902,6 +1002,9 @@ def pagerank(
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         scores, iterations = pagerank_pyo3(
             xs=xs_indexed,
             ys=ys_indexed,
@@ -921,6 +1024,7 @@ def pagerank(
             winners=winners,
             index=index,
             weights=weights,
+            solver="naive",
         )
 
         matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
@@ -961,7 +1065,7 @@ class ScoreDimensionError(ValueError):
 
 def pairwise_scores(
         scores: npt.NDArray[np.float64],
-        solver: Literal["naive", "pyo3"] = "pyo3",
+        solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> npt.NDArray[np.float64]:
     """
     Estimate the pairwise scores.
@@ -978,7 +1082,11 @@ def pairwise_scores(
         raise ScoreDimensionError(scores.ndim)
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         return pairwise_scores_pyo3(scores)
+
     return pairwise_scores_naive(scores)
 
 
@@ -998,6 +1106,8 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
 
 
 __all__ = [
+    "PYO3_AVAILABLE",
+    "SOLVER",
     "WINNERS",
     "BradleyTerryResult",
     "CountingResult",
@@ -1008,7 +1118,9 @@ __all__ = [
     "NewmanResult",
     "PageRankResult",
     "Result",
+    "RustExtensionWarning",
     "ScoreDimensionError",
+    "SolverError",
     "Winner",
     "__version__",
     "average_win_rate",
