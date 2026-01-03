@@ -37,6 +37,28 @@ jobs:
       run: cargo test --verbose
     - name: Generate docs
       run: cargo doc --verbose --no-deps
+  wasm:
+    runs-on: ubuntu-latest
+    needs: rust
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-wasm-${{ hashFiles('**/Cargo.toml') }}
+    - name: Install Wasm target
+      run: rustup target add wasm32-unknown-unknown
+    - name: Check Wasm
+      run: cargo check --target wasm32-unknown-unknown --features wasm
+    - name: Install wasm-pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    - name: Run Wasm tests
+      run: wasm-pack test --node -- --features wasm
   python:
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.python-version == '3.14' }}
@@ -111,10 +133,12 @@ jobs:
         token: ${{ secrets.CODSPEED_TOKEN }}
         run: pytest --codspeed
         mode: simulation
-    - if: matrix.python-version == '3.14'
-      name: Validate CITATION.cff
+    - name: Run tests (naïve)
+      run: find python/evalica -name "*.so" -delete -o -name "*.pyd" -delete && pytest
+  cff:
+    runs-on: ubuntu-slim
+    steps:
+    - name: Validate CITATION.cff
       uses: citation-file-format/cffconvert-github-action@2.0.0
       with:
         args: "--validate"
-    - name: Run tests (naïve)
-      run: find python/evalica -name "*.so" -delete -o -name "*.pyd" -delete && pytest

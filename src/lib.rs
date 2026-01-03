@@ -1,4 +1,3 @@
-
 /// Implements the Bradley–Terry model and related methods.
 pub mod bradley_terry;
 /// Implements counting-based rating methods.
@@ -11,6 +10,8 @@ pub mod linalg;
 mod python;
 /// Contains utility functions and macros.
 pub mod utils;
+#[cfg(feature = "wasm")]
+pub mod wasm;
 
 /// The outcome of the pairwise comparison.
 #[repr(u8)]
