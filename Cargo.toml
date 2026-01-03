@@ -25,4 +25,4 @@ python = ["dep:pyo3", "dep:numpy"]
 wasm = ["dep:wasm-bindgen"]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.49"
+wasm-bindgen-test = "0.3.56"
