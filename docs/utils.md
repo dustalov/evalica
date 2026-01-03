@@ -1,5 +1,7 @@
 ::: evalica.Winner
 ::: evalica.WINNERS
+::: evalica.PYO3_AVAILABLE
+::: evalica.SOLVER
 ::: evalica.indexing
 ::: evalica.matrices
 ::: evalica.MatricesResult
