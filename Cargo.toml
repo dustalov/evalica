@@ -9,7 +9,7 @@ exclude = ["*.csv", "*.ipynb", "*.svg", ".github", ".gitignore", "coling2025"]
 publish = []
 
 [lib]
-name = "brzo"
+name = "evalica"
 crate-type = ["cdylib"]
 
 [dependencies]
