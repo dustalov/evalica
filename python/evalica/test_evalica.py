@@ -51,7 +51,7 @@ def test_version() -> None:
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
 def test_version_consistency() -> None:
-    assert evalica.__version__ == evalica.brzo.__version__
+    assert evalica.__version__ == evalica._brzo.__version__
 
 
 def test_exports() -> None:

@@ -50,7 +50,7 @@ class RustExtensionWarning(RuntimeWarning):
 
 
 try:
-    from . import _brzo as brzo
+    from . import _brzo
     from ._brzo import __version__
 
     PYO3_AVAILABLE = True
@@ -67,7 +67,7 @@ except ImportError:
     with contextlib.suppress(importlib.metadata.PackageNotFoundError):
         __version__ = importlib.metadata.version("evalica")
 
-    brzo = None  # type: ignore[assignment]
+    _brzo = None  # type: ignore[assignment]
 
     PYO3_AVAILABLE = False
 
@@ -193,7 +193,7 @@ def matrices(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        win_matrix, tie_matrix = brzo.matrices(
+        win_matrix, tie_matrix = _brzo.matrices(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -292,7 +292,7 @@ def counting(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores = brzo.counting(
+        scores = _brzo.counting(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -382,7 +382,7 @@ def average_win_rate(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores = brzo.average_win_rate(
+        scores = _brzo.average_win_rate(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -506,7 +506,7 @@ def bradley_terry(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, iterations = brzo.bradley_terry(
+        scores, iterations = _brzo.bradley_terry(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -629,7 +629,7 @@ def newman(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, v, iterations = brzo.newman(
+        scores, v, iterations = _brzo.newman(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -754,7 +754,7 @@ def elo(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores = brzo.elo(
+        scores = _brzo.elo(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -866,7 +866,7 @@ def eigen(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, iterations = brzo.eigen(
+        scores, iterations = _brzo.eigen(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -987,7 +987,7 @@ def pagerank(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        scores, iterations = brzo.pagerank(
+        scores, iterations = _brzo.pagerank(
             xs=xs_indexed,
             ys=ys_indexed,
             winners=winners,
@@ -1067,7 +1067,7 @@ def pairwise_scores(
         if not PYO3_AVAILABLE:
             raise SolverError(solver)
 
-        return brzo.pairwise_scores(scores)
+        return _brzo.pairwise_scores(scores)
 
     return pairwise_scores_naive(scores)
 
