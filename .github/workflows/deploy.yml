@@ -9,12 +9,25 @@ env:
   CARGO_TERM_COLOR: always
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
 
 permissions:
   contents: read
 
 # Heavily inspired by https://github.com/pydantic/pydantic-core/blob/main/.github/workflows/ci.yml
 jobs:
+  rust:
+    runs-on: ubuntu-latest
+    environment: crates-io
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v6
+    - uses: rust-lang/crates-io-auth-action@v1
+      id: auth
+    - run: cargo publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
   build-sdist:
     name: build sdist
     runs-on: ubuntu-latest
@@ -31,7 +44,7 @@ jobs:
       with:
         name: package_sdist
         path: dist
-  build:
+  build-pyo3:
     strategy:
       fail-fast: false
       matrix:
@@ -109,10 +122,10 @@ jobs:
       url: https://test.pypi.org/p/evalica
     permissions:
       id-token: write
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     needs:
     - build-sdist
-    - build
+    - build-pyo3
     steps:
     - name: Download packages
       uses: actions/download-artifact@v7
@@ -136,7 +149,7 @@ jobs:
       url: https://pypi.org/p/evalica
     permissions:
       id-token: write
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     needs: testpypi
     steps:
     - name: Download packages
