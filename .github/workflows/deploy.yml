@@ -109,7 +109,7 @@ jobs:
       url: https://test.pypi.org/p/evalica
     permissions:
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs:
     - build-sdist
     - build
@@ -136,7 +136,7 @@ jobs:
       url: https://pypi.org/p/evalica
     permissions:
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: testpypi
     steps:
     - name: Download packages
