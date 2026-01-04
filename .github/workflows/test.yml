@@ -38,6 +38,8 @@ jobs:
       run: cargo test --verbose
     - name: Generate docs
       run: cargo doc --verbose --no-deps
+    - name: Publish dry-run
+      run: cargo publish --verbose --dry-run
   wasm:
     runs-on: ubuntu-latest
     needs: rust
