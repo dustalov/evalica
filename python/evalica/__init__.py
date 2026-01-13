@@ -86,7 +86,7 @@ from .naive import pagerank as pagerank_naive  # noqa: E402
 from .naive import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Collection
 
 WINNERS = list(Winner)
 """Known values of Winner."""
@@ -94,7 +94,7 @@ WINNERS = list(Winner)
 T_contra = TypeVar("T_contra", bound=Hashable, contravariant=True)
 
 
-def _wrap_weights(weights: Sequence[float] | npt.NDArray[np.float64] | None, n: int) -> Sequence[float]:
+def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> Collection[float]:
     if weights is None:
         return [1.] * n
 
@@ -122,8 +122,8 @@ def _make_matrix(
 
 
 def indexing(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
     index: pd.Index | None = None,
 ) -> tuple[list[int], list[int], pd.Index]:
     """
@@ -170,11 +170,11 @@ class MatricesResult:
 
 
 def matrices(
-    xs_indexed: Sequence[int],
-    ys_indexed: Sequence[int],
-    winners: Sequence[Winner],
+    xs_indexed: Collection[int],
+    ys_indexed: Collection[int],
+    winners: Collection[Winner],
     index: pd.Index,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> MatricesResult:
     """
@@ -242,11 +242,11 @@ class RankingMethod(Protocol[T_contra]):
 
     def __call__(
         self,
-        xs: Sequence[T_contra],
-        ys: Sequence[T_contra],
-        winners: Sequence[Winner],
+        xs: Collection[T_contra],
+        ys: Collection[T_contra],
+        winners: Collection[Winner],
         index: pd.Index | None = None,
-        weights: Sequence[float] | None = None,
+        weights: Collection[float] | None = None,
         *args: Any,  # noqa: ANN401
         **kwargs: Any,  # noqa: ANN401
     ) -> Result:
@@ -291,11 +291,11 @@ class CountingResult:
 
 
 def counting(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -383,11 +383,11 @@ class AverageWinRateResult:
 
 
 def average_win_rate(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -497,11 +497,11 @@ class BradleyTerryResult:
 
 
 def bradley_terry(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -625,12 +625,12 @@ class NewmanResult:
 
 
 def newman(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
     v_init: float = 0.5,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 1.0,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -755,15 +755,15 @@ class EloResult:
 
 
 def elo(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
     initial: float = 1000.0,
     base: float = 10.0,
     scale: float = 400.0,
     k: float = 4.0,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -873,11 +873,11 @@ class EigenResult:
 
 
 def eigen(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -989,12 +989,12 @@ class PageRankResult:
 
 
 def pagerank(
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
     index: pd.Index | None = None,
     damping: float = 0.85,
-    weights: Sequence[float] | None = None,
+    weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: Literal["naive", "pyo3"] = SOLVER,
@@ -1166,10 +1166,10 @@ class BootstrapResult:
 
 def bootstrap(
     method: RankingMethod[T_contra],
-    xs: Sequence[T_contra],
-    ys: Sequence[T_contra],
-    winners: Sequence[Winner],
-    weights: Sequence[float] | None = None,
+    xs: Collection[T_contra],
+    ys: Collection[T_contra],
+    winners: Collection[Winner],
+    weights: Collection[float] | None = None,
     index: pd.Index | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
