@@ -1,7 +1,9 @@
+::: evalica.BootstrapResult
 ::: evalica.Winner
 ::: evalica.WINNERS
 ::: evalica.PYO3_AVAILABLE
 ::: evalica.SOLVER
+::: evalica.bootstrap
 ::: evalica.indexing
 ::: evalica.matrices
 ::: evalica.MatricesResult
