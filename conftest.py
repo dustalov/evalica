@@ -11,8 +11,6 @@ from hypothesis import strategies as st
 from hypothesis.strategies import composite
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
-
     from _pytest.fixtures import TopRequest
     from hypothesis.strategies import DrawFn
 
@@ -20,10 +18,10 @@ if TYPE_CHECKING:
 class Comparison(NamedTuple):
     """A tuple holding comparison data."""
 
-    xs: list[str] | pd.Series[str]
-    ys: list[str] | pd.Series[str]
-    winners: Collection[Winner]
-    weights: Collection[float] | None = None
+    xs: list[str]
+    ys: list[str]
+    winners: list[Winner]
+    weights: list[float] | None = None
 
 
 def enumerate_sizes(n: int) -> list[tuple[int, ...]]:
@@ -39,8 +37,8 @@ MAPPING = {
 
 @composite
 def comparisons(
-        draw: DrawFn,
-        shape: Literal["good", "bad"] = "good",
+    draw: DrawFn,
+    shape: Literal["good", "bad"] = "good",
 ) -> Comparison:
     length = draw(st.integers(0, 5))
 
@@ -48,8 +46,9 @@ def comparisons(
         xs = st.lists(st.text(max_size=length), min_size=length, max_size=length)
         ys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
         winners = st.lists(st.sampled_from(WINNERS), min_size=length, max_size=length)
-        weights = st.lists(st.floats(min_value=0, allow_nan=False, allow_infinity=False),
-                           min_size=length, max_size=length)
+        weights = st.lists(
+            st.floats(min_value=0, allow_nan=False, allow_infinity=False), min_size=length, max_size=length,
+        )
     else:
         min_x, min_y, min_z = draw(st.sampled_from(enumerate_sizes(3)))
 
@@ -58,8 +57,9 @@ def comparisons(
         xs = st.lists(st.text(max_size=length_x), min_size=length_x, max_size=length_x)
         ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
         winners = st.lists(st.sampled_from(WINNERS), min_size=length_z, max_size=length_z)
-        weights = st.lists(st.floats(min_value=0, allow_nan=False, allow_infinity=False),
-                           min_size=length_z, max_size=length_z)
+        weights = st.lists(
+            st.floats(min_value=0, allow_nan=False, allow_infinity=False), min_size=length_z, max_size=length_z,
+        )
 
     has_weights = draw(st.booleans())
 
@@ -70,9 +70,9 @@ def comparisons(
 def simple() -> Comparison:
     df_simple = pd.read_csv(Path(__file__).resolve().parent / "simple.csv", dtype=str)
 
-    xs = df_simple["left"]
-    ys = df_simple["right"]
-    winners = list(map(MAPPING.__getitem__, df_simple["winner"]))
+    xs = df_simple["left"].tolist()
+    ys = df_simple["right"].tolist()
+    winners = df_simple["winner"].map(MAPPING).tolist()
 
     return Comparison(xs=xs, ys=ys, winners=winners)
 
@@ -90,9 +90,9 @@ def simple_golden() -> pd.DataFrame:
 def food() -> Comparison:
     df_food = pd.read_csv(Path(__file__).resolve().parent / "food.csv", dtype=str)
 
-    xs = df_food["left"]
-    ys = df_food["right"]
-    winners = list(map(MAPPING.__getitem__, df_food["winner"]))
+    xs = df_food["left"].tolist()
+    ys = df_food["right"].tolist()
+    winners = df_food["winner"].map(MAPPING).tolist()
 
     return Comparison(xs=xs, ys=ys, winners=winners)
 
@@ -110,9 +110,9 @@ def food_golden() -> pd.DataFrame:
 def llmfao() -> Comparison:
     df_llmfao = pd.read_csv("https://github.com/dustalov/llmfao/raw/master/crowd-comparisons.csv", dtype=str)
 
-    xs = df_llmfao["left"]
-    ys = df_llmfao["right"]
-    winners = list(map(MAPPING.__getitem__, df_llmfao["winner"]))
+    xs = df_llmfao["left"].tolist()
+    ys = df_llmfao["right"].tolist()
+    winners = df_llmfao["winner"].map(MAPPING).tolist()
 
     return Comparison(xs=xs, ys=ys, winners=winners)
 

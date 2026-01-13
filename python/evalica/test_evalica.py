@@ -3,6 +3,7 @@ from __future__ import annotations
 import pickle
 import sys
 import unittest.mock
+import warnings
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -11,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.extra._array_helpers import array_shapes
 from hypothesis.extra.numpy import arrays
 from hypothesis.extra.pandas import series
@@ -143,12 +144,14 @@ def test_matrices(comparison: Comparison, solver: Literal["naive", "pyo3"]) -> N
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
-@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+@given(comparison=comparisons(), win_weight=st.floats(0.0, 10.0), tie_weight=st.floats(0.0, 10.0))
 def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.counting(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -156,7 +159,9 @@ def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) 
     )
 
     result_naive = evalica.counting(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -173,12 +178,14 @@ def test_counting(comparison: Comparison, win_weight: float, tie_weight: float) 
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
-@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+@given(comparison=comparisons(), win_weight=st.floats(0.0, 10.0), tie_weight=st.floats(0.0, 10.0))
 def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.average_win_rate(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -186,7 +193,9 @@ def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight:
     )
 
     result_naive = evalica.average_win_rate(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -203,12 +212,14 @@ def test_average_win_rate(comparison: Comparison, win_weight: float, tie_weight:
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
-@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+@given(comparison=comparisons(), win_weight=st.floats(0.0, 10.0), tie_weight=st.floats(0.0, 10.0))
 def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.bradley_terry(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -216,7 +227,9 @@ def test_bradley_terry(comparison: Comparison, win_weight: float, tie_weight: fl
     )
 
     result_naive = evalica.bradley_terry(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -240,14 +253,18 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.newman(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         v_init=v_init,
         weights=weights,
         solver="pyo3",
     )
 
     result_naive = evalica.newman(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         v_init=v_init,
         weights=weights,
         solver="naive",
@@ -272,26 +289,28 @@ def test_newman(comparison: Comparison, v_init: float) -> None:
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
 @given(
     comparison=comparisons(),
-    initial=st.floats(0., 1000.),
-    base=st.floats(0., 1000.),
-    scale=st.floats(0., 1000.),
-    k=st.floats(0., 1000.),
-    win_weight=st.floats(0., 10.),
-    tie_weight=st.floats(0., 10.),
+    initial=st.floats(0.0, 1000.0),
+    base=st.floats(0.0, 1000.0),
+    scale=st.floats(0.0, 1000.0),
+    k=st.floats(0.0, 1000.0),
+    win_weight=st.floats(0.0, 10.0),
+    tie_weight=st.floats(0.0, 10.0),
 )
 def test_elo(
-        comparison: Comparison,
-        win_weight: float,
-        tie_weight: float,
-        initial: float,
-        base: float,
-        scale: float,
-        k: float,
+    comparison: Comparison,
+    win_weight: float,
+    tie_weight: float,
+    initial: float,
+    base: float,
+    scale: float,
+    k: float,
 ) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.elo(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         initial=initial,
         base=base,
         scale=scale,
@@ -303,7 +322,9 @@ def test_elo(
     )
 
     result_naive = evalica.elo(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         initial=initial,
         base=base,
         scale=scale,
@@ -324,12 +345,14 @@ def test_elo(
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
-@given(comparison=comparisons(), win_weight=st.floats(0., 10.), tie_weight=st.floats(0., 10.))
+@given(comparison=comparisons(), win_weight=st.floats(0.0, 10.0), tie_weight=st.floats(0.0, 10.0))
 def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.eigen(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -337,7 +360,9 @@ def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> 
     )
 
     result_naive = evalica.eigen(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         weights=weights,
         win_weight=win_weight,
         tie_weight=tie_weight,
@@ -358,15 +383,17 @@ def test_eigen(comparison: Comparison, win_weight: float, tie_weight: float) -> 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
 @given(
     comparison=comparisons(),
-    damping=st.floats(0., 1.),
-    win_weight=st.floats(0., 10.),
-    tie_weight=st.floats(0., 10.),
+    damping=st.floats(0.0, 1.0),
+    win_weight=st.floats(0.0, 10.0),
+    tie_weight=st.floats(0.0, 10.0),
 )
 def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie_weight: float) -> None:
     xs, ys, winners, weights = comparison
 
     result_pyo3 = evalica.pagerank(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         damping=damping,
         weights=weights,
         win_weight=win_weight,
@@ -375,7 +402,9 @@ def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie
     )
 
     result_naive = evalica.pagerank(
-        xs, ys, winners,
+        xs,
+        ys,
+        winners,
         damping=damping,
         weights=weights,
         win_weight=win_weight,
@@ -398,22 +427,25 @@ def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie
 
 
 @given(comparison=comparisons(shape="bad"))
-@pytest.mark.parametrize(("algorithm", "solver"), [
-    ("counting", "pyo3"),
-    ("counting", "naive"),
-    ("average_win_rate", "pyo3"),
-    ("average_win_rate", "naive"),
-    ("bradley_terry", "pyo3"),
-    ("bradley_terry", "naive"),
-    ("newman", "pyo3"),
-    ("newman", "naive"),
-    ("elo", "pyo3"),
-    ("elo", "naive"),
-    ("eigen", "pyo3"),
-    ("eigen", "naive"),
-    ("pagerank", "pyo3"),
-    ("pagerank", "naive"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "solver"),
+    [
+        ("counting", "pyo3"),
+        ("counting", "naive"),
+        ("average_win_rate", "pyo3"),
+        ("average_win_rate", "naive"),
+        ("bradley_terry", "pyo3"),
+        ("bradley_terry", "naive"),
+        ("newman", "pyo3"),
+        ("newman", "naive"),
+        ("elo", "pyo3"),
+        ("elo", "naive"),
+        ("eigen", "pyo3"),
+        ("eigen", "naive"),
+        ("pagerank", "pyo3"),
+        ("pagerank", "naive"),
+    ],
+)
 def test_misshaped(comparison: Comparison, algorithm: str, solver: Literal["naive", "pyo3"]) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -422,22 +454,25 @@ def test_misshaped(comparison: Comparison, algorithm: str, solver: Literal["naiv
         getattr(evalica, algorithm)(comparison.xs, comparison.ys, comparison.winners, solver=solver)
 
 
-@pytest.mark.parametrize(("algorithm", "solver"), [
-    ("counting", "naive"),
-    ("counting", "pyo3"),
-    ("average_win_rate", "naive"),
-    ("average_win_rate", "pyo3"),
-    ("bradley_terry", "naive"),
-    ("bradley_terry", "pyo3"),
-    ("newman", "naive"),
-    ("newman", "pyo3"),
-    ("elo", "naive"),
-    ("elo", "pyo3"),
-    ("eigen", "naive"),
-    ("eigen", "pyo3"),
-    ("pagerank", "naive"),
-    ("pagerank", "pyo3"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "solver"),
+    [
+        ("counting", "naive"),
+        ("counting", "pyo3"),
+        ("average_win_rate", "naive"),
+        ("average_win_rate", "pyo3"),
+        ("bradley_terry", "naive"),
+        ("bradley_terry", "pyo3"),
+        ("newman", "naive"),
+        ("newman", "pyo3"),
+        ("elo", "naive"),
+        ("elo", "pyo3"),
+        ("eigen", "naive"),
+        ("eigen", "pyo3"),
+        ("pagerank", "naive"),
+        ("pagerank", "pyo3"),
+    ],
+)
 def test_incomplete_index(algorithm: str, solver: Literal["naive", "pyo3"]) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -455,15 +490,18 @@ def test_incomplete_index(algorithm: str, solver: Literal["naive", "pyo3"]) -> N
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("counting", "simple"),
-    ("counting", "food"),
-    ("counting", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("counting", "simple"),
+        ("counting", "food"),
+        ("counting", "llmfao"),
+    ],
+)
 def test_counting_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -476,15 +514,18 @@ def test_counting_dataset(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("average_win_rate", "simple"),
-    ("average_win_rate", "food"),
-    ("average_win_rate", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("average_win_rate", "simple"),
+        ("average_win_rate", "food"),
+        ("average_win_rate", "llmfao"),
+    ],
+)
 def test_average_win_rate_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -497,15 +538,18 @@ def test_average_win_rate_dataset(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("bradley_terry", "simple"),
-    ("bradley_terry", "food"),
-    ("bradley_terry", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("bradley_terry", "simple"),
+        ("bradley_terry", "food"),
+        ("bradley_terry", "llmfao"),
+    ],
+)
 def test_bradley_terry_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -520,15 +564,18 @@ def test_bradley_terry_dataset(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("newman", "simple"),
-    ("newman", "food"),
-    ("newman", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("newman", "simple"),
+        ("newman", "food"),
+        ("newman", "llmfao"),
+    ],
+)
 def test_newman_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -541,15 +588,18 @@ def test_newman_dataset(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("elo", "simple"),
-    ("elo", "food"),
-    ("elo", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("elo", "simple"),
+        ("elo", "food"),
+        ("elo", "llmfao"),
+    ],
+)
 def test_elo_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -562,15 +612,18 @@ def test_elo_dataset(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("eigen", "simple"),
-    ("eigen", "food"),
-    ("eigen", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("eigen", "simple"),
+        ("eigen", "food"),
+        ("eigen", "llmfao"),
+    ],
+)
 def test_eigen_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -583,15 +636,18 @@ def test_eigen_dataset(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-@pytest.mark.parametrize(("algorithm", "dataset"), [
-    ("pagerank", "simple"),
-    ("pagerank", "food"),
-    ("pagerank", "llmfao"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "dataset"),
+    [
+        ("pagerank", "simple"),
+        ("pagerank", "food"),
+        ("pagerank", "llmfao"),
+    ],
+)
 def test_pagerank_dataset(
-        comparison: Comparison,
-        comparison_golden: pd.Series[str],
-        solver: Literal["naive", "pyo3"],
+    comparison: Comparison,
+    comparison_golden: pd.Series[str],
+    solver: Literal["naive", "pyo3"],
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -616,27 +672,30 @@ def test_llmfao_matrices(llmfao: Comparison, benchmark: BenchmarkFixture) -> Non
     benchmark(func)
 
 
-@pytest.mark.parametrize(("algorithm", "solver"), [
-    ("counting", "naive"),
-    ("counting", "pyo3"),
-    ("average_win_rate", "naive"),
-    ("average_win_rate", "pyo3"),
-    ("bradley_terry", "naive"),
-    ("bradley_terry", "pyo3"),
-    ("newman", "naive"),
-    ("newman", "pyo3"),
-    ("elo", "naive"),
-    ("elo", "pyo3"),
-    ("eigen", "naive"),
-    ("eigen", "pyo3"),
-    ("pagerank", "naive"),
-    ("pagerank", "pyo3"),
-])
+@pytest.mark.parametrize(
+    ("algorithm", "solver"),
+    [
+        ("counting", "naive"),
+        ("counting", "pyo3"),
+        ("average_win_rate", "naive"),
+        ("average_win_rate", "pyo3"),
+        ("bradley_terry", "naive"),
+        ("bradley_terry", "pyo3"),
+        ("newman", "naive"),
+        ("newman", "pyo3"),
+        ("elo", "naive"),
+        ("elo", "pyo3"),
+        ("eigen", "naive"),
+        ("eigen", "pyo3"),
+        ("pagerank", "naive"),
+        ("pagerank", "pyo3"),
+    ],
+)
 def test_llmfao_performance(
-        llmfao: Comparison,
-        algorithm: str,
-        solver: Literal["naive", "pyo3"],
-        benchmark: BenchmarkFixture,
+    llmfao: Comparison,
+    algorithm: str,
+    solver: Literal["naive", "pyo3"],
+    benchmark: BenchmarkFixture,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -645,7 +704,9 @@ def test_llmfao_performance(
 
     func = partial(
         getattr(evalica, algorithm),
-        llmfao.xs, llmfao.ys, llmfao.winners,
+        llmfao.xs,
+        llmfao.ys,
+        llmfao.winners,
         index=index,
         weights=llmfao.weights,
         solver=solver,
@@ -656,9 +717,9 @@ def test_llmfao_performance(
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
 def test_llmfao_pairwise_scores(
-        llmfao: Comparison,
-        solver: Literal["pyo3", "naive"],
-        benchmark: BenchmarkFixture,
+    llmfao: Comparison,
+    solver: Literal["pyo3", "naive"],
+    benchmark: BenchmarkFixture,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -728,3 +789,96 @@ def test_pairwise_frame(scores: pd.Series[Any]) -> None:
     assert df_pairwise.shape == (len(scores), len(scores))
     assert df_pairwise.index is scores.index
     assert df_pairwise.columns is scores.index
+
+
+@given(comparison=comparisons())
+@pytest.mark.parametrize("method", [evalica.counting, evalica.bradley_terry])
+def test_bootstrap_error(comparison: Comparison, method: evalica.RankingMethod[str]) -> None:
+    error_comparison = Comparison(
+        xs=comparison.xs[:1],
+        ys=comparison.ys[:1],
+        winners=comparison.winners[:1],
+    )
+
+    with pytest.raises(ValueError, match=r"each sample in `data` must contain two or more observations along `axis`."):
+        evalica.bootstrap(
+            method,
+            error_comparison.xs,
+            error_comparison.ys,
+            error_comparison.winners,
+            n_resamples=5,
+            random_state=42,
+        )
+
+
+@given(comparison=comparisons())
+@pytest.mark.parametrize("method", [evalica.counting, evalica.bradley_terry])
+def test_bootstrap(comparison: Comparison, method: evalica.RankingMethod[str]) -> None:
+    assume(len(comparison.xs) >= 2)
+
+    n_resamples = 5
+
+    with np.errstate(all="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        result = evalica.bootstrap(
+            method,
+            comparison.xs,
+            comparison.ys,
+            comparison.winners,
+            n_resamples=n_resamples,
+            random_state=42,
+        )
+
+    assert_array_equal(result.result.scores.index.sort_values(), result.index.sort_values())
+    assert_array_equal(result.low.index, result.index)
+    assert_array_equal(result.high.index, result.index)
+    assert_array_equal(result.stderr.index, result.index)
+    assert_array_equal(result.distribution.columns, result.index)
+
+    assert len(result.distribution) == n_resamples
+
+
+@given(comparison=comparisons())
+def test_bootstrap_weights_error(comparison: Comparison) -> None:
+    error_comparison = Comparison(
+        xs=comparison.xs[:1],
+        ys=comparison.ys[:1],
+        winners=comparison.winners[:1],
+        weights=comparison.weights[:1] if comparison.weights is not None else None,
+    )
+
+    with pytest.raises(ValueError, match=r"each sample in `data` must contain two or more observations along `axis`."):
+        evalica.bootstrap(
+            evalica.counting,  # type: ignore[arg-type]
+            error_comparison.xs,
+            error_comparison.ys,
+            error_comparison.winners,
+            weights=[1.0] * len(error_comparison.xs),
+            n_resamples=5,
+            random_state=42,
+        )
+
+
+@given(comparison=comparisons())
+def test_bootstrap_weights(comparison: Comparison) -> None:
+    assume(len(comparison.xs) >= 2)
+
+    n_resamples = 5
+
+    weights = [1.0] * len(comparison.xs)
+
+    with np.errstate(all="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        result = evalica.bootstrap(
+            evalica.counting,  # type: ignore[arg-type]
+            comparison.xs,
+            comparison.ys,
+            comparison.winners,
+            weights=weights,
+            n_resamples=n_resamples,
+            random_state=42,
+        )
+
+    assert len(result.distribution) == n_resamples

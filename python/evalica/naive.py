@@ -32,11 +32,11 @@ def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
 
 
 def matrices(
-        xs: Collection[int],
-        ys: Collection[int],
-        winners: Collection[Winner],
-        weights: Collection[float],
-        total: int,
+    xs: Collection[int],
+    ys: Collection[int],
+    winners: Collection[Winner],
+    weights: Collection[float],
+    total: int,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     _check_lengths(xs, ys, winners, weights)
 
@@ -57,13 +57,13 @@ def matrices(
 
 
 def counting(
-        xs: Collection[int],
-        ys: Collection[int],
-        winners: Collection[Winner],
-        weights: Collection[float],
-        total: int,
-        win_weight: float,
-        tie_weight: float,
+    xs: Collection[int],
+    ys: Collection[int],
+    winners: Collection[Winner],
+    weights: Collection[float],
+    total: int,
+    win_weight: float,
+    tie_weight: float,
 ) -> npt.NDArray[np.float64]:
     _check_lengths(xs, ys, winners, weights)
 
@@ -86,9 +86,9 @@ def counting(
 
 
 def bradley_terry(
-        matrix: npt.NDArray[np.floating],
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    matrix: npt.NDArray[np.floating],
+    tolerance: float = 1e-6,
+    limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
     scores = np.ones(matrix.shape[0])
 
@@ -126,11 +126,11 @@ def bradley_terry(
 
 
 def newman(
-        win_matrix: npt.NDArray[np.floating],
-        tie_matrix: npt.NDArray[np.floating],
-        v: float = .5,
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    win_matrix: npt.NDArray[np.floating],
+    tie_matrix: npt.NDArray[np.floating],
+    v: float = 0.5,
+    tolerance: float = 1e-6,
+    limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], float, int]:
     with np.errstate(all="ignore"):
         win_tie_half = np.nan_to_num(win_matrix + tie_matrix / 2, nan=tolerance, copy=False)
@@ -182,17 +182,17 @@ def newman(
 
 
 def elo(
-        xs: Collection[int],
-        ys: Collection[int],
-        winners: Collection[Winner],
-        weights: Collection[float],
-        total: int,
-        initial: float = 1000.,
-        base: float = 10.,
-        scale: float = 400.,
-        k: float = 30.,
-        win_weight: float = 1.0,
-        tie_weight: float = 0.5,
+    xs: Collection[int],
+    ys: Collection[int],
+    winners: Collection[Winner],
+    weights: Collection[float],
+    total: int,
+    initial: float = 1000.0,
+    base: float = 10.0,
+    scale: float = 400.0,
+    k: float = 30.0,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
 ) -> npt.NDArray[np.float64]:
     _check_lengths(xs, ys, winners, weights)
 
@@ -211,7 +211,7 @@ def elo(
             expected_x = np.nan_to_num(q_x / q)
             expected_y = np.nan_to_num(q_y / q)
 
-            scored_x, scored_y = 0., 0.
+            scored_x, scored_y = 0.0, 0.0
 
             if w == Winner.X:
                 scored_x = weight * win_weight
@@ -227,9 +227,9 @@ def elo(
 
 
 def eigen(
-        matrix: npt.NDArray[np.floating],
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    matrix: npt.NDArray[np.floating],
+    tolerance: float = 1e-6,
+    limit: int = 100,
 ) -> tuple[npt.NDArray[np.float64], int]:
     if not matrix.size:
         return np.zeros(0), 0
@@ -260,8 +260,8 @@ def eigen(
 
 
 def pagerank_matrix(
-        matrix: npt.NDArray[np.floating],
-        damping: float,
+    matrix: npt.NDArray[np.floating],
+    damping: float,
 ) -> npt.NDArray[np.float64]:
     if not matrix.size:
         return np.zeros(0)
@@ -279,10 +279,10 @@ def pagerank_matrix(
 
 
 def pagerank(
-        matrix: npt.NDArray[np.floating],
-        damping: float,
-        tolerance: float,
-        limit: int,
+    matrix: npt.NDArray[np.floating],
+    damping: float,
+    tolerance: float,
+    limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]:
     _matrix = pagerank_matrix(matrix, damping)
 

@@ -30,9 +30,10 @@ except ModuleNotFoundError:
     import sys
     from pathlib import Path
 
-    if (pydub_spec := importlib.util.find_spec("pydub")) is not None \
-        and (pydub_origin := pydub_spec.origin) is not None:
-            sys.path.append(str(Path(pydub_origin).parent))
+    if (pydub_spec := importlib.util.find_spec("pydub")) is not None and (
+        pydub_origin := pydub_spec.origin
+    ) is not None:
+        sys.path.append(str(Path(pydub_origin).parent))
 
     import gradio as gr
 
@@ -72,18 +73,18 @@ WINNERS = {
 
 class CallableAlgorithm(Protocol):
     def __call__(
-            self,
-            xs: pd.Series[str],
-            ys: pd.Series[str],
-            winners: Collection[Winner],
+        self,
+        xs: pd.Series[str],
+        ys: pd.Series[str],
+        winners: Collection[Winner],
     ) -> Result: ...
 
 
 def invoke(
-        algorithm: str,
-        xs: pd.Series[str],
-        ys: pd.Series[str],
-        winners: Collection[Winner],
+    algorithm: str,
+    xs: pd.Series[str],
+    ys: pd.Series[str],
+    winners: Collection[Winner],
 ) -> pd.Series[float]:
     algorithm_impl = cast("CallableAlgorithm", ALGORITHMS[algorithm])
 
@@ -91,9 +92,9 @@ def invoke(
 
 
 def handler(
-        file: str | None,
-        algorithm: str,
-        truncate: bool,  # noqa: FBT001
+    file: str | None,
+    algorithm: str,
+    truncate: bool,  # noqa: FBT001
 ) -> tuple[pd.DataFrame, Figure]:
     if file is None:
         raise gr.Error("File must be uploaded")  # noqa: EM101, TRY003
@@ -123,11 +124,18 @@ def handler(
     df_result = scores.to_frame(name="score")
     df_result.index.name = "item"
 
-    df_result["pairs"] = pd.Series(0, dtype=int, index=scores.index).add(
-        df_pairs.groupby("left")["left"].count(), fill_value=0,
-    ).add(
-        df_pairs.groupby("right")["right"].count(), fill_value=0,
-    ).astype(int)
+    df_result["pairs"] = (
+        pd.Series(0, dtype=int, index=scores.index)
+        .add(
+            df_pairs.groupby("left")["left"].count(),
+            fill_value=0,
+        )
+        .add(
+            df_pairs.groupby("right")["right"].count(),
+            fill_value=0,
+        )
+        .astype(int)
+    )
 
     df_result["rank"] = df_result["score"].rank(na_option="bottom", ascending=False).astype(int)
 
@@ -158,8 +166,7 @@ def interface() -> gr.Interface:
             gr.Checkbox(
                 value=False,
                 label="Truncate Output",
-                info="Perform the entire computation but output only five head and five tail items, "
-                     "avoiding overlap.",
+                info="Perform the entire computation but output only five head and five tail items, avoiding overlap.",
             ),
         ],
         outputs=[
@@ -186,8 +193,9 @@ def interface() -> gr.Interface:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evalica v" + evalica.__version__)
-    parser.add_argument("--version", action="version",
-                        version=f"Evalica v{evalica.__version__} with Gradio v{gr.__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"Evalica v{evalica.__version__} with Gradio v{gr.__version__}",
+    )
     parser.add_argument("--share", action="store_true", help="create a publicly shareable link")
 
     args = parser.parse_args()

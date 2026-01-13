@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import contextlib
+import math
 import warnings
 from collections.abc import Hashable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import TYPE_CHECKING, Literal, Protocol, TypeVar, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from scipy.stats import bootstrap as scipy_bootstrap
 
 
 class Winner(IntEnum):
@@ -84,42 +86,45 @@ from .naive import pagerank as pagerank_naive  # noqa: E402
 from .naive import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
+    from collections.abc import Sequence
 
 WINNERS = list(Winner)
 """Known values of Winner."""
 
-T_co = TypeVar("T_co", bound=Hashable, covariant=True)
+T_contra = TypeVar("T_contra", bound=Hashable, contravariant=True)
 
 
-def _wrap_weights(weights: Collection[float] | None, n: int) -> Collection[float]:
+def _wrap_weights(weights: Sequence[float] | npt.NDArray[np.float64] | None, n: int) -> Sequence[float]:
     if weights is None:
         return [1.] * n
 
-    assert np.isfinite(weights).all(), "weights must be finite"  # type: ignore[call-overload]
+    if isinstance(weights, np.ndarray):
+        weights = weights.tolist()
+
+    assert isinstance(weights, list), "weights must be a list"
+
+    assert all(math.isfinite(w) for w in weights), "weights must be finite"
 
     return weights
 
-
 def _make_matrix(
-        win_matrix: npt.NDArray[np.float64],
-        tie_matrix: npt.NDArray[np.float64],
-        win_weight: float = 1.,
-        tie_weight: float = .5,
-        nan: float = 0.0,
+    win_matrix: npt.NDArray[np.float64],
+    tie_matrix: npt.NDArray[np.float64],
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    nan: float = 0.0,
 ) -> npt.NDArray[np.float64]:
     with np.errstate(all="ignore"):
         return np.nan_to_num(
-            win_weight * np.nan_to_num(win_matrix, nan=nan) +
-            tie_weight * np.nan_to_num(tie_matrix, nan=nan),
+            win_weight * np.nan_to_num(win_matrix, nan=nan) + tie_weight * np.nan_to_num(tie_matrix, nan=nan),
             nan=nan,
         )
 
 
 def indexing(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        index: pd.Index | None = None,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    index: pd.Index | None = None,
 ) -> tuple[list[int], list[int], pd.Index]:
     """
     Map the input elements into their numerical representations.
@@ -165,12 +170,12 @@ class MatricesResult:
 
 
 def matrices(
-        xs_indexed: Collection[int],
-        ys_indexed: Collection[int],
-        winners: Collection[Winner],
-        index: pd.Index,
-        weights: Collection[float] | None = None,
-        solver: Literal["naive", "pyo3"] = SOLVER,
+    xs_indexed: Sequence[int],
+    ys_indexed: Sequence[int],
+    winners: Sequence[Winner],
+    index: pd.Index,
+    weights: Sequence[float] | None = None,
+    solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> MatricesResult:
     """
     Build win and tie matrices from the given elements.
@@ -231,6 +236,39 @@ class Result(Protocol):
     index: pd.Index
 
 
+@runtime_checkable
+class RankingMethod(Protocol[T_contra]):
+    """The ranking method protocol."""
+
+    def __call__(
+        self,
+        xs: Sequence[T_contra],
+        ys: Sequence[T_contra],
+        winners: Sequence[Winner],
+        index: pd.Index | None = None,
+        weights: Sequence[float] | None = None,
+        *args: Any,  # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
+    ) -> Result:
+        """
+        Compute the scores for the given pairwise comparison.
+
+        Args:
+            xs: The left-hand side elements.
+            ys: The right-hand side elements.
+            winners: The winner elements.
+            index: The index.
+            weights: The example weights.
+            *args: The additional positional arguments.
+            **kwargs: The additional keyword arguments.
+
+        Returns:
+            The ranking result.
+
+        """
+        ...
+
+
 @dataclass(frozen=True)
 class CountingResult:
     """
@@ -253,14 +291,15 @@ class CountingResult:
 
 
 def counting(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.,
-        tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = SOLVER,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> CountingResult:
     """
     Count individual elements.
@@ -274,6 +313,7 @@ def counting(
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
+        **kwargs: The additional arguments.
 
     Returns:
         The counting result.
@@ -343,14 +383,15 @@ class AverageWinRateResult:
 
 
 def average_win_rate(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.,
-        tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = SOLVER,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> AverageWinRateResult:
     """
     Count pairwise win rates between the elements and average per element.
@@ -364,6 +405,7 @@ def average_win_rate(
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
+        **kwargs: The additional arguments.
 
     Returns:
         The average win rate result.
@@ -416,7 +458,9 @@ def average_win_rate(
 
     return AverageWinRateResult(
         scores=pd.Series(
-            scores, index=index, name=average_win_rate.__name__,
+            scores,
+            index=index,
+            name=average_win_rate.__name__,
         ).sort_values(ascending=False, kind="stable"),
         index=index,
         win_weight=win_weight,
@@ -453,16 +497,17 @@ class BradleyTerryResult:
 
 
 def bradley_terry(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.,
-        tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = SOLVER,
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    tolerance: float = 1e-6,
+    limit: int = 100,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> BradleyTerryResult:
     """
     Compute the Bradley-Terry scores for the given pairwise comparison.
@@ -488,6 +533,7 @@ def bradley_terry(
         solver: The solver.
         tolerance: The convergence tolerance.
         limit: The maximum number of iterations.
+        **kwargs: The additional arguments.
 
     Returns:
         The Bradley-Terry result.
@@ -579,17 +625,18 @@ class NewmanResult:
 
 
 def newman(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        v_init: float = .5,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.,
-        tie_weight: float = 1.,
-        solver: Literal["naive", "pyo3"] = SOLVER,
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    v_init: float = 0.5,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 1.0,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    tolerance: float = 1e-6,
+    limit: int = 100,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> NewmanResult:
     """
     Compute the scores for the given pairwise comparison using the Newman's algorithm.
@@ -611,6 +658,7 @@ def newman(
         solver: The solver.
         tolerance: The convergence tolerance.
         limit: The maximum number of iterations.
+        **kwargs: The additional arguments.
 
     Returns:
         The Newman's result.
@@ -707,18 +755,19 @@ class EloResult:
 
 
 def elo(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        initial: float = 1000.,
-        base: float = 10.,
-        scale: float = 400.,
-        k: float = 4.,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.0,
-        tie_weight: float = 0.5,
-        solver: Literal["naive", "pyo3"] = SOLVER,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    initial: float = 1000.0,
+    base: float = 10.0,
+    scale: float = 400.0,
+    k: float = 4.0,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> EloResult:
     """
     Compute the Elo scores.
@@ -739,6 +788,7 @@ def elo(
         win_weight: The win weight.
         tie_weight: The tie weight.
         solver: The solver.
+        **kwargs: The additional arguments.
 
     Returns:
         The Elo result.
@@ -823,16 +873,17 @@ class EigenResult:
 
 
 def eigen(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.,
-        tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = SOLVER,
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    tolerance: float = 1e-6,
+    limit: int = 100,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> EigenResult:
     """
     Compute the eigenvalue-based scores.
@@ -848,6 +899,7 @@ def eigen(
         solver: The solver.
         tolerance: The convergence tolerance.
         limit: The maximum number of iterations.
+        **kwargs: The additional arguments.
 
     Returns:
         The eigenvalue result.
@@ -937,17 +989,18 @@ class PageRankResult:
 
 
 def pagerank(
-        xs: Collection[T_co],
-        ys: Collection[T_co],
-        winners: Collection[Winner],
-        index: pd.Index | None = None,
-        damping: float = .85,
-        weights: Collection[float] | None = None,
-        win_weight: float = 1.,
-        tie_weight: float = .5,
-        solver: Literal["naive", "pyo3"] = SOLVER,
-        tolerance: float = 1e-6,
-        limit: int = 100,
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    index: pd.Index | None = None,
+    damping: float = 0.85,
+    weights: Sequence[float] | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    tolerance: float = 1e-6,
+    limit: int = 100,
+    **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> PageRankResult:
     """
     Compute the PageRank scores.
@@ -969,6 +1022,7 @@ def pagerank(
         solver: The solver.
         tolerance: The convergence tolerance.
         limit: The maximum number of iterations.
+        **kwargs: The additional arguments.
 
     Returns:
         The PageRank result.
@@ -1046,8 +1100,8 @@ class ScoreDimensionError(ValueError):
 
 
 def pairwise_scores(
-        scores: npt.NDArray[np.float64],
-        solver: Literal["naive", "pyo3"] = SOLVER,
+    scores: npt.NDArray[np.float64],
+    solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> npt.NDArray[np.float64]:
     """
     Estimate the pairwise scores.
@@ -1087,10 +1141,131 @@ def pairwise_frame(scores: pd.Series[float]) -> pd.DataFrame:
     return pd.DataFrame(pairwise_scores(arr), index=scores.index, columns=scores.index)
 
 
+@dataclass(frozen=True)
+class BootstrapResult:
+    """
+    The result of a bootstrap operation.
+
+    Attributes:
+        result: The original point estimates (from the full dataset).
+        low: Lower bounds of the confidence interval.
+        high: Upper bounds of the confidence interval.
+        stderr: Standard errors of the scores.
+        distribution: The full bootstrap distribution (resamples x elements).
+        index: The index of elements.
+
+    """
+
+    result: Result
+    low: pd.Series[float]
+    high: pd.Series[float]
+    stderr: pd.Series[float]
+    distribution: pd.DataFrame = field(repr=False)
+    index: pd.Index
+
+
+def bootstrap(
+    method: RankingMethod[T_contra],
+    xs: Sequence[T_contra],
+    ys: Sequence[T_contra],
+    winners: Sequence[Winner],
+    weights: Sequence[float] | None = None,
+    index: pd.Index | None = None,
+    win_weight: float = 1.0,
+    tie_weight: float = 0.5,
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    *,
+    n_resamples: int = 1000,
+    confidence_level: float = 0.95,
+    bootstrap_method: Literal["percentile", "basic", "BCa"] = "BCa",
+    random_state: int | np.random.Generator | None = None,
+    **kwargs: Any,  # noqa: ANN401
+) -> BootstrapResult:
+    """
+    Compute weighted bootstrap confidence intervals for the given pairwise comparison.
+
+    Args:
+        xs: The left-hand side elements.
+        ys: The right-hand side elements.
+        winners: The winner elements.
+        weights: The example weights.
+        method: The ranking method to use.
+        index: The index.
+        win_weight: The win weight.
+        tie_weight: The tie weight.
+        solver: The solver.
+        n_resamples: The number of resamples.
+        confidence_level: The confidence level.
+        bootstrap_method: The bootstrap method (percentile, basic, or BCa).
+        random_state: The random state.
+        **kwargs: The additional arguments for the ranking method.
+
+    Returns:
+        The bootstrap result.
+
+    """
+    _, _, index = indexing(xs, ys, index)
+
+    result = method(
+        xs=xs,
+        ys=ys,
+        winners=winners,
+        weights=weights,
+        index=index,
+        win_weight=win_weight,
+        tie_weight=tie_weight,
+        solver=solver,
+        **kwargs,
+    )
+
+    weights_array = np.array(_wrap_weights(weights, len(xs)), dtype=np.float64)
+
+    samples = (np.array(xs, dtype=object), np.array(ys, dtype=object), np.array(winners, dtype=np.uint8), weights_array)
+
+    def statistic(*data: tuple[Any, ...]) -> npt.NDArray[np.float64]:
+        xs_sample, ys_sample, winners_sample, weights_sample = data
+
+        result_sample = method(
+            xs=xs_sample,
+            ys=ys_sample,
+            winners=list(winners_sample),  # TODO: ensure no copying needed
+            index=index,
+            weights=weights_sample,
+            win_weight=win_weight,
+            tie_weight=tie_weight,
+            solver=solver,
+            **kwargs,
+        )
+
+        return cast("npt.NDArray[np.float64]", result_sample.scores.to_numpy(dtype=np.float64))
+
+    bootstrap_result = scipy_bootstrap(
+        data=samples,
+        statistic=statistic,
+        paired=True,
+        n_resamples=n_resamples,
+        confidence_level=confidence_level,
+        method=bootstrap_method,
+        random_state=random_state,
+        vectorized=False,
+    )
+
+    return BootstrapResult(
+        result=result,
+        low=pd.Series(bootstrap_result.confidence_interval.low, index=index, name="low"),
+        high=pd.Series(bootstrap_result.confidence_interval.high, index=index, name="high"),
+        stderr=pd.Series(bootstrap_result.standard_error, index=index, name="stderr"),
+        distribution=pd.DataFrame(bootstrap_result.bootstrap_distribution.T, columns=index),
+        index=index,
+    )
+
+
 __all__ = [
     "PYO3_AVAILABLE",
     "SOLVER",
     "WINNERS",
+    "AverageWinRateResult",
+    "BootstrapResult",
     "BradleyTerryResult",
     "CountingResult",
     "EigenResult",
@@ -1099,6 +1274,7 @@ __all__ = [
     "MatricesResult",
     "NewmanResult",
     "PageRankResult",
+    "RankingMethod",
     "Result",
     "RustExtensionWarning",
     "ScoreDimensionError",
@@ -1106,6 +1282,7 @@ __all__ = [
     "Winner",
     "__version__",
     "average_win_rate",
+    "bootstrap",
     "bradley_terry",
     "counting",
     "eigen",
