@@ -19,7 +19,7 @@ jobs:
     name: build sdist
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: PyO3/maturin-action@v1
       with:
         command: sdist
@@ -73,7 +73,7 @@ jobs:
           target: aarch64
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
