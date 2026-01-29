@@ -38,6 +38,7 @@ The logo was created using [Recraft](https://www.recraft.ai/).
 ## Installation
 
 - [pip](https://pip.pypa.io/): `pip install evalica`
+- [pip](https://pip.pypa.io/) without acceleration: `pip install --no-binary evalica`
 - [Anaconda](https://docs.conda.io/en/latest/): `conda install conda-forge::evalica`
 
 ## Usage

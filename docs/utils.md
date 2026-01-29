@@ -7,6 +7,7 @@
 ::: evalica.indexing
 ::: evalica.matrices
 ::: evalica.MatricesResult
+::: evalica.RankingMethod
 ::: evalica.Result
 ::: evalica.pairwise_frame
 ::: evalica.pairwise_scores
