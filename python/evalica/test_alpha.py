@@ -202,6 +202,9 @@ def test_alpha_distances_gcl(gcl: pd.DataFrame, distance: str) -> None:
 )
 @given(data=rating_dataframes())
 def test_alpha_properties(data: pd.DataFrame, distance: str, solver: str) -> None:
+    if not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
     result = evalica.alpha(data, distance=distance, solver=solver)  # type: ignore[arg-type]
 
     assert isinstance(result, AlphaResult)
