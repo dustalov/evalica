@@ -78,6 +78,8 @@ def test_matrices(comparison: Comparison, solver: Literal["naive", "pyo3"]) -> N
     wins = sum(int(winner in [evalica.Winner.X, evalica.Winner.Y]) * weight for winner, weight in zip(winners, weights))
     ties = sum(int(winner == evalica.Winner.Draw) * weight for winner, weight in zip(winners, weights))
 
+    assume(np.isfinite(wins) and np.isfinite(ties))
+
     result = evalica.matrices(
         xs_indexed=xs_indexed,
         ys_indexed=ys_indexed,
