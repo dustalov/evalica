@@ -140,7 +140,7 @@ def handler(
     df_result["rank"] = df_result["score"].rank(na_option="bottom", ascending=False).astype(int)
 
     if truncate:
-        df_result = pd.concat((df_result.head(5), df_result.tail(5)), copy=False)
+        df_result = pd.concat([df_result.head(5), df_result.tail(5)])
         df_result = df_result[~df_result.index.duplicated(keep="last")]
 
     fig = visualize(evalica.pairwise_frame(df_result["score"]))
