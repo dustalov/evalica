@@ -103,7 +103,7 @@ jobs:
           **/pyproject.toml
     - name: Set up Maturin
       run: |
-        uv venv
+        uv venv --allow-existing
         uv pip install maturin
         maturin develop --uv --extras dev,docs,gradio
     - if: matrix.python-version != '3.8' && matrix.python-version != '3.9'
