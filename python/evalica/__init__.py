@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import math
+import os
 import warnings
 from collections.abc import Hashable
 from dataclasses import dataclass, field
@@ -74,11 +75,18 @@ class RustExtensionWarning(RuntimeWarning):
 
 
 try:
+    if os.environ.get("EVALICA_NIJE_BRZO"):
+        raise ImportError  # noqa: TRY301
+
     from . import _brzo
     from ._brzo import __version__
 
     PYO3_AVAILABLE = True
-    """The Rust extension is available and can be used for performance-critical operations."""
+    """
+    The Rust extension is available and can be used for performance-critical operations.
+
+    Please set the environment variable EVALICA_NIJE_BRZO to disable it.
+    """
 except ImportError:
     warnings.warn(
         "The Rust extension could not be imported; falling back to the naive implementations.",
@@ -94,6 +102,48 @@ except ImportError:
     _brzo = None  # type: ignore[assignment]
 
     PYO3_AVAILABLE = False
+
+
+@dataclass(frozen=True)
+class AlphaResult:
+    """
+    The result of Krippendorff's alpha.
+
+    Attributes:
+        alpha: The alpha value.
+        observed: The observed disagreement.
+        expected: The expected disagreement.
+        solver: The solver used.
+
+    """
+
+    alpha: float
+    observed: float
+    expected: float
+    solver: str
+
+
+T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
+
+
+DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
+
+
+class DistanceFunc(Protocol[T_distance_contra]):
+    """
+    Callable protocol for custom distance functions.
+
+    Args:
+        left: The left-hand value.
+        right: The right-hand value.
+
+    Returns:
+        The non-negative distance between the values.
+
+    """
+
+    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float: ...
+
 
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
@@ -271,7 +321,6 @@ class RankingMethod(Protocol[T_contra]):
         winners: Collection[Winner],
         index: pd.Index | None = None,
         weights: Collection[float] | None = None,
-        *args: Any,  # noqa: ANN401
         **kwargs: Any,  # noqa: ANN401
     ) -> Result:
         """
@@ -1282,47 +1331,6 @@ def bootstrap(
         distribution=pd.DataFrame(bootstrap_result.bootstrap_distribution.T, columns=index),
         index=index,
     )
-
-
-@dataclass(frozen=True)
-class AlphaResult:
-    """
-    The result of Krippendorff's alpha.
-
-    Attributes:
-        alpha: The alpha value.
-        observed: The observed disagreement.
-        expected: The expected disagreement.
-        solver: The solver used.
-
-    """
-
-    alpha: float
-    observed: float
-    expected: float
-    solver: str
-
-
-T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
-
-
-DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
-
-
-class DistanceFunc(Protocol[T_distance_contra]):
-    """
-    Callable protocol for custom distance functions.
-
-    Args:
-        left: The left-hand value.
-        right: The right-hand value.
-
-    Returns:
-        The non-negative distance between the values.
-
-    """
-
-    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float: ...
 
 
 def alpha(

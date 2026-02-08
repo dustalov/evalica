@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import hypothesis.strategies as st
 import numpy as np
@@ -802,7 +802,7 @@ def test_bootstrap_weights_error(comparison: Comparison) -> None:
 
     with pytest.raises(ValueError, match=r"each sample in `data` must contain two or more observations along `axis`."):
         evalica.bootstrap(
-            evalica.counting,  # type: ignore[arg-type]
+            cast("evalica.RankingMethod[str]", evalica.counting),
             error_comparison.xs,
             error_comparison.ys,
             error_comparison.winners,
@@ -824,7 +824,7 @@ def test_bootstrap_weights(comparison: Comparison) -> None:
         warnings.simplefilter("ignore")
 
         result = evalica.bootstrap(
-            evalica.counting,  # type: ignore[arg-type]
+            cast("evalica.RankingMethod[str]", evalica.counting),
             comparison.xs,
             comparison.ys,
             comparison.winners,
