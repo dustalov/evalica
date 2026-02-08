@@ -332,7 +332,6 @@ class RankingMethod(Protocol[T_contra]):
             winners: The winner elements.
             index: The index.
             weights: The example weights.
-            *args: The additional positional arguments.
             **kwargs: The additional keyword arguments.
 
         Returns:
