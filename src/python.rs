@@ -1,7 +1,8 @@
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1, PyArrayLike2};
 use pyo3::import_exception;
 use pyo3::prelude::*;
 
+use crate::alpha;
 use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
@@ -9,6 +10,8 @@ use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
 
 import_exception!(evalica, LengthMismatchError);
+import_exception!(evalica, InsufficientRatingsError);
+import_exception!(evalica, UnknownDistanceError);
 
 #[pyfunction(name = "matrices")]
 fn matrices_pyo3<'py>(
@@ -287,6 +290,28 @@ fn pagerank_pyo3<'py>(
     }
 }
 
+#[pyfunction(name = "alpha")]
+fn alpha_pyo3(
+    data: PyArrayLike2<'_, f64>,
+    distance: &str,
+) -> PyResult<(f64, f64, f64)> {
+    let distance_enum = match alpha::Distance::from_str(distance) {
+        Ok(d) => d,
+        Err(msg) => return Err(UnknownDistanceError::new_err(msg)),
+    };
+
+    match alpha::alpha(&data.as_array(), distance_enum) {
+        Ok((alpha_value, observed, expected)) => Ok((alpha_value, observed, expected)),
+        Err(msg) => {
+            if msg.contains("No units have at least 2 ratings") {
+                Err(InsufficientRatingsError::new_err(()))
+            } else {
+                Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg))
+            }
+        }
+    }
+}
+
 #[pymodule]
 #[pyo3(name = "_brzo")]
 fn _brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -300,5 +325,6 @@ fn _brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(elo_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(eigen_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pagerank_pyo3, m)?)?;
+    m.add_function(wrap_pyfunction!(alpha_pyo3, m)?)?;
     Ok(())
 }

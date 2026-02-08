@@ -76,6 +76,7 @@ except ImportError:
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
+from .alpha import InsufficientRatingsError, UnknownDistanceError, alpha  # noqa: E402
 from .naive import bradley_terry as bradley_terry_naive  # noqa: E402
 from .naive import counting as counting_naive  # noqa: E402
 from .naive import eigen as eigen_naive  # noqa: E402
@@ -1270,6 +1271,7 @@ __all__ = [
     "CountingResult",
     "EigenResult",
     "EloResult",
+    "InsufficientRatingsError",
     "LengthMismatchError",
     "MatricesResult",
     "NewmanResult",
@@ -1279,8 +1281,10 @@ __all__ = [
     "RustExtensionWarning",
     "ScoreDimensionError",
     "SolverError",
+    "UnknownDistanceError",
     "Winner",
     "__version__",
+    "alpha",
     "average_win_rate",
     "bootstrap",
     "bradley_terry",

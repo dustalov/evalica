@@ -1,3 +1,5 @@
+/// Implements Krippendorff's alpha for inter-rater reliability.
+pub mod alpha;
 /// Implements the Bradley–Terry model and related methods.
 pub mod bradley_terry;
 /// Implements counting-based rating methods.

@@ -108,3 +108,9 @@ def pagerank(
         tolerance: float,
         limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
+
+
+def alpha(
+        data: npt.NDArray[np.float64],
+        distance: str,
+) -> tuple[float, float, float]: ...
