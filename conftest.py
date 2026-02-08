@@ -47,7 +47,9 @@ def comparisons(
         ys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
         winners = st.lists(st.sampled_from(WINNERS), min_size=length, max_size=length)
         weights = st.lists(
-            st.floats(min_value=0, allow_nan=False, allow_infinity=False), min_size=length, max_size=length,
+            st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+            min_size=length,
+            max_size=length,
         )
     else:
         min_x, min_y, min_z = draw(st.sampled_from(enumerate_sizes(3)))
@@ -58,7 +60,9 @@ def comparisons(
         ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
         winners = st.lists(st.sampled_from(WINNERS), min_size=length_z, max_size=length_z)
         weights = st.lists(
-            st.floats(min_value=0, allow_nan=False, allow_infinity=False), min_size=length_z, max_size=length_z,
+            st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+            min_size=length_z,
+            max_size=length_z,
         )
 
     has_weights = draw(st.booleans())

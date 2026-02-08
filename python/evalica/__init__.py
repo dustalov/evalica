@@ -47,6 +47,28 @@ class SolverError(RuntimeError):
         super().__init__(f"The '{solver}' solver is not available")
 
 
+class InsufficientRatingsError(ValueError):
+    """Raised when no units have at least 2 ratings."""
+
+    def __init__(self) -> None:
+        """Create and return a new object."""
+        super().__init__("No units have at least 2 ratings.")
+
+
+class UnknownDistanceError(ValueError):
+    """Raised when an unknown distance metric is specified."""
+
+    def __init__(self, distance: str) -> None:
+        """
+        Create and return a new object.
+
+        Args:
+            distance: The distance metric name.
+
+        """
+        super().__init__(f"Unknown distance '{distance}'")
+
+
 class RustExtensionWarning(RuntimeWarning):
     """The Rust extension could not be imported."""
 
@@ -76,15 +98,15 @@ except ImportError:
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
-from .alpha import InsufficientRatingsError, UnknownDistanceError, alpha  # noqa: E402
-from .naive import bradley_terry as bradley_terry_naive  # noqa: E402
-from .naive import counting as counting_naive  # noqa: E402
-from .naive import eigen as eigen_naive  # noqa: E402
-from .naive import elo as elo_naive  # noqa: E402
-from .naive import matrices as matrices_naive  # noqa: E402
-from .naive import newman as newman_naive  # noqa: E402
-from .naive import pagerank as pagerank_naive  # noqa: E402
-from .naive import pairwise_scores as pairwise_scores_naive  # noqa: E402
+from .alpha import _alpha_naive  # noqa: E402
+from .pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
+from .pairwise import counting as counting_naive  # noqa: E402
+from .pairwise import eigen as eigen_naive  # noqa: E402
+from .pairwise import elo as elo_naive  # noqa: E402
+from .pairwise import matrices as matrices_naive  # noqa: E402
+from .pairwise import newman as newman_naive  # noqa: E402
+from .pairwise import pagerank as pagerank_naive  # noqa: E402
+from .pairwise import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -97,7 +119,7 @@ T_contra = TypeVar("T_contra", bound=Hashable, contravariant=True)
 
 def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> Collection[float]:
     if weights is None:
-        return [1.] * n
+        return [1.0] * n
 
     if isinstance(weights, np.ndarray):
         weights = weights.tolist()
@@ -107,6 +129,7 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
     assert all(math.isfinite(w) for w in weights), "weights must be finite"
 
     return weights
+
 
 def _make_matrix(
     win_matrix: npt.NDArray[np.float64],
@@ -1258,6 +1281,89 @@ def bootstrap(
         stderr=pd.Series(bootstrap_result.standard_error, index=index, name="stderr"),
         distribution=pd.DataFrame(bootstrap_result.bootstrap_distribution.T, columns=index),
         index=index,
+    )
+
+
+@dataclass(frozen=True)
+class AlphaResult:
+    """
+    The result of Krippendorff's alpha.
+
+    Attributes:
+        alpha: The alpha value.
+        observed: The observed disagreement.
+        expected: The expected disagreement.
+        solver: The solver used.
+
+    """
+
+    alpha: float
+    observed: float
+    expected: float
+    solver: str
+
+
+T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
+
+
+DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
+
+
+class DistanceFunc(Protocol[T_distance_contra]):
+    """
+    Callable protocol for custom distance functions.
+
+    Args:
+        left: The left-hand value.
+        right: The right-hand value.
+
+    Returns:
+        The non-negative distance between the values.
+
+    """
+
+    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float: ...
+
+
+def alpha(
+    data: pd.DataFrame,
+    distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
+    solver: Literal["naive", "pyo3"] = "pyo3",
+) -> AlphaResult:
+    """
+    Compute Krippendorff's alpha.
+
+    Args:
+        data: Ratings by observer (rows) and unit (columns).
+        distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
+        solver: The solver to use (naive or pyo3).
+
+    Returns:
+        The alpha result.
+
+    Raises:
+        InsufficientRatingsError: If no units have at least 2 ratings.
+        UnknownDistanceError: If an unknown distance metric is specified.
+        SolverError: If the requested solver is not available or incompatible.
+
+    """
+    if solver == "pyo3" and (not PYO3_AVAILABLE or callable(distance)):
+        raise SolverError(solver)
+
+    if solver == "pyo3":
+        data_array = data.T.to_numpy(dtype=float)
+
+        assert not callable(distance), "distance must not be a function"
+
+        _alpha, observed, expected = _brzo.alpha(data_array, distance)
+    else:
+        _alpha, observed, expected = _alpha_naive(data, distance)
+
+    return AlphaResult(
+        alpha=_alpha,
+        observed=observed,
+        expected=expected,
+        solver=solver,
     )
 
 

@@ -1,67 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Literal, Protocol, TypeVar
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-
-class InsufficientRatingsError(ValueError):
-    """Raised when no units have at least 2 ratings."""
-
-    def __init__(self) -> None:
-        super().__init__("No units have at least 2 ratings.")
-
-
-class UnknownDistanceError(ValueError):
-    """Raised when an unknown distance metric is specified."""
-
-    def __init__(self, distance: str) -> None:
-        super().__init__(f"Unknown distance '{distance}'")
-
-
-@dataclass
-class AlphaResult:
-    """
-    The result of Krippendorff's alpha.
-
-    Attributes:
-        alpha: The alpha value.
-        observed: The observed disagreement.
-        expected: The expected disagreement.
-        solver: The solver used.
-
-    """
-
-    alpha: float
-    observed: float
-    expected: float
-    solver: str
-
-
-T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
-
-
-DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
-
-
-class DistanceFunc(Protocol[T_distance_contra]):
-    """
-    Callable protocol for custom distance functions.
-
-    Args:
-        left: The left-hand value.
-        right: The right-hand value.
-
-    Returns:
-        The non-negative distance between the values.
-
-    """
-
-    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float:
-        ...
+from . import DistanceFunc, DistanceName, InsufficientRatingsError, T_distance_contra, UnknownDistanceError
 
 
 def _as_unit_matrix(data: pd.DataFrame) -> npt.NDArray[np.object_]:
@@ -218,7 +163,7 @@ def _ratio_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np.fl
 
 
 def _custom_distance(
-    distance_func: Any,  # noqa: ANN401
+    distance_func: DistanceFunc[T_distance_contra],
     unique_values: npt.NDArray[np.object_],
 ) -> npt.NDArray[np.float64]:
     """
@@ -302,8 +247,8 @@ def _compute_expected_matrix(
 
 
 def _alpha_naive(
-    data: Any,  # noqa: ANN401
-    distance: Any,  # noqa: ANN401
+    data: pd.DataFrame,
+    distance: DistanceFunc[T_distance_contra] | DistanceName,
 ) -> tuple[float, float, float]:
     """
     Compute Krippendorff's alpha (naive Python implementation).
@@ -326,64 +271,6 @@ def _alpha_naive(
     observed_disagreement = np.sum(coincidence * delta)
     expected_disagreement = np.sum(expected * delta)
 
-    alpha_value = (
-        0.0
-        if expected_disagreement == 0.0
-        else float(1.0 - observed_disagreement / expected_disagreement)
-    )
+    alpha_value = 0.0 if expected_disagreement == 0.0 else float(1.0 - observed_disagreement / expected_disagreement)
 
     return (alpha_value, float(observed_disagreement), float(expected_disagreement))
-
-
-def alpha(
-    data: pd.DataFrame,
-    distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
-    solver: Literal["naive", "pyo3"] = "pyo3",
-) -> AlphaResult:
-    """
-    Compute Krippendorff's alpha.
-
-    Args:
-        data: Ratings by observer (rows) and unit (columns).
-        distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
-        solver: The solver to use (naive or pyo3).
-
-    Returns:
-        The alpha result.
-
-    Raises:
-        InsufficientRatingsError: If no units have at least 2 ratings.
-        UnknownDistanceError: If an unknown distance metric is specified.
-        SolverError: If the requested solver is not available or incompatible.
-
-    """
-    from evalica import PYO3_AVAILABLE, SolverError, _brzo  # noqa: PLC0415
-
-    if callable(distance):
-        if solver == "pyo3":
-            raise SolverError(solver)
-
-        alpha_value, observed, expected = _alpha_naive(data, distance)
-        return AlphaResult(
-            alpha=alpha_value,
-            observed=observed,
-            expected=expected,
-            solver=solver,
-        )
-
-    if solver == "pyo3":
-        if not PYO3_AVAILABLE:
-            raise SolverError(solver)
-
-        data_array = data.T.to_numpy(dtype=float)
-
-        alpha_value, observed, expected = _brzo.alpha(data_array, distance)
-    else:
-        alpha_value, observed, expected = _alpha_naive(data, distance)
-
-    return AlphaResult(
-        alpha=alpha_value,
-        observed=observed,
-        expected=expected,
-        solver=solver,
-    )
