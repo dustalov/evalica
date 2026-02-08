@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal, NamedTuple, cast
 import pandas as pd
 import pytest
 from evalica import WINNERS, Winner
+from hypothesis import assume
 from hypothesis import strategies as st
 from hypothesis.strategies import composite
 
@@ -128,6 +129,43 @@ def llmfao_golden() -> pd.DataFrame:
     df_golden["score"] = df_golden["score"].astype(float)
 
     return df_golden
+
+
+@pytest.fixture
+def codings() -> pd.DataFrame:
+    return pd.read_csv(Path(__file__).resolve().parent / "codings.csv", header=None, dtype=str)
+
+
+@pytest.fixture
+def gcl() -> pd.DataFrame:
+    return pd.read_csv(Path(__file__).resolve().parent / "gcl.csv", header=None, dtype=str)
+
+
+@composite
+def rating_dataframes(
+    draw: st.DrawFn,
+    min_observers: int = 2,
+    max_observers: int = 5,
+    min_units: int = 2,
+    max_units: int = 8,
+) -> pd.DataFrame:
+    """Generate a DataFrame of ratings with at least one unit having 2+ ratings."""
+    n_observers = draw(st.integers(min_observers, max_observers))
+    n_units = draw(st.integers(min_units, max_units))
+
+    values = st.sampled_from([None, "1", "2", "3", "4", "5"])
+
+    rows = []
+    for _ in range(n_observers):
+        row = [draw(values) for _ in range(n_units)]
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+
+    valid_counts = df.notna().sum(axis=0)
+    assume((valid_counts > 1).any())
+
+    return df
 
 
 DATASETS = frozenset(("simple", "food", "llmfao"))

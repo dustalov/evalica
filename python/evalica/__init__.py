@@ -148,15 +148,15 @@ class DistanceFunc(Protocol[T_distance_contra]):
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
-from .alpha import _alpha_naive  # noqa: E402
-from .pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
-from .pairwise import counting as counting_naive  # noqa: E402
-from .pairwise import eigen as eigen_naive  # noqa: E402
-from .pairwise import elo as elo_naive  # noqa: E402
-from .pairwise import matrices as matrices_naive  # noqa: E402
-from .pairwise import newman as newman_naive  # noqa: E402
-from .pairwise import pagerank as pagerank_naive  # noqa: E402
-from .pairwise import pairwise_scores as pairwise_scores_naive  # noqa: E402
+from ._alpha import _alpha_naive, _as_unit_matrix, _factorize_values  # noqa: E402
+from ._pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
+from ._pairwise import counting as counting_naive  # noqa: E402
+from ._pairwise import eigen as eigen_naive  # noqa: E402
+from ._pairwise import elo as elo_naive  # noqa: E402
+from ._pairwise import matrices as matrices_naive  # noqa: E402
+from ._pairwise import newman as newman_naive  # noqa: E402
+from ._pairwise import pagerank as pagerank_naive  # noqa: E402
+from ._pairwise import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -1348,21 +1348,23 @@ def alpha(
     Returns:
         The alpha result.
 
-    Raises:
-        InsufficientRatingsError: If no units have at least 2 ratings.
-        UnknownDistanceError: If an unknown distance metric is specified.
-        SolverError: If the requested solver is not available or incompatible.
-
     """
     if solver == "pyo3" and (not PYO3_AVAILABLE or callable(distance)):
         raise SolverError(solver)
 
     if solver == "pyo3":
-        data_array = data.T.to_numpy(dtype=float)
-
         assert not callable(distance), "distance must not be a function"
 
+        matrix = _as_unit_matrix(data)
+        codes, unique_values = _factorize_values(matrix)
+        numeric_values = np.asarray(unique_values, dtype=np.float64)
+
+        data_array = np.where(codes == -1, np.nan, numeric_values[codes])
+
         _alpha, observed, expected = _brzo.alpha(data_array, distance)
+
+        if expected == 0.0:
+            _alpha = 1.0 if observed == 0.0 else 0.0
     else:
         _alpha, observed, expected = _alpha_naive(data, distance)
 

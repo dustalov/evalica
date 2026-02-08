@@ -1,3 +1,4 @@
+::: evalica.InsufficientRatingsError
 ::: evalica.LengthMismatchError
 ::: evalica.ScoreDimensionError
 ::: evalica.SolverError
@@ -5,3 +6,4 @@
     options:
       filters:
       - "!^__"
+::: evalica.UnknownDistanceError

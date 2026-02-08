@@ -1,15 +1,19 @@
-from pathlib import Path
+from __future__ import annotations
 
+from functools import partial
+from typing import TYPE_CHECKING, Literal
+
+import numpy as np
 import pandas as pd
 import pytest
+from hypothesis import given
 
 import evalica
+from conftest import rating_dataframes
 from evalica import AlphaResult
 
-
-@pytest.fixture
-def codings() -> pd.DataFrame:
-    return pd.read_csv(Path(__file__).resolve().parent.parent.parent / "codings.csv", header=None, dtype=str)
+if TYPE_CHECKING:
+    from pytest_codspeed import BenchmarkFixture
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
@@ -19,6 +23,16 @@ def test_alpha(codings: pd.DataFrame, solver: str) -> None:
 
     result = evalica.alpha(codings, solver=solver)  # type: ignore[arg-type]
     assert result.alpha == pytest.approx(0.7434211)
+    assert result.solver == solver
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_gcl(gcl: pd.DataFrame, solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    result = evalica.alpha(gcl, solver=solver)  # type: ignore[arg-type]
+    assert result.alpha == pytest.approx(0.0833333)
     assert result.solver == solver
 
 
@@ -76,7 +90,6 @@ def test_alpha_custom_distance() -> None:
 
 
 def test_alpha_custom_distance_pyo3_error() -> None:
-    """Test that pyo3 solver raises SolverError with custom distance functions."""
     data = [[1, 2], [2, 3], [3, 4]]
     df = pd.DataFrame(data).T
 
@@ -135,8 +148,7 @@ def test_alpha_no_pairable_units(solver: str) -> None:
 
 
 @pytest.mark.parametrize("distance", ["nominal", "ordinal", "interval", "ratio"])
-def test_alpha_solvers(codings: pd.DataFrame, distance: str) -> None:
-    """Compare pyo3 and naive solvers for alpha computation."""
+def test_alpha_distances_codings(codings: pd.DataFrame, distance: str) -> None:
     if not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
@@ -153,3 +165,98 @@ def test_alpha_solvers(codings: pd.DataFrame, distance: str) -> None:
     assert result_pyo3.alpha == pytest.approx(result_naive.alpha)
     assert result_pyo3.observed == pytest.approx(result_naive.observed)
     assert result_pyo3.expected == pytest.approx(result_naive.expected)
+
+
+@pytest.mark.parametrize("distance", ["nominal", "ordinal", "interval", "ratio"])
+def test_alpha_distances_gcl(gcl: pd.DataFrame, distance: str) -> None:
+    if not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    result_pyo3 = evalica.alpha(gcl, distance=distance, solver="pyo3")  # type: ignore[arg-type]
+    result_naive = evalica.alpha(gcl, distance=distance, solver="naive")  # type: ignore[arg-type]
+
+    for result in (result_pyo3, result_naive):
+        assert isinstance(result, AlphaResult)
+        assert isinstance(result.alpha, float)
+        assert isinstance(result.observed, float)
+        assert isinstance(result.expected, float)
+        assert result.solver in ("pyo3", "naive")
+
+    assert result_pyo3.alpha == pytest.approx(result_naive.alpha)
+    assert result_pyo3.observed == pytest.approx(result_naive.observed)
+    assert result_pyo3.expected == pytest.approx(result_naive.expected)
+
+
+@pytest.mark.parametrize(
+    ("distance", "solver"),
+    [
+        ("nominal", "naive"),
+        ("nominal", "pyo3"),
+        ("ordinal", "naive"),
+        ("ordinal", "pyo3"),
+        ("interval", "naive"),
+        ("interval", "pyo3"),
+        ("ratio", "naive"),
+        ("ratio", "pyo3"),
+    ],
+)
+@given(data=rating_dataframes())
+def test_alpha_properties(data: pd.DataFrame, distance: str, solver: str) -> None:
+    result = evalica.alpha(data, distance=distance, solver=solver)  # type: ignore[arg-type]
+
+    assert isinstance(result, AlphaResult)
+    assert isinstance(result.alpha, float)
+    assert np.isfinite(result.alpha)
+    assert result.observed >= 0.0
+    assert result.expected >= 0.0
+    assert result.solver == solver
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+@pytest.mark.parametrize("distance", ["nominal", "ordinal", "interval", "ratio"])
+@given(data=rating_dataframes())
+def test_alpha_solvers_hypothesis(data: pd.DataFrame, distance: str) -> None:
+    result_pyo3 = evalica.alpha(data, distance=distance, solver="pyo3")  # type: ignore[arg-type]
+    result_naive = evalica.alpha(data, distance=distance, solver="naive")  # type: ignore[arg-type]
+
+    assert result_pyo3.alpha == pytest.approx(result_naive.alpha)
+    assert result_pyo3.observed == pytest.approx(result_naive.observed)
+    assert result_pyo3.expected == pytest.approx(result_naive.expected)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@given(data=rating_dataframes())
+def test_alpha_perfect_agreement_bounds(data: pd.DataFrame, solver: str) -> None:
+    if not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    result = evalica.alpha(data, distance="nominal", solver=solver)  # type: ignore[arg-type]
+
+    assert result.alpha <= 1.0
+
+
+@pytest.mark.parametrize(
+    ("distance", "solver"),
+    [
+        ("nominal", "naive"),
+        ("nominal", "pyo3"),
+        ("ordinal", "naive"),
+        ("ordinal", "pyo3"),
+        ("interval", "naive"),
+        ("interval", "pyo3"),
+        ("ratio", "naive"),
+        ("ratio", "pyo3"),
+    ],
+)
+def test_alpha_performance(
+    codings: pd.DataFrame,
+    distance: Literal["nominal", "ordinal", "interval", "ratio"],
+    solver: Literal["naive", "pyo3"],
+    benchmark: BenchmarkFixture,
+) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    func = partial(evalica.alpha, codings, distance=distance, solver=solver)
+
+    benchmark(func)

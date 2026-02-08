@@ -19,10 +19,6 @@ def _as_unit_matrix(data: pd.DataFrame) -> npt.NDArray[np.object_]:
     Returns:
         A numpy matrix with units as rows and observers as columns.
 
-    Raises:
-        TypeError: If ``data`` is not a pandas DataFrame.
-        InsufficientRatingsError: If no unit has at least two ratings.
-
     """
     valid_counts = data.notna().sum(axis=0)
     frame = data.loc[:, valid_counts > 1].T
@@ -46,20 +42,14 @@ def _factorize_values(
         A tuple of (coded matrix, unique values) where missing values are -1.
 
     """
-    flat = matrix.ravel()
-    codes, uniques = pd.factorize(flat)
+    codes, uniques = pd.factorize(matrix.ravel(), sort=True)
 
-    sort_idx = np.argsort(uniques)
-    unique_values = uniques[sort_idx]
+    try:
+        unique_values = uniques.astype(np.float64).astype(np.object_)
+    except (ValueError, TypeError):
+        unique_values = np.arange(len(uniques), dtype=np.object_)
 
-    remap = np.empty(len(uniques), dtype=int)
-    remap[sort_idx] = np.arange(len(uniques))
-
-    valid_mask = codes != -1
-    sorted_codes = np.full_like(codes, -1)
-    sorted_codes[valid_mask] = remap[codes[valid_mask]]
-
-    return sorted_codes.reshape(matrix.shape), unique_values
+    return codes.reshape(matrix.shape), unique_values
 
 
 def _coincidence_matrix(
@@ -202,9 +192,6 @@ def _compute_delta_matrix(
     Returns:
         The delta matrix.
 
-    Raises:
-        UnknownDistanceError: If an unknown distance name is provided.
-
     """
     if callable(distance):
         return _custom_distance(distance, unique_values)
@@ -265,12 +252,12 @@ def _alpha_naive(
     matrix_indices, unique_values = _factorize_values(matrix)
     coincidence = _coincidence_matrix(matrix_indices, len(unique_values))
 
-    expected = _compute_expected_matrix(coincidence)
+    expected_matrix = _compute_expected_matrix(coincidence)
     delta = _compute_delta_matrix(distance, unique_values, coincidence)
 
-    observed_disagreement = np.sum(coincidence * delta)
-    expected_disagreement = np.sum(expected * delta)
+    observed = float(np.sum(coincidence * delta))
+    expected = float(np.sum(expected_matrix * delta))
 
-    alpha_value = 0.0 if expected_disagreement == 0.0 else float(1.0 - observed_disagreement / expected_disagreement)
+    _alpha = (1.0 if observed == 0.0 else 0.0) if expected == 0.0 else float(1.0 - observed / expected)
 
-    return (alpha_value, float(observed_disagreement), float(expected_disagreement))
+    return (_alpha, observed, expected)
