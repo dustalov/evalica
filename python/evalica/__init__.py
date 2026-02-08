@@ -130,19 +130,21 @@ DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
 
 
 class DistanceFunc(Protocol[T_distance_contra]):
-    """
-    Callable protocol for custom distance functions.
+    """The distance function protocol."""
 
-    Args:
-        left: The left-hand value.
-        right: The right-hand value.
+    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float:
+        """
+        Compute the distance between the values.
 
-    Returns:
-        The non-negative distance between the values.
+        Args:
+            left: The left-hand side value.
+            right: The right-hand side value.
 
-    """
+        Returns:
+            The non-negative distance between the values.
 
-    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float: ...
+        """
+        ...
 
 
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
