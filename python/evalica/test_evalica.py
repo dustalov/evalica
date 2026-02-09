@@ -16,10 +16,7 @@ def test_rust_extension_warning() -> None:
         with pytest.warns() as record:
             import evalica  # noqa: PLC0415
 
-        assert any(
-            isinstance(w.message, evalica.RustExtensionWarning)
-            for w in record
-        )
+        assert any(isinstance(w.message, evalica.RustExtensionWarning) for w in record)
 
         assert not evalica.PYO3_AVAILABLE
         assert evalica.SOLVER == "naive"

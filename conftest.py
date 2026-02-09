@@ -133,6 +133,7 @@ def llmfao_golden() -> pd.DataFrame:
 
 @pytest.fixture
 def codings() -> pd.DataFrame:
+    """https://www.asc.upenn.edu/sites/default/files/2021-03/Computing%20Krippendorff%27s%20Alpha-Reliability.pdf"""
     return pd.read_csv(Path(__file__).resolve().parent / "codings.csv", header=None, dtype=str)
 
 
@@ -149,7 +150,6 @@ def rating_dataframes(
     min_units: int = 2,
     max_units: int = 8,
 ) -> pd.DataFrame:
-    """Generate a DataFrame of ratings with at least one unit having 2+ ratings."""
     n_observers = draw(st.integers(min_observers, max_observers))
     n_units = draw(st.integers(min_units, max_units))
 
