@@ -263,3 +263,24 @@ def test_alpha_performance(
     func = partial(evalica.alpha, codings, distance=distance, solver=solver)
 
     benchmark(func)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_non_numeric(solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    df = pd.DataFrame([["A", "B"], ["B", "A"], ["A", "A"]]).T
+    result = evalica.alpha(df, distance="nominal", solver=solver)  # type: ignore[arg-type]
+    assert isinstance(result.alpha, float)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_zero_expected(solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    df = pd.DataFrame([["A", "A"], ["A", "A"]]).T
+    result = evalica.alpha(df, distance="nominal", solver=solver)  # type: ignore[arg-type]
+    assert result.expected == 0.0
+    assert result.alpha == 1.0
