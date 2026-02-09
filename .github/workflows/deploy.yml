@@ -80,9 +80,6 @@ jobs:
         # windows
         - os: windows
           target: x86_64
-        exclude:
-        - os: windows
-          target: aarch64
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
     - uses: actions/checkout@v6
