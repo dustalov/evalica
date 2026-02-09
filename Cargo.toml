@@ -12,16 +12,16 @@ name = "evalica"
 crate-type = ["cdylib"]
 
 [dependencies]
-approx = "^0.5.1"
-ndarray = "^0.17.1"
+ndarray = "^0.17.2"
 num-traits = "^0.2.19"
-pyo3 = { version = "^0.27.0", features = ["abi3-py38"], optional = true }
-numpy = { git = "https://github.com/PyO3/rust-numpy.git", rev = "28dfb24fd431283fdf4d6310dda3fbbd5672d57e", optional = true }
-wasm-bindgen = { version = "^0.2.106", optional = true }
+pyo3 = { version = "^0.28.0", features = ["abi3-py38"], optional = true }
+numpy = { version = "^0.28.0", optional = true }
+wasm-bindgen = { version = "^0.2.108", optional = true }
 
 [features]
 python = ["dep:pyo3", "dep:numpy"]
 wasm = ["dep:wasm-bindgen"]
 
 [dev-dependencies]
-wasm-bindgen-test = "^0.3.56"
+approx = "^0.5.1"
+wasm-bindgen-test = "^0.3.58"

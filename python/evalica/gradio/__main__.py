@@ -186,7 +186,7 @@ def interface() -> gr.Interface:
 - <https://evalica.readthedocs.io/>
         """.strip(),
         analytics_enabled=False,
-        allow_flagging="never",
+        flagging_mode="never",
         fill_width=True,
     )
 

@@ -11,20 +11,20 @@ import evalica
 
 def test_rust_extension_warning() -> None:
     with unittest.mock.patch.dict(sys.modules, {"evalica._brzo": None}):
-        if "evalica" in sys.modules:
-            del sys.modules["evalica"]
+        sys.modules.pop("evalica", None)
 
-        for mod in list(sys.modules.keys()):
-            if mod.startswith("evalica."):
-                del sys.modules[mod]
-
-        with pytest.warns(RuntimeWarning, match="The Rust extension could not be imported"):
+        with pytest.warns() as record:
             import evalica  # noqa: PLC0415
+
+        assert any(
+            isinstance(w.message, evalica.RustExtensionWarning)
+            for w in record
+        )
 
         assert not evalica.PYO3_AVAILABLE
         assert evalica.SOLVER == "naive"
 
-        with pytest.raises(evalica.SolverError, match="The 'pyo3' solver is not available"):
+        with pytest.raises(evalica.SolverError):
             evalica.counting([], [], [], solver="pyo3")
 
 

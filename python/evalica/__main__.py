@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2024-2025 Dmitry Ustalov
+# Copyright 2024-2026 Dmitry Ustalov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ __license__ = "Apache-2.0"
 
 import argparse
 import sys
+from pathlib import Path
 from typing import IO, cast
 
 import pandas as pd
@@ -57,8 +58,8 @@ def write_csv(f: IO[str], scores: pd.Series[str]) -> pd.DataFrame:
     return df_output
 
 
-def invoke(args: argparse.Namespace) -> pd.Series[str]:
-    return cast("pd.Series[str]", args.algorithm(*read_csv(args.input)).scores)
+def invoke(args: argparse.Namespace, f_in: IO[str]) -> pd.Series[str]:
+    return cast("pd.Series[str]", args.algorithm(*read_csv(f_in)).scores)
 
 
 ALGORITHMS = {
@@ -74,14 +75,8 @@ ALGORITHMS = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evalica v" + evalica.__version__)
-    parser.add_argument("-i", "--input", help="input.csv", required=True, type=argparse.FileType("r", encoding="UTF-8"))
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="output.csv",
-        default=sys.stdout,
-        type=argparse.FileType("w", encoding="UTF-8"),
-    )
+    parser.add_argument("-i", "--input", help="input.csv", required=True, type=Path)
+    parser.add_argument("-o", "--output", help="output.csv", type=Path)
     parser.add_argument("--version", action="version", version="Evalica v" + evalica.__version__)
     parser.set_defaults()
 
@@ -92,9 +87,15 @@ def main() -> None:
         subparser.set_defaults(func=invoke, algorithm=algorithm)
 
     args = parser.parse_args()
-    scores = args.func(args)
 
-    write_csv(args.output, scores)
+    with args.input.open(encoding="UTF-8") as f_in:
+        scores = args.func(args, f_in)
+
+    if args.output:
+        with args.output.open("w", encoding="UTF-8") as f_out:
+            write_csv(f_out, scores)
+    else:
+        write_csv(sys.stdout, scores)
 
 
 if __name__ == "__main__":

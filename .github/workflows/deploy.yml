@@ -65,7 +65,6 @@ jobs:
         - os: linux
           manylinux: auto
           target: x86_64
-
         # musllinux
         - os: linux
           manylinux: musllinux_1_1
@@ -73,17 +72,15 @@ jobs:
         - os: linux
           manylinux: musllinux_1_1
           target: aarch64
-
         # macos
         - os: macos
           target: x86_64
         - os: macos
           target: aarch64
-
         # windows
         - os: windows
           target: x86_64
-          interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
+          interpreter: 3.10 3.11 3.12 3.13 3.14
         exclude:
         - os: windows
           target: aarch64
@@ -107,7 +104,7 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 3.14' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 3.14' }} --compatibility pypi
         rust-toolchain: stable
         docker-options: -e CI
     - name: List wheels
