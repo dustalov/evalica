@@ -3,6 +3,8 @@ from __future__ import annotations
 import pickle
 import sys
 import unittest.mock
+import warnings
+from functools import partial
 
 import pytest
 
