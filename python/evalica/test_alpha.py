@@ -22,7 +22,7 @@ def test_alpha(codings: pd.DataFrame, solver: str) -> None:
         pytest.skip("Rust extension is not available")
 
     result = evalica.alpha(codings, solver=solver)  # type: ignore[arg-type]
-    assert result.alpha == pytest.approx(0.7434211)
+    assert result.alpha == pytest.approx(904 / 1216)
     assert result.solver == solver
 
 
