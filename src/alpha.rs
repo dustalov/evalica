@@ -204,6 +204,46 @@ fn compute_expected_matrix(coincidence: &ArrayView2<f64>) -> Array2<f64> {
     }
 }
 
+/// Compute Krippendorff's alpha from factorized data.
+///
+/// # Arguments
+///
+/// * `matrix_indices` - Coded matrix with -1 for missing values
+/// * `unique_values` - Unique values corresponding to the codes
+/// * `distance` - Distance metric to use
+///
+/// # Returns
+///
+/// A tuple of (alpha, observed_disagreement, expected_disagreement).
+pub fn alpha_from_factorized(
+    matrix_indices: &ArrayView2<i64>,
+    unique_values: &[f64],
+    distance: Distance,
+) -> Result<(f64, f64, f64), String> {
+    let n_unique = unique_values.len();
+    let coincidence = coincidence_matrix(matrix_indices, n_unique);
+    let expected = compute_expected_matrix(&coincidence.view());
+
+    let delta = match distance {
+        Distance::Nominal => nominal_distance(n_unique),
+        Distance::Ordinal => ordinal_distance(&coincidence.view()),
+        Distance::Interval => interval_distance(unique_values),
+        Distance::Ratio => ratio_distance(unique_values),
+        Distance::Custom(func) => func(unique_values),
+    };
+
+    let observed_disagreement: f64 = (&coincidence * &delta).sum();
+    let expected_disagreement: f64 = (&expected * &delta).sum();
+
+    let alpha_value = if expected_disagreement == 0.0 {
+        0.0
+    } else {
+        1.0 - observed_disagreement / expected_disagreement
+    };
+
+    Ok((alpha_value, observed_disagreement, expected_disagreement))
+}
+
 /// Compute Krippendorff's alpha.
 ///
 /// # Arguments
@@ -227,35 +267,14 @@ pub fn alpha(data: &ArrayView2<f64>, distance: Distance) -> Result<(f64, f64, f6
             break;
         }
     }
-    
+
     if !has_valid_unit {
         return Err("No units have at least 2 ratings.".to_string());
     }
 
     let (matrix_indices, unique_values) = factorize_values(data);
-    let n_unique = unique_values.len();
 
-    let coincidence = coincidence_matrix(&matrix_indices.view(), n_unique);
-    let expected = compute_expected_matrix(&coincidence.view());
-
-    let delta = match distance {
-        Distance::Nominal => nominal_distance(n_unique),
-        Distance::Ordinal => ordinal_distance(&coincidence.view()),
-        Distance::Interval => interval_distance(&unique_values),
-        Distance::Ratio => ratio_distance(&unique_values),
-        Distance::Custom(func) => func(&unique_values),
-    };
-
-    let observed_disagreement: f64 = (&coincidence * &delta).sum();
-    let expected_disagreement: f64 = (&expected * &delta).sum();
-
-    let alpha_value = if expected_disagreement == 0.0 {
-        0.0
-    } else {
-        1.0 - observed_disagreement / expected_disagreement
-    };
-
-    Ok((alpha_value, observed_disagreement, expected_disagreement))
+    alpha_from_factorized(&matrix_indices.view(), &unique_values, distance)
 }
 
 /// Example custom distance function: squared difference.
@@ -294,7 +313,7 @@ mod tests {
     fn test_factorize_values() {
         let data = array![[1.0, 2.0], [2.0, 3.0], [f64::NAN, 1.0]];
         let (coded, unique) = factorize_values(&data.view());
-        
+
         assert_eq!(unique, vec![1.0, 2.0, 3.0]);
         assert_eq!(coded[[0, 0]], 0);
         assert_eq!(coded[[0, 1]], 1);
@@ -315,10 +334,10 @@ mod tests {
     #[test]
     fn test_custom_distance_squared_diff() {
         let data = array![[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]];
-        
+
         let result_interval = alpha(&data.view(), Distance::Interval).unwrap();
         let result_custom = alpha(&data.view(), Distance::Custom(custom_squared_diff)).unwrap();
-        
+
         assert!((result_interval.0 - result_custom.0).abs() < 1e-10);
         assert!((result_interval.1 - result_custom.1).abs() < 1e-10);
         assert!((result_interval.2 - result_custom.2).abs() < 1e-10);
@@ -327,9 +346,9 @@ mod tests {
     #[test]
     fn test_custom_distance_abs_diff() {
         let data = array![[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]];
-        
+
         let result = alpha(&data.view(), Distance::Custom(custom_abs_diff)).unwrap();
-        
+
         assert!(result.0.is_finite());
         assert!(result.1 >= 0.0);
         assert!(result.2 >= 0.0);
@@ -338,9 +357,9 @@ mod tests {
     #[test]
     fn test_custom_distance_with_missing_values() {
         let data = array![[1.0, f64::NAN], [2.0, 3.0], [3.0, 4.0]];
-        
+
         let result = alpha(&data.view(), Distance::Custom(custom_squared_diff)).unwrap();
-        
+
         assert!(result.0.is_finite());
         assert!(result.1 >= 0.0);
         assert!(result.2 >= 0.0);

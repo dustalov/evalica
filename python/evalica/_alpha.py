@@ -234,22 +234,22 @@ def _compute_expected_matrix(
 
 
 def _alpha_naive(
-    data: pd.DataFrame,
+    matrix_indices: npt.NDArray[np.int64],
+    unique_values: npt.NDArray[np.object_],
     distance: DistanceFunc[T_distance_contra] | DistanceName,
 ) -> tuple[float, float, float]:
     """
     Compute Krippendorff's alpha (naive Python implementation).
 
     Args:
-        data: Ratings by observer (rows) and unit (columns).
+        matrix_indices: The coded unit matrix with -1 for missing values.
+        unique_values: The unique values.
         distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
 
     Returns:
         A tuple of (alpha, observed_disagreement, expected_disagreement).
 
     """
-    matrix = _as_unit_matrix(data)
-    matrix_indices, unique_values = _factorize_values(matrix)
     coincidence = _coincidence_matrix(matrix_indices, len(unique_values))
 
     expected_matrix = _compute_expected_matrix(coincidence)

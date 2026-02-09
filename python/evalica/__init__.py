@@ -1354,21 +1354,20 @@ def alpha(
     if solver == "pyo3" and (not PYO3_AVAILABLE or callable(distance)):
         raise SolverError(solver)
 
+    matrix = _as_unit_matrix(data)
+    codes, unique_values = _factorize_values(matrix)
+
     if solver == "pyo3":
         assert not callable(distance), "distance must not be a function"
 
-        matrix = _as_unit_matrix(data)
-        codes, unique_values = _factorize_values(matrix)
         numeric_values = np.asarray(unique_values, dtype=np.float64)
 
-        data_array = np.where(codes == -1, np.nan, numeric_values[codes])
-
-        _alpha, observed, expected = _brzo.alpha(data_array, distance)
+        _alpha, observed, expected = _brzo.alpha(codes, numeric_values, distance)
 
         if expected == 0.0:
             _alpha = 1.0 if observed == 0.0 else 0.0
     else:
-        _alpha, observed, expected = _alpha_naive(data, distance)
+        _alpha, observed, expected = _alpha_naive(codes, unique_values, distance)
 
     return AlphaResult(
         alpha=_alpha,

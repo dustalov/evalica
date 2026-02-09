@@ -94,6 +94,7 @@ def pagerank(
     limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 def alpha(
-    data: npt.NDArray[np.float64],
+    codes: npt.NDArray[np.int64],
+    unique_values: npt.NDArray[np.float64],
     distance: DistanceName,
 ) -> tuple[float, float, float]: ...

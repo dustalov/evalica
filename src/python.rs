@@ -292,7 +292,8 @@ fn pagerank_pyo3<'py>(
 
 #[pyfunction(name = "alpha")]
 fn alpha_pyo3(
-    data: PyArrayLike2<'_, f64>,
+    codes: PyArrayLike2<'_, i64>,
+    unique_values: PyArrayLike1<'_, f64>,
     distance: &str,
 ) -> PyResult<(f64, f64, f64)> {
     let distance_enum = match alpha::Distance::from_str(distance) {
@@ -300,7 +301,13 @@ fn alpha_pyo3(
         Err(msg) => return Err(UnknownDistanceError::new_err(msg)),
     };
 
-    match alpha::alpha(&data.as_array(), distance_enum) {
+    let codes_array = codes.as_array();
+    let unique_values_array = unique_values.as_array();
+    let unique_slice = unique_values_array.as_slice().ok_or_else(|| {
+        PyErr::new::<pyo3::exceptions::PyValueError, _>("unique_values must be contiguous")
+    })?;
+
+    match alpha::alpha_from_factorized(&codes_array, unique_slice, distance_enum) {
         Ok((alpha_value, observed, expected)) => Ok((alpha_value, observed, expected)),
         Err(msg) => {
             if msg.contains("No units have at least 2 ratings") {
