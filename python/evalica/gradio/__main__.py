@@ -194,7 +194,9 @@ def interface() -> gr.Interface:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evalica v" + evalica.__version__)
     parser.add_argument(
-        "--version", action="version", version=f"Evalica v{evalica.__version__} with Gradio v{gr.__version__}",
+        "--version",
+        action="version",
+        version=f"Evalica v{evalica.__version__} with Gradio v{gr.__version__}",
     )
     parser.add_argument("--share", action="store_true", help="create a publicly shareable link")
 

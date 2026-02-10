@@ -41,3 +41,36 @@ Or simply:
 ...     limit=100,
 ... )
 ```
+
+## NLTK
+
+Users of the [NLTK](https://www.nltk.org/) library computing Krippendorff's alpha via `AnnotationTask` can switch to Evalica for a cleaner and more efficient interface.
+
+```pycon
+>>> from nltk.metrics import binary_distance
+>>> from nltk.metrics.agreement import AnnotationTask
+>>> data = [
+...     ('coder1', 'item1', 1),
+...     ('coder1', 'item2', 2),
+...     ('coder2', 'item1', 1),
+...     ('coder2', 'item2', 3),
+...     ('coder3', 'item1', 2),
+...     ('coder3', 'item2', 2),
+... ]
+>>> task = AnnotationTask(data, distance=binary_distance)
+>>> task.alpha()
+```
+
+Evalica accepts a pandas DataFrame with observers as rows and units as columns, avoiding the need to construct `(coder, item, label)` triples manually. The built-in distance metrics are specified by name.
+
+```pycon
+>>> import pandas as pd
+>>> from evalica import alpha
+>>> df = pd.DataFrame(
+...     [[1, 2], [1, 3], [2, 2]],
+... )
+>>> result = alpha(df, distance="nominal")
+>>> result.alpha
+```
+
+NLTK's `binary_distance` corresponds to Evalica's `"nominal"` and `interval_distance` corresponds to `"interval"`.

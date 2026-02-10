@@ -1,9 +1,10 @@
+use crate::alpha::{self, Distance};
 use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, win_plus_tie_matrix};
-use ndarray::Array1;
+use ndarray::{Array1, Array2};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "counting")]
@@ -190,11 +191,29 @@ pub fn elo_wasm(
     .map_err(|e| e.to_string())
 }
 
+#[wasm_bindgen(js_name = "alpha")]
+pub fn alpha_wasm(
+    codes: &[i64],
+    unique_values: &[f64],
+    n_units: usize,
+    n_raters: usize,
+    distance: &str,
+) -> Result<Vec<f64>, String> {
+    let distance_enum = Distance::from_str(distance)?;
+
+    let codes_array =
+        Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
+
+    let (alpha, observed, expected) =
+        alpha::alpha_from_factorized(&codes_array.view(), unique_values, distance_enum)?;
+
+    Ok(vec![alpha, observed, expected])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use wasm_bindgen_test::*;
-
 
     #[wasm_bindgen_test]
     fn test_counting() {
@@ -231,5 +250,32 @@ mod tests {
         )
         .unwrap();
         assert_eq!(result.len(), 3);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_alpha() {
+        // Data:
+        //      Unit 1: 1, 1
+        //      Unit 2: 2, 2
+        //      Unit 3: 3, 3
+        // Perfect agreement, alpha should be 1.0.
+        // Coded:
+        //      Unit 1: 0, 0
+        //      Unit 2: 1, 1
+        //      Unit 3: 2, 2
+        // Unique values: [1.0, 2.0, 3.0]
+
+        let codes = vec![
+            0, 0, // Unit 1
+            1, 1, // Unit 2
+            2, 2, // Unit 3
+        ];
+        let unique_values = vec![1.0, 2.0, 3.0];
+
+        let result = alpha_wasm(&codes, &unique_values, 3, 2, "nominal").unwrap();
+
+        assert_eq!(result.len(), 3);
+        assert!((result[0] - 1.0).abs() < 1e-6); // Alpha
+        assert_eq!(result[1], 0.0); // Observed disagreement
     }
 }

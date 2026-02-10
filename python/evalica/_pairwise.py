@@ -288,5 +288,4 @@ def pagerank(
 
     scores, iterations = eigen(_matrix, tolerance=tolerance, limit=limit)
     scores /= np.linalg.norm(scores, ord=1)
-
     return scores, iterations

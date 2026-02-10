@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import math
+import os
 import warnings
 from collections.abc import Hashable
 from dataclasses import dataclass, field
@@ -47,16 +48,45 @@ class SolverError(RuntimeError):
         super().__init__(f"The '{solver}' solver is not available")
 
 
+class InsufficientRatingsError(ValueError):
+    """Raised when no units have at least 2 ratings."""
+
+    def __init__(self) -> None:
+        """Create and return a new object."""
+        super().__init__("No units have at least 2 ratings.")
+
+
+class UnknownDistanceError(ValueError):
+    """Raised when an unknown distance metric is specified."""
+
+    def __init__(self, distance: str) -> None:
+        """
+        Create and return a new object.
+
+        Args:
+            distance: The distance metric name.
+
+        """
+        super().__init__(f"Unknown distance '{distance}'")
+
+
 class RustExtensionWarning(RuntimeWarning):
     """The Rust extension could not be imported."""
 
 
 try:
+    if os.environ.get("EVALICA_NIJE_BRZO"):
+        raise ImportError  # noqa: TRY301
+
     from . import _brzo
     from ._brzo import __version__
 
     PYO3_AVAILABLE = True
-    """The Rust extension is available and can be used for performance-critical operations."""
+    """
+    The Rust extension is available and can be used for performance-critical operations.
+
+    Please set the environment variable EVALICA_NIJE_BRZO to disable it.
+    """
 except ImportError:
     warnings.warn(
         "The Rust extension could not be imported; falling back to the naive implementations.",
@@ -73,17 +103,62 @@ except ImportError:
 
     PYO3_AVAILABLE = False
 
+
+@dataclass(frozen=True)
+class AlphaResult:
+    """
+    The result of Krippendorff's alpha.
+
+    Attributes:
+        alpha: The alpha value.
+        observed: The observed disagreement.
+        expected: The expected disagreement.
+        solver: The solver used.
+
+    """
+
+    alpha: float
+    observed: float
+    expected: float
+    solver: str
+
+
+T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
+
+
+DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
+
+
+class DistanceFunc(Protocol[T_distance_contra]):
+    """The distance function protocol."""
+
+    def __call__(self, left: T_distance_contra, right: T_distance_contra, /) -> float:
+        """
+        Compute the distance between the values.
+
+        Args:
+            left: The left-hand side value.
+            right: The right-hand side value.
+
+        Returns:
+            The non-negative distance between the values.
+
+        """
+        ...
+
+
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
-from .naive import bradley_terry as bradley_terry_naive  # noqa: E402
-from .naive import counting as counting_naive  # noqa: E402
-from .naive import eigen as eigen_naive  # noqa: E402
-from .naive import elo as elo_naive  # noqa: E402
-from .naive import matrices as matrices_naive  # noqa: E402
-from .naive import newman as newman_naive  # noqa: E402
-from .naive import pagerank as pagerank_naive  # noqa: E402
-from .naive import pairwise_scores as pairwise_scores_naive  # noqa: E402
+from ._alpha import _alpha_naive, _as_unit_matrix, _factorize_values  # noqa: E402
+from ._pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
+from ._pairwise import counting as counting_naive  # noqa: E402
+from ._pairwise import eigen as eigen_naive  # noqa: E402
+from ._pairwise import elo as elo_naive  # noqa: E402
+from ._pairwise import matrices as matrices_naive  # noqa: E402
+from ._pairwise import newman as newman_naive  # noqa: E402
+from ._pairwise import pagerank as pagerank_naive  # noqa: E402
+from ._pairwise import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -96,7 +171,7 @@ T_contra = TypeVar("T_contra", bound=Hashable, contravariant=True)
 
 def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> Collection[float]:
     if weights is None:
-        return [1.] * n
+        return [1.0] * n
 
     if isinstance(weights, np.ndarray):
         weights = weights.tolist()
@@ -106,6 +181,7 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
     assert all(math.isfinite(w) for w in weights), "weights must be finite"
 
     return weights
+
 
 def _make_matrix(
     win_matrix: npt.NDArray[np.float64],
@@ -247,7 +323,6 @@ class RankingMethod(Protocol[T_contra]):
         winners: Collection[Winner],
         index: pd.Index | None = None,
         weights: Collection[float] | None = None,
-        *args: Any,  # noqa: ANN401
         **kwargs: Any,  # noqa: ANN401
     ) -> Result:
         """
@@ -259,7 +334,6 @@ class RankingMethod(Protocol[T_contra]):
             winners: The winner elements.
             index: The index.
             weights: The example weights.
-            *args: The additional positional arguments.
             **kwargs: The additional keyword arguments.
 
         Returns:
@@ -1260,6 +1334,49 @@ def bootstrap(
     )
 
 
+def alpha(
+    data: pd.DataFrame,
+    distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
+    solver: Literal["naive", "pyo3"] = "pyo3",
+) -> AlphaResult:
+    """
+    Compute Krippendorff's alpha.
+
+    Args:
+        data: Ratings by observer (rows) and unit (columns).
+        distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
+        solver: The solver to use (naive or pyo3).
+
+    Returns:
+        The alpha result.
+
+    """
+    if solver == "pyo3" and (not PYO3_AVAILABLE or callable(distance)):
+        raise SolverError(solver)
+
+    matrix = _as_unit_matrix(data)
+    codes, unique_values = _factorize_values(matrix)
+
+    if solver == "pyo3":
+        assert not callable(distance), "distance must not be a function"
+
+        numeric_values = np.asarray(unique_values, dtype=np.float64)
+
+        _alpha, observed, expected = _brzo.alpha(codes, numeric_values, distance)
+
+        if expected == 0.0:
+            _alpha = 1.0 if observed == 0.0 else 0.0
+    else:
+        _alpha, observed, expected = _alpha_naive(codes, unique_values, distance)
+
+    return AlphaResult(
+        alpha=_alpha,
+        observed=observed,
+        expected=expected,
+        solver=solver,
+    )
+
+
 __all__ = [
     "PYO3_AVAILABLE",
     "SOLVER",
@@ -1270,6 +1387,7 @@ __all__ = [
     "CountingResult",
     "EigenResult",
     "EloResult",
+    "InsufficientRatingsError",
     "LengthMismatchError",
     "MatricesResult",
     "NewmanResult",
@@ -1279,8 +1397,10 @@ __all__ = [
     "RustExtensionWarning",
     "ScoreDimensionError",
     "SolverError",
+    "UnknownDistanceError",
     "Winner",
     "__version__",
+    "alpha",
     "average_win_rate",
     "bootstrap",
     "bradley_terry",

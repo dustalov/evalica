@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Literal, NamedTuple, cast
 import pandas as pd
 import pytest
 from evalica import WINNERS, Winner
+from hypothesis import assume
 from hypothesis import strategies as st
 from hypothesis.strategies import composite
 
@@ -47,7 +48,9 @@ def comparisons(
         ys = st.lists(st.text(max_size=length), min_size=length, max_size=length)
         winners = st.lists(st.sampled_from(WINNERS), min_size=length, max_size=length)
         weights = st.lists(
-            st.floats(min_value=0, allow_nan=False, allow_infinity=False), min_size=length, max_size=length,
+            st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+            min_size=length,
+            max_size=length,
         )
     else:
         min_x, min_y, min_z = draw(st.sampled_from(enumerate_sizes(3)))
@@ -58,7 +61,9 @@ def comparisons(
         ys = st.lists(st.text(max_size=length_y), min_size=length_y, max_size=length_y)
         winners = st.lists(st.sampled_from(WINNERS), min_size=length_z, max_size=length_z)
         weights = st.lists(
-            st.floats(min_value=0, allow_nan=False, allow_infinity=False), min_size=length_z, max_size=length_z,
+            st.floats(min_value=0, allow_nan=False, allow_infinity=False),
+            min_size=length_z,
+            max_size=length_z,
         )
 
     has_weights = draw(st.booleans())
@@ -124,6 +129,43 @@ def llmfao_golden() -> pd.DataFrame:
     df_golden["score"] = df_golden["score"].astype(float)
 
     return df_golden
+
+
+@pytest.fixture
+def codings() -> pd.DataFrame:
+    """https://www.asc.upenn.edu/sites/default/files/2021-03/Computing%20Krippendorff%27s%20Alpha-Reliability.pdf"""
+    return pd.read_csv(Path(__file__).resolve().parent / "codings.csv", header=None, dtype=str)
+
+
+@pytest.fixture
+def gcl() -> pd.DataFrame:
+    return pd.read_csv(Path(__file__).resolve().parent / "gcl.csv", header=None, dtype=str)
+
+
+@composite
+def rating_dataframes(
+    draw: st.DrawFn,
+    min_observers: int = 2,
+    max_observers: int = 5,
+    min_units: int = 2,
+    max_units: int = 8,
+) -> pd.DataFrame:
+    n_observers = draw(st.integers(min_observers, max_observers))
+    n_units = draw(st.integers(min_units, max_units))
+
+    values = st.sampled_from([None, "1", "2", "3", "4", "5"])
+
+    rows = []
+    for _ in range(n_observers):
+        row = [draw(values) for _ in range(n_units)]
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+
+    valid_counts = df.notna().sum(axis=0)
+    assume((valid_counts > 1).any())
+
+    return df
 
 
 DATASETS = frozenset(("simple", "food", "llmfao"))
