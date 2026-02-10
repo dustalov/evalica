@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
 import pickle
 import sys
 import unittest.mock
 import warnings
 from functools import partial
 
+import numpy as np
+import pandas as pd
 import pytest
 
 import evalica
@@ -76,3 +79,40 @@ def test_winner_pickle() -> None:
         dumped = pickle.dumps(w)
         loaded = pickle.loads(dumped)  # noqa: S301
         assert w == loaded
+
+
+def test_envvar_disable_pyo3() -> None:
+    original_evalica = sys.modules.get("evalica")
+    original_brzo = sys.modules.get("evalica._brzo")
+
+    try:
+        with unittest.mock.patch.dict(os.environ, {"EVALICA_NIJE_BRZO": "1"}):
+            sys.modules.pop("evalica", None)
+            sys.modules.pop("evalica._brzo", None)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                import evalica  # noqa: PLC0415
+
+            assert not evalica.PYO3_AVAILABLE
+            assert evalica.SOLVER == "naive"
+    finally:
+        if original_evalica is not None:
+            sys.modules["evalica"] = original_evalica
+        if original_brzo is not None:
+            sys.modules["evalica._brzo"] = original_brzo
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+def test_matrices_solver_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(evalica, "PYO3_AVAILABLE", False)
+    xs_indexed, ys_indexed, index = [0], [1], pd.Index(["a", "b"])
+    with pytest.raises(evalica.SolverError):
+        evalica.matrices(xs_indexed, ys_indexed, [evalica.Winner.X], index, solver="pyo3")
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+def test_pairwise_scores_solver_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(evalica, "PYO3_AVAILABLE", False)
+    with pytest.raises(evalica.SolverError):
+        evalica.pairwise_scores(np.array([1.0, 2.0, 3.0]), solver="pyo3")

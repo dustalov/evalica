@@ -11,6 +11,7 @@ from hypothesis import given
 import evalica
 from conftest import rating_dataframes
 from evalica import AlphaResult
+from evalica._alpha import _coincidence_matrix, _compute_expected_matrix
 
 if TYPE_CHECKING:
     from pytest_codspeed import BenchmarkFixture
@@ -284,3 +285,54 @@ def test_alpha_zero_expected(solver: str) -> None:
     result = evalica.alpha(df, distance="nominal", solver=solver)  # type: ignore[arg-type]
     assert result.expected == 0.0
     assert result.alpha == 1.0
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_single_rater_units(solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    df = pd.DataFrame(
+        {
+            "rater1": ["A", "B", np.nan],
+            "rater2": ["A", "B", np.nan],
+            "rater3": [np.nan, np.nan, "C"],
+        },
+    ).T
+    result = evalica.alpha(df, distance="nominal", solver=solver)  # type: ignore[arg-type]
+    assert isinstance(result, AlphaResult)
+    assert result.alpha == 1.0
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_n_total_edge_case(solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    df = pd.DataFrame([[1.0], [1.0]])
+    result = evalica.alpha(df, distance="nominal", solver=solver)  # type: ignore[arg-type]
+    assert isinstance(result, AlphaResult)
+    assert result.expected == 0.0
+    assert result.alpha == 1.0
+
+
+def test_coincidence_matrix_skip_insufficient_raters() -> None:
+    matrix_indices = np.array([
+        [0, 1, -1],
+        [-1, -1, -1],
+        [2, 3, 4],
+    ], dtype=np.int64)
+
+    result = _coincidence_matrix(matrix_indices, n_unique=5)
+
+    assert result.shape == (5, 5)
+    assert isinstance(result, np.ndarray)
+
+
+def test_compute_expected_matrix_zero_case() -> None:
+    coincidence = np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float64)
+
+    result = _compute_expected_matrix(coincidence)
+
+    assert result.shape == (2, 2)
+    assert np.array_equal(result, np.zeros((2, 2)))
