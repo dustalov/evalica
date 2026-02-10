@@ -116,6 +116,8 @@ jobs:
     - if: matrix.python-version == '3.14'
       name: Upload to Codecov
       uses: codecov/codecov-action@v5.5.2
+      with:
+        use_oidc: true
     - name: Run Module
       run: |
         python3 -m evalica.gradio --version
