@@ -75,12 +75,41 @@ As a result, we obtain [Elo scores](https://en.wikipedia.org/wiki/Elo_rating_sys
 | `burger` | 970.65 |
 | `sushi` | 1014.38 |
 
+### Inter-Rater Reliability with Krippendorff's Alpha
+
+Evalica also supports computing [Krippendorff's alpha](https://en.wikipedia.org/wiki/Krippendorff%27s_alpha), a statistical measure of inter-rater reliability. Unlike pairwise comparisons, alpha accepts a matrix where rows represent raters (observers) and columns represent units (items being rated).
+
+```pycon
+>>> import pandas as pd
+>>> from evalica import alpha
+>>> data = pd.DataFrame([
+...     [1, 1, None, 1],
+...     [2, 2, 3, 2],
+...     [3, 3, 3, 3],
+...     [3, 3, 3, 3],
+...     [2, 2, 2, 2],
+...     [1, 2, 3, 4],
+...     [4, 4, 4, 4],
+...     [1, 1, 2, 1],
+...     [2, 2, 2, 2],
+...     [None, 5, 5, 5],
+...     [None, None, 1, 1],
+... ]).T
+>>> result = alpha(data, distance='nominal')
+>>> result.alpha
+0.7434210526315788
+```
+
+This example demonstrates computing alpha with nominal distance for categorical ratings. The result indicates substantial agreement among raters (alpha ≈ 0.74). Evalica supports multiple distance metrics: `nominal`, `ordinal`, `interval`, `ratio`, or custom distance functions.
+
 ## Command-Line Interface
 
 Evalica also provides a simple command-line interface, allowing the use of these methods in shell scripts and for prototyping.
 
+### Pairwise Ranking
+
 ```console
-$ evalica -i food.csv bradley-terry                
+$ evalica -i food.csv pairwise bradley-terry
 item,score,rank
 Tacos,2.509025136024378,1
 Sushi,1.1011561298265815,2
@@ -90,6 +119,18 @@ Pizza,0.5718366915548537,5
 ```
 
 Refer to the [food.csv](food.csv) file as an input example.
+
+### Krippendorff's Alpha
+
+For Krippendorff's alpha, use a CSV file with ratings in a matrix format (no header):
+
+```console
+$ evalica -i codings.csv alpha --distance=nominal
+metric,value
+alpha,0.743421052631579
+observed,7.999999999999999
+expected,31.179487179487182
+```
 
 ## Web Application
 
@@ -106,6 +147,7 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 | [Eigenvalue] | &#x2705; | &#x2705; |
 | [PageRank] | &#x2705; | &#x2705; |
 | [Newman] | &#x2705; | &#x2705; |
+| [Krippendorff's Alpha] | &#x2705; | &#x2705; |
 
 <!-- Present: &#x2705; / Absent: &#x274C; -->
 
@@ -114,6 +156,7 @@ Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be
 [Eigenvalue]: https://doi.org/10.1086/228631
 [PageRank]: https://doi.org/10.1016/S0169-7552(98)00110-X
 [Newman]: https://jmlr.org/papers/v24/22-1086.html
+[Krippendorff's Alpha]: https://en.wikipedia.org/wiki/Krippendorff%27s_alpha
 
 ## Contributing
 

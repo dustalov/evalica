@@ -27,7 +27,7 @@ from typing import IO, cast
 import pandas as pd
 
 import evalica
-from evalica import Winner
+from evalica import AlphaResult, Winner
 
 WINNERS = {
     "left": Winner.X,
@@ -49,6 +49,10 @@ def read_csv(f: IO[str]) -> tuple[list[str], list[str], list[Winner]]:
     return xs, ys, ws
 
 
+def read_alpha_csv(f: IO[str]) -> pd.DataFrame:
+    return pd.read_csv(f, header=None, dtype=str)
+
+
 def write_csv(f: IO[str], scores: pd.Series[str]) -> pd.DataFrame:
     df_output = pd.DataFrame(scores.rename("score"))
     df_output.index.name = "item"
@@ -58,8 +62,23 @@ def write_csv(f: IO[str], scores: pd.Series[str]) -> pd.DataFrame:
     return df_output
 
 
+def write_alpha_csv(f: IO[str], result: AlphaResult) -> None:
+    df_output = pd.DataFrame(
+        {
+            "metric": ["alpha", "observed", "expected"],
+            "value": [result.alpha, result.observed, result.expected],
+        },
+    )
+    df_output.to_csv(f, index=False)
+
+
 def invoke(args: argparse.Namespace, f_in: IO[str]) -> pd.Series[str]:
     return cast("pd.Series[str]", args.algorithm(*read_csv(f_in)).scores)
+
+
+def invoke_alpha(args: argparse.Namespace, f_in: IO[str]) -> AlphaResult:
+    data = read_alpha_csv(f_in)
+    return evalica.alpha(data, distance=args.distance)
 
 
 ALGORITHMS = {
@@ -80,22 +99,44 @@ def main() -> None:
     parser.add_argument("--version", action="version", version="Evalica v" + evalica.__version__)
     parser.set_defaults()
 
-    subparsers = parser.add_subparsers(required=True)
+    subparsers = parser.add_subparsers(required=True, dest="command")
+
+    pairwise_parser = subparsers.add_parser("pairwise", help="pairwise ranking methods")
+    pairwise_subparsers = pairwise_parser.add_subparsers(required=True, dest="algorithm_name")
 
     for name, algorithm in ALGORITHMS.items():
-        subparser = subparsers.add_parser(name)
+        subparser = pairwise_subparsers.add_parser(name)
         subparser.set_defaults(func=invoke, algorithm=algorithm)
+
+    alpha_parser = subparsers.add_parser("alpha", help="Krippendorff's alpha")
+    alpha_parser.add_argument(
+        "-d",
+        "--distance",
+        choices=["nominal", "ordinal", "interval", "ratio"],
+        default="nominal",
+        help="distance metric (default: nominal)",
+    )
+    alpha_parser.set_defaults(func=invoke_alpha)
 
     args = parser.parse_args()
 
     with args.input.open(encoding="UTF-8") as f_in:
-        scores = args.func(args, f_in)
+        result = args.func(args, f_in)
 
-    if args.output:
-        with args.output.open("w", encoding="UTF-8") as f_out:
-            write_csv(f_out, scores)
+    if hasattr(args, "algorithm"):
+        scores = cast("pd.Series[str]", result)
+        if args.output:
+            with args.output.open("w", encoding="UTF-8") as f_out:
+                write_csv(f_out, scores)
+        else:
+            write_csv(sys.stdout, scores)
     else:
-        write_csv(sys.stdout, scores)
+        alpha_result = cast("AlphaResult", result)
+        if args.output:
+            with args.output.open("w", encoding="UTF-8") as f_out:
+                write_alpha_csv(f_out, alpha_result)
+        else:
+            write_alpha_csv(sys.stdout, alpha_result)
 
 
 if __name__ == "__main__":

@@ -150,7 +150,39 @@ def handler(
     return df_result, fig
 
 
-def interface() -> gr.Interface:
+def alpha_handler(
+    file: str | None,
+    distance: str,
+) -> pd.DataFrame:
+    if file is None:
+        raise gr.Error("File must be uploaded")  # noqa: EM101, TRY003
+
+    try:
+        df_ratings = pd.read_csv(file, header=None, dtype=str)
+    except ValueError as e:
+        raise gr.Error(f"Parsing error: {e}") from e  # noqa: EM102, TRY003
+
+    if df_ratings.empty:
+        raise gr.Error("The file is empty")  # noqa: EM101, TRY003
+
+    try:
+        result = evalica.alpha(df_ratings, distance=distance)  # type: ignore[arg-type]
+    except evalica.InsufficientRatingsError as e:
+        raise gr.Error("Insufficient ratings: no units have at least 2 ratings") from e  # noqa: EM101, TRY003
+    except evalica.UnknownDistanceError as e:
+        raise gr.Error(f"Unknown distance: {e}") from e  # noqa: EM102, TRY003
+    except Exception as e:
+        raise gr.Error(f"Computation error: {e}") from e  # noqa: EM102, TRY003
+
+    return pd.DataFrame(
+        {
+            "Metric": ["Alpha", "Observed Disagreement", "Expected Disagreement"],
+            "Value": [result.alpha, result.observed, result.expected],
+        },
+    )
+
+
+def pairwise_interface() -> gr.Interface:
     return gr.Interface(
         fn=handler,
         inputs=[
@@ -178,16 +210,47 @@ def interface() -> gr.Interface:
                 label="Win Rates",
             ),
         ],
-        title="Evalica",
-        article=f"""
-**Evalica** is a library that transforms pairwise comparisons into ranked lists of items.
-
-- <https://github.com/dustalov/evalica> (Evalica v{evalica.__version__} is used)
-- <https://evalica.readthedocs.io/>
-        """.strip(),
+        title="Pairwise Ranking",
         analytics_enabled=False,
         flagging_mode="never",
         fill_width=True,
+    )
+
+
+def alpha_interface() -> gr.Interface:
+    return gr.Interface(
+        fn=alpha_handler,
+        inputs=[
+            gr.File(
+                file_types=[".tsv", ".csv"],
+                label="Ratings Matrix (CSV without header)",
+            ),
+            gr.Dropdown(
+                choices=["nominal", "ordinal", "interval", "ratio"],
+                value="nominal",
+                label="Distance Metric",
+                info="Nominal for categorical, ordinal for ordered categories, interval/ratio for numeric scales",
+            ),
+        ],
+        outputs=[
+            gr.Dataframe(
+                headers=["Metric", "Value"],
+                label="Inter-Rater Reliability",
+            ),
+        ],
+        title="Krippendorff's Alpha",
+        analytics_enabled=False,
+        flagging_mode="never",
+        fill_width=True,
+    )
+
+
+def interface() -> gr.TabbedInterface:
+    return gr.TabbedInterface(
+        [pairwise_interface(), alpha_interface()],
+        ["Pairwise Ranking", "Krippendorff's Alpha"],
+        title="Evalica",
+        analytics_enabled=False,
     )
 
 

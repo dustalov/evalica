@@ -121,9 +121,12 @@ jobs:
     - name: Run Module
       run: |
         python3 -m evalica.gradio --version
-        python3 -m evalica --input=food.csv counting
+        python3 -m evalica --input=food.csv pairwise counting
+        python3 -m evalica --input=codings.csv alpha
     - name: Run CLI
-      run: evalica --input=food.csv counting
+      run: |
+        evalica --input=food.csv pairwise counting
+        evalica --input=codings.csv alpha --distance=ordinal
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb docs/*.ipynb
     - name: Lint with abi3audit
