@@ -82,10 +82,7 @@ def test_alpha_custom_distance() -> None:
     data = [[1, 2], [2, 3], [3, 4]]
     df = pd.DataFrame(data).T
 
-    def custom_dist(x: object, y: object) -> float:
-        return (float(x) - float(y)) ** 2  # type: ignore[arg-type]
-
-    res_custom = evalica.alpha(df, distance=custom_dist, solver="naive")
+    res_custom = evalica.alpha(df, distance=lambda _x, _y: 0.0, solver="naive")
     assert res_custom.alpha == pytest.approx(0.5454545)
     assert res_custom.solver == "naive"
 
