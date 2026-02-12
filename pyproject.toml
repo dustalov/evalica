@@ -92,6 +92,7 @@ Repository = "https://github.com/dustalov/evalica"
 [tool.coverage.report]
 exclude_also = [
     "if TYPE_CHECKING:",
+    "pytest.skip",
 ]
 
 [tool.maturin]
