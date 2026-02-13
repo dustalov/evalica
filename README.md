@@ -41,7 +41,7 @@ The logo was created using [Recraft](https://www.recraft.ai/).
 - [pip](https://pip.pypa.io/) without acceleration: `pip install --no-binary evalica`
 - [Anaconda](https://docs.conda.io/en/latest/): `conda install conda-forge::evalica`
 
-## Usage
+## Pairwise Comparisons
 
 Imagine that we would like to rank the different meals and have the following dataset of three comparisons produced by food experts.
 
@@ -75,7 +75,7 @@ As a result, we obtain [Elo scores](https://en.wikipedia.org/wiki/Elo_rating_sys
 | `burger` | 970.65 |
 | `sushi` | 1014.38 |
 
-### Inter-Rater Reliability with Krippendorff's Alpha
+### Inter-Rater Reliability
 
 Evalica also supports computing [Krippendorff's alpha](https://en.wikipedia.org/wiki/Krippendorff%27s_alpha), a statistical measure of inter-rater reliability. Unlike pairwise comparisons, alpha accepts a matrix where rows represent raters (observers) and columns represent units (items being rated).
 
