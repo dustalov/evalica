@@ -29,13 +29,13 @@
     <p>This is a minimal working example of <a href="https://github.com/dustalov/evalica">Evalica</a> running in the
         browser via WebAssembly.</p>
 
-    <h2>Input Data</h2>
+    <h2>Pairwise Comparison Input Data</h2>
     <pre id="input-data">| **Item X** | **Item Y** | **Winner** |
 | `pizza`    | `burger`   | `x`        |
 | `burger`   | `sushi`    | `y`        |
 | `pizza`    | `sushi`    | `tie`      |</pre>
 
-    <h2>Method Selection</h2>
+    <h2>Pairwise Method Selection</h2>
     <select id="method-select">
         <option value="counting">Counting</option>
         <option value="average_win_rate">Average Win Rate</option>
@@ -50,6 +50,26 @@
     <h2 id="method-title">Results</h2>
     <div id="status">Loading Wasm...</div>
     <pre id="output"></pre>
+
+    <h2>Krippendorff's Alpha Input Data</h2>
+    <pre id="alpha-input-data">Raters rating 4 units:
+Unit 1: [1, 1, None, 1]
+Unit 2: [2, 2, 3, 2]
+Unit 3: [3, 3, 3, 3]
+Unit 4: [3, 3, 3, 3]</pre>
+
+    <h2>Distance Metric</h2>
+    <select id="distance-select">
+        <option value="nominal">Nominal</option>
+        <option value="ordinal">Ordinal</option>
+        <option value="interval">Interval</option>
+        <option value="ratio">Ratio</option>
+    </select>
+    <button id="alpha-button">Run Alpha</button>
+
+    <h2 id="alpha-title">Alpha Results</h2>
+    <div id="alpha-status"></div>
+    <pre id="alpha-output"></pre>
 </div>
 
 <script type="module">
@@ -60,7 +80,8 @@
         newman,
         eigen,
         pagerank,
-        elo
+        elo,
+        alpha
     } from './pkg/evalica.js';
 
     async function run() {
@@ -124,7 +145,45 @@
                 }
             };
 
+            const runAlpha = () => {
+                const distance = document.getElementById('distance-select').value;
+                document.getElementById('alpha-status').innerText = `Running Krippendorff's alpha with ${distance} distance...`;
+                document.getElementById('alpha-title').innerText = `Alpha Results: ${distance}`;
+
+                try {
+                    // Simplified example data (4 units, 4 raters)
+                    // Unit 1: [1, 1, None, 1]  -> codes: [0, 0, -1, 0]
+                    // Unit 2: [2, 2, 3, 2]     -> codes: [1, 1, 2, 1]
+                    // Unit 3: [3, 3, 3, 3]     -> codes: [2, 2, 2, 2]
+                    // Unit 4: [3, 3, 3, 3]     -> codes: [2, 2, 2, 2]
+                    // Unique values: [1, 2, 3]
+                    const codes = new BigInt64Array([
+                        0n, 0n, -1n, 0n,   // Unit 1
+                        1n, 1n, 2n, 1n,    // Unit 2
+                        2n, 2n, 2n, 2n,    // Unit 3
+                        2n, 2n, 2n, 2n     // Unit 4
+                    ]);
+                    const uniqueValues = new Float64Array([1.0, 2.0, 3.0]);
+                    const nUnits = 4;
+                    const nRaters = 4;
+
+                    const results = alpha(codes, uniqueValues, nUnits, nRaters, distance);
+                    const [alphaValue, observed, expected] = Array.from(results);
+
+                    let outputText = `Krippendorff's alpha: ${alphaValue.toFixed(6)}\n`;
+                    outputText += `Observed disagreement: ${observed.toFixed(6)}\n`;
+                    outputText += `Expected disagreement: ${expected.toFixed(6)}\n`;
+
+                    document.getElementById('alpha-output').innerText = outputText;
+                    document.getElementById('alpha-status').innerText = 'Done!';
+                } catch (err) {
+                    document.getElementById('alpha-status').innerText = 'Error: ' + err;
+                    console.error(err);
+                }
+            };
+
             document.getElementById('run-button').onclick = runMethod;
+            document.getElementById('alpha-button').onclick = runAlpha;
             runMethod();
         } catch (e) {
             document.getElementById('status').innerText = 'Error: ' + e;
