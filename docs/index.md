@@ -99,6 +99,8 @@ observed,7.999999999999999
 expected,31.179487179487182
 ```
 
+Refer to the [codings.csv](https://github.com/dustalov/evalica/blob/master/codings.csv) file as an input example.
+
 ## Web Application
 
 Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be launched as `python3 -m evalica.gradio`. Please ensure that the library was installed as `pip install evalica[gradio]`.
