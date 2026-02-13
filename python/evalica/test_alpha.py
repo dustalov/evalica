@@ -82,7 +82,10 @@ def test_alpha_custom_distance() -> None:
     data = [[1, 2], [2, 3], [3, 4]]
     df = pd.DataFrame(data).T
 
-    res_custom = evalica.alpha(df, distance=lambda _x, _y: 0.0, solver="naive")
+    def custom_dist(x: float, y: float) -> float:
+        return (x - y) ** 2
+
+    res_custom = evalica.alpha(df, distance=custom_dist, solver="naive")
     assert res_custom.alpha == pytest.approx(0.5454545)
     assert res_custom.solver == "naive"
 
@@ -91,11 +94,8 @@ def test_alpha_custom_distance_pyo3_error() -> None:
     data = [[1, 2], [2, 3], [3, 4]]
     df = pd.DataFrame(data).T
 
-    def custom_dist(x: object, y: object) -> float:
-        return (float(x) - float(y)) ** 2  # type: ignore[arg-type]
-
     with pytest.raises(evalica.SolverError, match="The 'pyo3' solver is not available"):
-        evalica.alpha(df, distance=custom_dist, solver="pyo3")
+        evalica.alpha(df, distance=lambda _x, _y: 0.0, solver="pyo3")
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
