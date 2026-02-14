@@ -1351,13 +1351,13 @@ def alpha(
         The alpha result.
 
     """
-    if solver == "pyo3" and not PYO3_AVAILABLE:
-        raise SolverError(solver)
-
     matrix = _as_unit_matrix(data)
     codes, unique_values = _factorize_values(matrix)
 
     if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
         numeric_values = np.asarray(unique_values, dtype=np.float64)
 
         if callable(distance):
