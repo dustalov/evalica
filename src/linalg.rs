@@ -28,6 +28,7 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     }
 
     let n = matrix.shape()[0];
+    let matrix_t = matrix.t();
 
     let mut scores = Array1::from_elem(n, A::one() / A::from(n).unwrap());
     let mut scores_new = scores.clone();
@@ -38,7 +39,7 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     while !converged && iterations < limit {
         iterations += 1;
 
-        scores_new.assign(&(matrix.t().dot(&scores)));
+        scores_new.assign(&matrix_t.dot(&scores));
 
         let norm = scores_new.dot(&scores_new).sqrt();
 
@@ -48,8 +49,12 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
 
         nan_to_num(&mut scores_new, tolerance);
 
-        let difference = &scores_new - &scores;
-        converged = difference.dot(&difference).sqrt() < tolerance;
+        let mut squared_difference = A::zero();
+        for (&new_value, &old_value) in scores_new.iter().zip(scores.iter()) {
+            let difference = new_value - old_value;
+            squared_difference = squared_difference + difference * difference;
+        }
+        converged = squared_difference.sqrt() < tolerance;
 
         scores.assign(&scores_new);
     }

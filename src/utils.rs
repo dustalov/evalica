@@ -161,7 +161,7 @@ where
     check_total!(total, xs, ys);
 
     let mut wins = Array2::zeros((total, total));
-    let mut ties = wins.clone();
+    let mut ties = Array2::zeros((total, total));
 
     for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
         match w.into() {

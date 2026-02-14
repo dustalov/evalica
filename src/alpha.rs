@@ -81,10 +81,18 @@ fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
 fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Array2<f64> {
     let mut coincidence = Array2::<f64>::zeros((n_unique, n_unique));
     let min_raters = 2;
+    let mut counts = vec![0.0; n_unique];
 
     for unit_row in matrix_indices.rows() {
-        let valid_values: Vec<i64> = unit_row.iter().filter(|&&v| v >= 0).copied().collect();
-        let m_u = valid_values.len();
+        counts.fill(0.0);
+        let mut m_u = 0usize;
+
+        for &val in unit_row {
+            if val >= 0 {
+                counts[val as usize] += 1.0;
+                m_u += 1;
+            }
+        }
 
         if m_u < min_raters {
             continue;
@@ -92,19 +100,23 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
 
         let weight = 1.0 / (m_u - 1) as f64;
 
-        let mut counts = vec![0.0; n_unique];
-        for &val in &valid_values {
-            counts[val as usize] += 1.0;
-        }
-
         for i in 0..n_unique {
-            for j in 0..n_unique {
-                let contribution = if i == j {
-                    counts[i] * (counts[i] - 1.0)
-                } else {
-                    counts[i] * counts[j]
-                };
-                coincidence[[i, j]] += weight * contribution;
+            let count_i = counts[i];
+            if count_i == 0.0 {
+                continue;
+            }
+
+            coincidence[[i, i]] += weight * count_i * (count_i - 1.0);
+
+            for j in (i + 1)..n_unique {
+                let count_j = counts[j];
+                if count_j == 0.0 {
+                    continue;
+                }
+
+                let contribution = weight * count_i * count_j;
+                coincidence[[i, j]] += contribution;
+                coincidence[[j, i]] += contribution;
             }
         }
     }

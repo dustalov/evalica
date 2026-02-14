@@ -31,7 +31,8 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let mut scores = Array1::ones(matrix.shape()[0]);
+    let n = matrix.nrows();
+    let mut scores = Array1::ones(n);
 
     let mut converged = false;
     let mut iterations = 0;
@@ -45,12 +46,13 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
 
         let mut scores_new = scores.clone();
 
-        for i in 0..matrix.nrows() {
+        for i in 0..n {
             let mut numerator = A::zero();
             let mut denominator = A::zero();
+            let score_i = scores_new[i];
 
-            for j in 0..matrix.ncols() {
-                let sum_scores = scores_new[i] + scores_new[j];
+            for j in 0..n {
+                let sum_scores = score_i + scores_new[j];
                 numerator += matrix[[i, j]] * scores_new[j] / sum_scores;
                 denominator += matrix[[j, i]] / sum_scores;
             }
@@ -58,13 +60,21 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
             scores_new[i] = numerator / denominator;
         }
 
-        let geometric_mean = scores_new.mapv(|x| x.ln()).mean().unwrap().exp();
+        let mut log_sum = A::zero();
+        for &value in &scores_new {
+            log_sum += value.ln();
+        }
+        let geometric_mean = (log_sum / A::from(n).unwrap()).exp();
         scores_new /= geometric_mean;
 
         nan_to_num(&mut scores_new, tolerance);
 
-        let difference = &scores_new - &scores;
-        converged = difference.dot(&difference).sqrt() < tolerance;
+        let mut squared_difference = A::zero();
+        for (&new_value, &old_value) in scores_new.iter().zip(scores.iter()) {
+            let difference = new_value - old_value;
+            squared_difference += difference * difference;
+        }
+        converged = squared_difference.sqrt() < tolerance;
 
         scores.assign(&scores_new);
     }
