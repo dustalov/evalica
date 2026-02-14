@@ -150,7 +150,7 @@ class DistanceFunc(Protocol[T_distance_contra]):
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
-from ._alpha import _alpha_naive, _as_unit_matrix, _factorize_values  # noqa: E402
+from ._alpha import _alpha_naive, _as_unit_matrix, _custom_distance, _factorize_values  # noqa: E402
 from ._pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
 from ._pairwise import counting as counting_naive  # noqa: E402
 from ._pairwise import eigen as eigen_naive  # noqa: E402
@@ -1351,18 +1351,20 @@ def alpha(
         The alpha result.
 
     """
-    if solver == "pyo3" and (not PYO3_AVAILABLE or callable(distance)):
+    if solver == "pyo3" and not PYO3_AVAILABLE:
         raise SolverError(solver)
 
     matrix = _as_unit_matrix(data)
     codes, unique_values = _factorize_values(matrix)
 
     if solver == "pyo3":
-        assert not callable(distance), "distance must not be a function"
-
         numeric_values = np.asarray(unique_values, dtype=np.float64)
 
-        _alpha, observed, expected = _brzo.alpha(codes, numeric_values, distance)
+        if callable(distance):
+            distance_matrix = _custom_distance(distance, unique_values)
+            _alpha, observed, expected = _brzo.alpha(codes, numeric_values, distance_matrix)
+        else:
+            _alpha, observed, expected = _brzo.alpha(codes, numeric_values, distance)
 
         if expected == 0.0:
             _alpha = 1.0 if observed == 0.0 else 0.0

@@ -90,14 +90,6 @@ def test_alpha_custom_distance() -> None:
     assert res_custom.solver == "naive"
 
 
-def test_alpha_custom_distance_pyo3_error() -> None:
-    data = [[1, 2], [2, 3], [3, 4]]
-    df = pd.DataFrame(data).T
-
-    with pytest.raises(evalica.SolverError, match="The 'pyo3' solver is not available"):
-        evalica.alpha(df, distance=lambda _x, _y: 0.0, solver="pyo3")
-
-
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
 def test_alpha_ordinal(solver: str) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
@@ -333,3 +325,49 @@ def test_compute_expected_matrix_zero_case() -> None:
 
     assert result.shape == (2, 2)
     assert np.array_equal(result, np.zeros((2, 2)))
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_custom_distance_function(solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    data = [
+        [1, 1, None, 1],
+        [2, 2, 3, 2],
+        [3, 3, 3, 3],
+        [3, 3, 3, 3],
+        [2, 2, 2, 2],
+    ]
+    df = pd.DataFrame(data)
+
+    def custom_squared_diff(left: float, right: float) -> float:
+        return float((left - right) ** 2)
+
+    result = evalica.alpha(df, distance=custom_squared_diff, solver=solver)  # type: ignore[arg-type]
+
+    assert isinstance(result, AlphaResult)
+    assert isinstance(result.alpha, float)
+    assert np.isfinite(result.alpha)
+    assert result.solver == solver
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+def test_alpha_custom_distance_solvers_match() -> None:
+    data = [
+        [1, 2, 3, 2],
+        [2, 3, 4, 3],
+        [3, 4, 5, 4],
+        [1, 1, 1, 1],
+    ]
+    df = pd.DataFrame(data)
+
+    def custom_abs_diff(left: float, right: float) -> float:
+        return abs(float(left - right))
+
+    result_pyo3 = evalica.alpha(df, distance=custom_abs_diff, solver="pyo3")
+    result_naive = evalica.alpha(df, distance=custom_abs_diff, solver="naive")
+
+    assert result_pyo3.alpha == pytest.approx(result_naive.alpha)
+    assert result_pyo3.observed == pytest.approx(result_naive.observed)
+    assert result_pyo3.expected == pytest.approx(result_naive.expected)

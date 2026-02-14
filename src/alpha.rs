@@ -12,7 +12,8 @@ pub enum Distance {
     Ordinal,
     Interval,
     Ratio,
-    Custom(DistanceFunc),
+    CustomFunc(DistanceFunc),
+    CustomMatrix(Array2<f64>),
 }
 
 impl Distance {
@@ -241,7 +242,8 @@ pub fn alpha_from_factorized(
         Distance::Ordinal => ordinal_distance(&coincidence.view()),
         Distance::Interval => interval_distance(unique_values),
         Distance::Ratio => ratio_distance(unique_values),
-        Distance::Custom(func) => func(unique_values),
+        Distance::CustomFunc(func) => func(unique_values),
+        Distance::CustomMatrix(matrix) => matrix,
     };
 
     let observed_disagreement: f64 = (&coincidence * &delta).sum();
@@ -348,7 +350,7 @@ mod tests {
         let data = array![[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]];
 
         let result_interval = alpha(&data.view(), Distance::Interval).unwrap();
-        let result_custom = alpha(&data.view(), Distance::Custom(custom_squared_diff)).unwrap();
+        let result_custom = alpha(&data.view(), Distance::CustomFunc(custom_squared_diff)).unwrap();
 
         assert!((result_interval.0 - result_custom.0).abs() < 1e-10);
         assert!((result_interval.1 - result_custom.1).abs() < 1e-10);
@@ -359,7 +361,7 @@ mod tests {
     fn test_custom_distance_abs_diff() {
         let data = array![[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]];
 
-        let result = alpha(&data.view(), Distance::Custom(custom_abs_diff)).unwrap();
+        let result = alpha(&data.view(), Distance::CustomFunc(custom_abs_diff)).unwrap();
 
         assert!(result.0.is_finite());
         assert!(result.1 >= 0.0);
@@ -370,7 +372,7 @@ mod tests {
     fn test_custom_distance_with_missing_values() {
         let data = array![[1.0, f64::NAN], [2.0, 3.0], [3.0, 4.0]];
 
-        let result = alpha(&data.view(), Distance::Custom(custom_squared_diff)).unwrap();
+        let result = alpha(&data.view(), Distance::CustomFunc(custom_squared_diff)).unwrap();
 
         assert!(result.0.is_finite());
         assert!(result.1 >= 0.0);

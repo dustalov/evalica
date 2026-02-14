@@ -292,20 +292,55 @@ fn pagerank_pyo3<'py>(
 
 #[pyfunction(name = "alpha")]
 fn alpha_pyo3(
+    py: Python<'_>,
     codes: PyArrayLike2<'_, i64>,
     unique_values: PyArrayLike1<'_, f64>,
-    distance: &str,
+    distance: &Bound<'_, PyAny>,
 ) -> PyResult<(f64, f64, f64)> {
-    let distance_enum = match alpha::Distance::from_str(distance) {
-        Ok(d) => d,
-        Err(msg) => return Err(UnknownDistanceError::new_err(msg)),
-    };
-
     let codes_array = codes.as_array();
     let unique_values_array = unique_values.as_array();
     let unique_slice = unique_values_array.as_slice().ok_or_else(|| {
         PyErr::new::<pyo3::exceptions::PyValueError, _>("unique_values must be contiguous")
     })?;
+
+    let distance_enum = if let Ok(matrix) = distance.extract::<PyArrayLike2<'_, f64>>() {
+        let array_view = matrix.as_array();
+
+        if array_view.nrows() != unique_slice.len() || array_view.ncols() != unique_slice.len() {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Distance matrix must be {}x{}, got {}x{}",
+                unique_slice.len(),
+                unique_slice.len(),
+                array_view.nrows(),
+                array_view.ncols()
+            )));
+        }
+
+        alpha::Distance::CustomMatrix(array_view.to_owned())
+    } else if distance.is_callable() {
+        let py_array = PyArray1::from_slice(py, unique_slice);
+        let result = distance.call1((py_array,))?;
+        let matrix: PyArrayLike2<'_, f64> = result.extract()?;
+        let array_view = matrix.as_array();
+
+        if array_view.nrows() != unique_slice.len() || array_view.ncols() != unique_slice.len() {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Distance matrix must be {}x{}, got {}x{}",
+                unique_slice.len(),
+                unique_slice.len(),
+                array_view.nrows(),
+                array_view.ncols()
+            )));
+        }
+
+        alpha::Distance::CustomMatrix(array_view.to_owned())
+    } else {
+        let distance_str: String = distance.extract()?;
+        match alpha::Distance::from_str(&distance_str) {
+            Ok(d) => d,
+            Err(msg) => return Err(UnknownDistanceError::new_err(msg)),
+        }
+    };
 
     match alpha::alpha_from_factorized(&codes_array, unique_slice, distance_enum) {
         Ok((alpha_value, observed, expected)) => Ok((alpha_value, observed, expected)),
