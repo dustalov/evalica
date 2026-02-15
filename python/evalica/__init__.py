@@ -15,7 +15,7 @@ import numpy.typing as npt
 import pandas as pd
 from scipy.stats import bootstrap as scipy_bootstrap
 
-__version__ = "0.4.0rc1"
+__version__ = "0.4.0rc2"
 """The version of Evalica."""
 
 
