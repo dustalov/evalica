@@ -38,6 +38,10 @@ jobs:
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Run tests
       run: cargo test --verbose
+    - name: Install OpenBLAS
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev
     - name: Run tests with BLAS
       run: cargo test --verbose --features blas
     - name: Generate docs
