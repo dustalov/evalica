@@ -113,15 +113,20 @@ jobs:
       run: mypy .
     - name: Lint with Ruff
       run: ruff check
-    - if: matrix.python-version == '3.8'
-      name: Run tests
-      run: pytest
-    - if: matrix.python-version != '3.8'
-      name: Run tests
-      run: pytest --cov
     - if: matrix.python-version == '3.14'
-      name: Upload to Codecov
+      name: Run tests with coverage
+      run: pytest --cov --junitxml=junit.xml -o junit_family=legacy
+    - if: matrix.python-version != '3.14'
+      name: Run tests only
+      run: pytest
+    - if: matrix.python-version == '3.14'
+      name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5.5.2
+      with:
+        use_oidc: true
+    - if: matrix.python-version == '3.14' && {{ !cancelled() }}
+      name: Upload test results to Codecov
+      uses: codecov/test-results-action@v1
       with:
         use_oidc: true
     - name: Run Module
