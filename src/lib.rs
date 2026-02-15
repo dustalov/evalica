@@ -42,7 +42,7 @@ mod tests {
 
 /// The outcome of the pairwise comparison.
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Winner {
     /// There is a tie.
     Draw = 0,
@@ -52,23 +52,25 @@ pub enum Winner {
     Y = 2,
 }
 
-impl From<u8> for Winner {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for Winner {
+    type Error = &'static str;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Self::Draw,
-            1 => Self::X,
-            2 => Self::Y,
-            _ => panic!("Invalid value: {}", value),
+            0 => Ok(Self::Draw),
+            1 => Ok(Self::X),
+            2 => Ok(Self::Y),
+            _ => Err("invalid winner value"),
         }
     }
 }
 
-impl Into<u8> for Winner {
-    fn into(self) -> u8 {
-        match self {
-            Self::Draw => 0,
-            Self::X => 1,
-            Self::Y => 2,
+impl From<Winner> for u8 {
+    fn from(val: Winner) -> Self {
+        match val {
+            Winner::Draw => 0,
+            Winner::X => 1,
+            Winner::Y => 2,
         }
     }
 }

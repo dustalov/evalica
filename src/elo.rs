@@ -27,6 +27,10 @@ use crate::{check_lengths, check_total, utils::one_nan_to_num, Winner};
 /// # Returns
 ///
 /// A 1D array of scores for each item.
+///
+/// # Errors
+///
+/// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
 pub fn elo<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
@@ -42,7 +46,7 @@ pub fn elo<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign,
-    W: Copy + Into<Winner>,
+    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -54,6 +58,9 @@ where
 
     let mut scores = Array1::from_elem(total, initial);
     for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
+        let winner = w
+            .try_into()
+            .map_err(|_| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
         let q_x = one_nan_to_num(base.powf(scores[x] / scale), A::zero());
         let q_y = one_nan_to_num(base.powf(scores[y] / scale), A::zero());
 
@@ -62,7 +69,7 @@ where
         let expected_x = one_nan_to_num(q_x / q, A::zero());
         let expected_y = one_nan_to_num(q_y / q, A::zero());
 
-        let (scored_x, scored_y) = match w.into() {
+        let (scored_x, scored_y) = match winner {
             Winner::X => (weight * win_weight, A::zero()),
             Winner::Y => (A::zero(), weight * win_weight),
             Winner::Draw => (weight * tie_weight, weight * tie_weight),
@@ -79,6 +86,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_abs_diff_eq as assert_approx_eq;
     use ndarray::array;
 
     use super::*;
@@ -112,7 +120,7 @@ mod tests {
         .unwrap();
 
         for (a, b) in actual.iter().zip(expected.iter()) {
-            assert!((a - b).abs() < 1e-0, "a = {}, b = {}", a, b);
+            assert_approx_eq!(*a, *b, epsilon = 1e-0);
         }
     }
 }

@@ -21,6 +21,10 @@ use crate::{check_lengths, check_total, Winner};
 /// # Returns
 ///
 /// A 1D array of scores for each item.
+///
+/// # Errors
+///
+/// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
 pub fn counting<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
@@ -32,7 +36,7 @@ pub fn counting<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign,
-    W: Copy + Into<Winner>,
+    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -45,7 +49,10 @@ where
     let mut scores = Array1::zeros(total);
 
     for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        match w.into() {
+        let winner = w
+            .try_into()
+            .map_err(|_| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
+        match winner {
             Winner::X => scores[x] += weight * win_weight,
             Winner::Y => scores[y] += weight * win_weight,
             Winner::Draw => {
@@ -77,6 +84,10 @@ where
 /// # Returns
 ///
 /// A 1D array of scores for each item.
+///
+/// # Errors
+///
+/// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
 pub fn average_win_rate<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
@@ -88,7 +99,7 @@ pub fn average_win_rate<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign + MulAssign + ScalarOperand,
-    W: Copy + Into<Winner>,
+    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -96,7 +107,7 @@ where
         return Ok(Array1::zeros(0));
     }
 
-    let (win_matrix, tie_matrix) = matrices(xs, ys, winners, weights, total).unwrap();
+    let (win_matrix, tie_matrix) = matrices(xs, ys, winners, weights, total)?;
 
     let mut matrix = win_plus_tie_matrix(
         &win_matrix.view(),

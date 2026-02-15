@@ -1,4 +1,5 @@
 use ndarray::{Array2, ArrayView2};
+use num_traits::ToPrimitive;
 use std::collections::HashMap;
 
 /// Function type for custom distance metrics.
@@ -18,13 +19,17 @@ pub enum Distance {
 
 impl Distance {
     /// Parse distance from string.
-    pub fn from_str(s: &str) -> Result<Self, String> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `s` does not match a supported distance type.
+    pub fn parse(s: &str) -> Result<Self, String> {
         match s {
             "nominal" => Ok(Self::Nominal),
             "ordinal" => Ok(Self::Ordinal),
             "interval" => Ok(Self::Interval),
             "ratio" => Ok(Self::Ratio),
-            _ => Err(format!("Unknown distance '{}'", s)),
+            _ => Err(format!("Unknown distance '{s}'")),
         }
     }
 }
@@ -37,7 +42,7 @@ impl Distance {
 ///
 /// # Returns
 ///
-/// A tuple of (coded_matrix, unique_values) where missing values are coded as -1.
+/// A tuple of (`coded_matrix`, `unique_values`) where missing values are coded as `-1`.
 fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
     let mut value_to_code: HashMap<u64, usize> = HashMap::new();
     let mut unique_values: Vec<f64> = Vec::new();
@@ -46,10 +51,11 @@ fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
     for &val in data.iter() {
         if !val.is_nan() {
             let bits = val.to_bits();
-            if !value_to_code.contains_key(&bits) {
-                value_to_code.insert(bits, unique_values.len());
+            value_to_code.entry(bits).or_insert_with(|| {
+                let code = unique_values.len();
                 unique_values.push(val);
-            }
+                code
+            });
         }
     }
 
@@ -57,12 +63,15 @@ fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
 
     let mut remap: HashMap<u64, i64> = HashMap::new();
     for (new_idx, &val) in unique_values.iter().enumerate() {
-        remap.insert(val.to_bits(), new_idx as i64);
+        remap.insert(
+            val.to_bits(),
+            i64::try_from(new_idx).expect("index should fit into i64"),
+        );
     }
 
     for ((i, j), &val) in data.indexed_iter() {
         if !val.is_nan() {
-            coded[[i, j]] = remap[&val.to_bits()];
+            coded[(i, j)] = remap[&val.to_bits()];
         }
     }
 
@@ -90,7 +99,9 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
 
         for &val in unit_row {
             if val >= 0 {
-                counts[val as usize] += 1.0;
+                if let Ok(index) = usize::try_from(val) {
+                    counts[index] += 1.0;
+                }
                 m_u += 1;
             }
         }
@@ -99,7 +110,10 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
             continue;
         }
 
-        let weight = 1.0 / (m_u - 1) as f64;
+        let weight = 1.0
+            / (m_u - 1)
+                .to_f64()
+                .expect("usize to f64 conversion should always succeed");
 
         for i in 0..n_unique {
             let count_i = counts[i];
@@ -227,7 +241,11 @@ fn compute_expected_matrix(coincidence: &ArrayView2<f64>) -> Array2<f64> {
 ///
 /// # Returns
 ///
-/// A tuple of (alpha, observed_disagreement, expected_disagreement).
+/// A tuple of (`alpha`, `observed_disagreement`, `expected_disagreement`).
+///
+/// # Errors
+///
+/// Returns an error when the provided distance value cannot be processed.
 pub fn alpha_from_factorized(
     matrix_indices: &ArrayView2<i64>,
     unique_values: &[f64],
@@ -267,7 +285,7 @@ pub fn alpha_from_factorized(
 ///
 /// # Returns
 ///
-/// A tuple of (alpha, observed_disagreement, expected_disagreement).
+/// A tuple of (`alpha`, `observed_disagreement`, `expected_disagreement`).
 ///
 /// # Errors
 ///
@@ -293,6 +311,7 @@ pub fn alpha(data: &ArrayView2<f64>, distance: Distance) -> Result<(f64, f64, f6
 
 /// Example custom distance function: squared difference.
 /// This is equivalent to the interval distance metric.
+#[must_use]
 pub fn custom_squared_diff(unique_values: &[f64]) -> Array2<f64> {
     let n = unique_values.len();
     let mut delta = Array2::<f64>::zeros((n, n));
@@ -306,6 +325,7 @@ pub fn custom_squared_diff(unique_values: &[f64]) -> Array2<f64> {
 }
 
 /// Example custom distance function: absolute difference.
+#[must_use]
 pub fn custom_abs_diff(unique_values: &[f64]) -> Array2<f64> {
     let n = unique_values.len();
     let mut delta = Array2::<f64>::zeros((n, n));
@@ -321,6 +341,7 @@ pub fn custom_abs_diff(unique_values: &[f64]) -> Array2<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_abs_diff_eq as assert_approx_eq;
     use ndarray::array;
 
     #[test]
@@ -340,9 +361,9 @@ mod tests {
     #[test]
     fn test_nominal_distance() {
         let delta = nominal_distance(3);
-        assert_eq!(delta[[0, 0]], 0.0);
-        assert_eq!(delta[[0, 1]], 1.0);
-        assert_eq!(delta[[1, 2]], 1.0);
+        assert_approx_eq!(delta[[0, 0]], 0.0, epsilon = f64::EPSILON);
+        assert_approx_eq!(delta[[0, 1]], 1.0, epsilon = f64::EPSILON);
+        assert_approx_eq!(delta[[1, 2]], 1.0, epsilon = f64::EPSILON);
     }
 
     #[test]
@@ -352,9 +373,9 @@ mod tests {
         let result_interval = alpha(&data.view(), Distance::Interval).unwrap();
         let result_custom = alpha(&data.view(), Distance::CustomFunc(custom_squared_diff)).unwrap();
 
-        assert!((result_interval.0 - result_custom.0).abs() < 1e-10);
-        assert!((result_interval.1 - result_custom.1).abs() < 1e-10);
-        assert!((result_interval.2 - result_custom.2).abs() < 1e-10);
+        assert_approx_eq!(result_interval.0, result_custom.0, epsilon = 1e-10);
+        assert_approx_eq!(result_interval.1, result_custom.1, epsilon = 1e-10);
+        assert_approx_eq!(result_interval.2, result_custom.2, epsilon = 1e-10);
     }
 
     #[test]

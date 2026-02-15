@@ -1,7 +1,7 @@
 use std::ops::DivAssign;
 
 use ndarray::{Array1, Array2, ArrayView2, ErrorKind, ScalarOperand, ShapeError};
-use num_traits::Float;
+use num_traits::{Float, ToPrimitive};
 
 use crate::utils::nan_to_num;
 
@@ -18,6 +18,10 @@ use crate::utils::nan_to_num;
 /// A tuple containing:
 /// * A 1D array of scores for each item.
 /// * The number of iterations performed.
+///
+/// # Errors
+///
+/// Returns an error if the matrix is not square or if numeric conversion fails.
 pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
@@ -28,9 +32,10 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     }
 
     let n = matrix.shape()[0];
+    let n_as_a = A::from(n).ok_or_else(|| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
     let matrix_t = matrix.t();
 
-    let mut scores = Array1::from_elem(n, A::one() / A::from(n).unwrap());
+    let mut scores = Array1::from_elem(n, A::one() / n_as_a);
     let mut scores_new = scores.clone();
 
     let mut converged = false;
@@ -67,7 +72,10 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
         return Array2::<f64>::zeros((0, 0));
     }
 
-    let p = 1.0 / matrix.shape()[0] as f64;
+    let p = 1.0
+        / matrix.shape()[0]
+            .to_f64()
+            .expect("usize to f64 conversion should always succeed");
 
     let mut matrix = matrix.t().to_owned();
 
@@ -84,9 +92,9 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
     damping * matrix + (1.0 - damping) * p
 }
 
-/// Implements the PageRank algorithm.
+/// Implements the `PageRank` algorithm.
 ///
-/// PageRank is an algorithm used by Google Search to rank web pages in their search engine results.
+/// `PageRank` is an algorithm used by `Google Search` to rank web pages in search results.
 ///
 /// # Arguments
 ///
@@ -100,6 +108,10 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
 /// A tuple containing:
 /// * A 1D array of scores for each item.
 /// * The number of iterations performed.
+///
+/// # Errors
+///
+/// Returns an error if the input matrix is not square.
 pub fn pagerank(
     matrix: &ArrayView2<f64>,
     damping: f64,
@@ -110,7 +122,7 @@ pub fn pagerank(
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let pagerank_matrix = pagerank_matrix(&matrix, damping);
+    let pagerank_matrix = pagerank_matrix(matrix, damping);
 
     let result = eigen(&pagerank_matrix.view(), tolerance, limit);
 
@@ -120,7 +132,7 @@ pub fn pagerank(
 
             Ok((scores, iterations))
         }
-        Err(error) => return Err(error),
+        Err(error) => Err(error),
     }
 }
 

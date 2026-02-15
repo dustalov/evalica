@@ -22,6 +22,10 @@ use crate::utils::{nan_to_num, one_nan_to_num, win_plus_tie_matrix};
 /// A tuple containing:
 /// * A 1D array of scores for each item.
 /// * The number of iterations performed.
+///
+/// # Errors
+///
+/// Returns an error if the matrix is not square or if numeric conversion fails.
 pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
@@ -32,6 +36,8 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
     }
 
     let n = matrix.nrows();
+    let n_as_a =
+        A::from(n).ok_or_else(|| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
     let mut scores = Array1::ones(n);
 
     let mut converged = false;
@@ -64,7 +70,7 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
         for &value in &scores_new {
             log_sum += value.ln();
         }
-        let geometric_mean = (log_sum / A::from(n).unwrap()).exp();
+        let geometric_mean = (log_sum / n_as_a).exp();
         scores_new /= geometric_mean;
 
         nan_to_num(&mut scores_new, tolerance);
@@ -101,6 +107,10 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
 /// * A 1D array of scores for each item.
 /// * The final value of the `v` parameter.
 /// * The number of iterations performed.
+///
+/// # Errors
+///
+/// Returns an error if input matrices have different shapes or are not square.
 pub fn newman(
     win_matrix: &ArrayView2<f64>,
     tie_matrix: &ArrayView2<f64>,
@@ -122,7 +132,7 @@ pub fn newman(
         return Ok((scores, v, iterations));
     }
 
-    let win_tie_half = win_plus_tie_matrix(&win_matrix, &tie_matrix, 1.0, 0.5, tolerance);
+    let win_tie_half = win_plus_tie_matrix(win_matrix, tie_matrix, 1.0, 0.5, tolerance);
 
     let mut v_new = v;
 
@@ -248,7 +258,7 @@ mod tests {
             assert_abs_diff_eq!(left, right, epsilon = tolerance * 1e1);
         }
 
-        assert_ne!(v, v_init);
+        assert!((v - v_init).abs() > tolerance);
         assert!(v.is_normal());
         assert_abs_diff_eq!(v, expected_v, epsilon = tolerance * 1e3);
     }

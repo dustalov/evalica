@@ -16,12 +16,17 @@ import_exception!(evalica, UnknownDistanceError);
 #[pyfunction(name = "matrices")]
 fn matrices_pyo3<'py>(
     py: Python<'py>,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
 ) -> PyResult<(Py<PyArray2<f64>>, Py<PyArray2<f64>>)> {
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
@@ -39,9 +44,10 @@ fn matrices_pyo3<'py>(
 
 #[pyfunction(name = "pairwise_scores")]
 fn pairwise_scores_pyo3<'py>(
-    py: Python,
-    scores: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    scores: &Bound<'py, PyAny>,
 ) -> PyResult<Py<PyArray2<f64>>> {
+    let scores: PyArrayLike1<'py, f64> = scores.extract()?;
     let pairwise = pairwise_scores(&scores.as_array());
 
     Ok(pairwise.into_pyarray(py).unbind())
@@ -49,16 +55,21 @@ fn pairwise_scores_pyo3<'py>(
 
 #[pyfunction(name = "counting")]
 fn counting_pyo3<'py>(
-    py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    match counting(
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
+    counting(
         &xs.as_array(),
         &ys.as_array(),
         &winners.as_array(),
@@ -66,24 +77,30 @@ fn counting_pyo3<'py>(
         total,
         win_weight,
         tie_weight,
-    ) {
-        Ok(scores) => Ok(scores.into_pyarray(py).unbind()),
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
-    }
+    )
+    .map_or_else(
+        |_| Err(LengthMismatchError::new_err("mismatching input shapes")),
+        |scores| Ok(scores.into_pyarray(py).unbind()),
+    )
 }
 
 #[pyfunction(name = "average_win_rate")]
 fn average_win_rate_pyo3<'py>(
-    py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    match average_win_rate(
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
+    average_win_rate(
         &xs.as_array(),
         &ys.as_array(),
         &winners.as_array(),
@@ -91,25 +108,31 @@ fn average_win_rate_pyo3<'py>(
         total,
         win_weight,
         tie_weight,
-    ) {
-        Ok(scores) => Ok(scores.into_pyarray(py).unbind()),
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
-    }
+    )
+    .map_or_else(
+        |_| Err(LengthMismatchError::new_err("mismatching input shapes")),
+        |scores| Ok(scores.into_pyarray(py).unbind()),
+    )
 }
 
 #[pyfunction(name = "bradley_terry")]
 fn bradley_terry_pyo3<'py>(
-    py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
@@ -137,11 +160,11 @@ fn bradley_terry_pyo3<'py>(
 
 #[pyfunction(name = "newman")]
 fn newman_pyo3<'py>(
-    py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     v_init: f64,
     win_weight: f64,
@@ -149,6 +172,11 @@ fn newman_pyo3<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, f64, usize)> {
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
@@ -182,11 +210,11 @@ fn newman_pyo3<'py>(
 
 #[pyfunction(name = "elo")]
 fn elo_pyo3<'py>(
-    py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     initial: f64,
     base: f64,
@@ -195,7 +223,12 @@ fn elo_pyo3<'py>(
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    match elo(
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
+    elo(
         &xs.as_array(),
         &ys.as_array(),
         &winners.as_array(),
@@ -207,25 +240,31 @@ fn elo_pyo3<'py>(
         k,
         win_weight,
         tie_weight,
-    ) {
-        Ok(scores) => Ok(scores.into_pyarray(py).unbind()),
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
-    }
+    )
+    .map_or_else(
+        |_| Err(LengthMismatchError::new_err("mismatching input shapes")),
+        |scores| Ok(scores.into_pyarray(py).unbind()),
+    )
 }
 
 #[pyfunction(name = "eigen")]
 fn eigen_pyo3<'py>(
     py: Python<'py>,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     win_weight: f64,
     tie_weight: f64,
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
@@ -253,11 +292,11 @@ fn eigen_pyo3<'py>(
 
 #[pyfunction(name = "pagerank")]
 fn pagerank_pyo3<'py>(
-    py: Python,
-    xs: PyArrayLike1<'py, usize>,
-    ys: PyArrayLike1<'py, usize>,
-    winners: PyArrayLike1<'py, u8>,
-    weights: PyArrayLike1<'py, f64>,
+    py: Python<'py>,
+    xs: &Bound<'py, PyAny>,
+    ys: &Bound<'py, PyAny>,
+    winners: &Bound<'py, PyAny>,
+    weights: &Bound<'py, PyAny>,
     total: usize,
     damping: f64,
     win_weight: f64,
@@ -265,6 +304,11 @@ fn pagerank_pyo3<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
+    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
+    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let weights: PyArrayLike1<'py, f64> = weights.extract()?;
+
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
@@ -291,19 +335,21 @@ fn pagerank_pyo3<'py>(
 }
 
 #[pyfunction(name = "alpha")]
-fn alpha_pyo3(
-    py: Python<'_>,
-    codes: PyArrayLike2<'_, i64>,
-    unique_values: PyArrayLike1<'_, f64>,
-    distance: &Bound<'_, PyAny>,
+fn alpha_pyo3<'py>(
+    py: Python<'py>,
+    codes: &Bound<'py, PyAny>,
+    unique_values: &Bound<'py, PyAny>,
+    distance: &Bound<'py, PyAny>,
 ) -> PyResult<(f64, f64, f64)> {
+    let codes: PyArrayLike2<'py, i64> = codes.extract()?;
+    let unique_values: PyArrayLike1<'py, f64> = unique_values.extract()?;
     let codes_array = codes.as_array();
     let unique_values_array = unique_values.as_array();
     let unique_slice = unique_values_array.as_slice().ok_or_else(|| {
         PyErr::new::<pyo3::exceptions::PyValueError, _>("unique_values must be contiguous")
     })?;
 
-    let distance_enum = if let Ok(matrix) = distance.extract::<PyArrayLike2<'_, f64>>() {
+    let distance_enum = if let Ok(matrix) = distance.extract::<PyArrayLike2<'py, f64>>() {
         let array_view = matrix.as_array();
 
         if array_view.nrows() != unique_slice.len() || array_view.ncols() != unique_slice.len() {
@@ -320,7 +366,7 @@ fn alpha_pyo3(
     } else if distance.is_callable() {
         let py_array = PyArray1::from_slice(py, unique_slice);
         let result = distance.call1((py_array,))?;
-        let matrix: PyArrayLike2<'_, f64> = result.extract()?;
+        let matrix: PyArrayLike2<'py, f64> = result.extract()?;
         let array_view = matrix.as_array();
 
         if array_view.nrows() != unique_slice.len() || array_view.ncols() != unique_slice.len() {
@@ -336,7 +382,7 @@ fn alpha_pyo3(
         alpha::Distance::CustomMatrix(array_view.to_owned())
     } else {
         let distance_str: String = distance.extract()?;
-        match alpha::Distance::from_str(&distance_str) {
+        match alpha::Distance::parse(&distance_str) {
             Ok(d) => d,
             Err(msg) => return Err(UnknownDistanceError::new_err(msg)),
         }

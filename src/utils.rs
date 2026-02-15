@@ -52,6 +52,7 @@ macro_rules! check_total {
 ///
 /// A `HashMap` where keys are the unique items and values are their assigned indices.
 #[allow(dead_code)]
+#[must_use]
 pub fn index<I: Eq + Hash + Clone>(xs: &ArrayView1<I>, ys: &ArrayView1<I>) -> HashMap<I, usize> {
     let mut index: HashMap<I, usize> = HashMap::new();
 
@@ -83,9 +84,7 @@ pub fn one_nan_to_num<A: Float>(x: A, nan: A) -> A {
                 A::min_value()
             }
         }
-        FpCategory::Zero => x,
-        FpCategory::Subnormal => x,
-        FpCategory::Normal => x,
+        FpCategory::Zero | FpCategory::Subnormal | FpCategory::Normal => x,
     }
 }
 
@@ -108,6 +107,7 @@ pub fn nan_to_num<A: Float, D: Dimension>(xs: &mut Array<A, D>, nan: A) {
 /// # Returns
 ///
 /// The mean of the array, ignoring NaN values.
+#[must_use]
 pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
     let mut sum = A::zero();
     let mut count = A::zero();
@@ -141,6 +141,10 @@ pub fn nan_mean<A: Float + AddAssign>(xs: &ArrayView1<A>) -> A {
 /// A tuple containing:
 /// * The win matrix.
 /// * The tie matrix.
+///
+/// # Errors
+///
+/// Returns an error if the input arrays have different lengths or indices exceed `total`.
 pub fn matrices<A, W>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
@@ -150,7 +154,7 @@ pub fn matrices<A, W>(
 ) -> Result<(Array2<A>, Array2<A>), ShapeError>
 where
     A: Num + Copy + AddAssign,
-    W: Copy + Into<Winner>,
+    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -164,7 +168,10 @@ where
     let mut ties = Array2::zeros((total, total));
 
     for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        match w.into() {
+        let winner = w
+            .try_into()
+            .map_err(|_| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
+        match winner {
             Winner::X => {
                 wins[[x, y]] += weight;
             }
@@ -224,6 +231,7 @@ pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
 /// # Returns
 ///
 /// A 2D array of pairwise scores.
+#[must_use]
 pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
     if scores.is_empty() {
         return Array2::zeros((0, 0));
@@ -281,7 +289,7 @@ mod tests {
 
         let expected = [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
             .iter()
-            .cloned()
+            .copied()
             .collect();
 
         let actual = index(&xs.view(), &ys.view());

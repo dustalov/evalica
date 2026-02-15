@@ -8,6 +8,11 @@ use ndarray::{Array1, Array2};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "counting")]
+/// Runs the counting method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths or invalid indices.
 pub fn counting_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -31,6 +36,11 @@ pub fn counting_wasm(
 }
 
 #[wasm_bindgen(js_name = "averageWinRate")]
+/// Runs the average win rate method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths or invalid indices.
 pub fn average_win_rate_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -54,6 +64,11 @@ pub fn average_win_rate_wasm(
 }
 
 #[wasm_bindgen(js_name = "bradleyTerry")]
+/// Runs the Bradley-Terry method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths, invalid indices, or matrix errors.
 pub fn bradley_terry_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -81,6 +96,11 @@ pub fn bradley_terry_wasm(
 }
 
 #[wasm_bindgen(js_name = "newman")]
+/// Runs the Newman method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths, invalid indices, or matrix errors.
 pub fn newman_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -106,6 +126,11 @@ pub fn newman_wasm(
 }
 
 #[wasm_bindgen(js_name = "eigen")]
+/// Runs the eigenvector method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths, invalid indices, or matrix errors.
 pub fn eigen_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -133,6 +158,11 @@ pub fn eigen_wasm(
 }
 
 #[wasm_bindgen(js_name = "pagerank")]
+/// Runs the `PageRank` method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths, invalid indices, or matrix errors.
 pub fn pagerank_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -161,6 +191,11 @@ pub fn pagerank_wasm(
 }
 
 #[wasm_bindgen(js_name = "elo")]
+/// Runs the Elo method in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when inputs have mismatched lengths or invalid indices.
 pub fn elo_wasm(
     xs: &[usize],
     ys: &[usize],
@@ -192,6 +227,11 @@ pub fn elo_wasm(
 }
 
 #[wasm_bindgen(js_name = "alpha")]
+/// Runs Krippendorff's alpha in WebAssembly.
+///
+/// # Errors
+///
+/// Returns an error string when distance parsing fails or input shapes are invalid.
 pub fn alpha_wasm(
     codes: &[i64],
     unique_values: &[f64],
@@ -199,7 +239,7 @@ pub fn alpha_wasm(
     n_raters: usize,
     distance: &str,
 ) -> Result<Vec<f64>, String> {
-    let distance_enum = Distance::from_str(distance)?;
+    let distance_enum = Distance::parse(distance)?;
 
     let codes_array =
         Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
@@ -212,6 +252,7 @@ pub fn alpha_wasm(
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_abs_diff_eq as assert_approx_eq;
     use super::*;
     use wasm_bindgen_test::*;
 
@@ -275,7 +316,7 @@ mod tests {
         let result = alpha_wasm(&codes, &unique_values, 3, 2, "nominal").unwrap();
 
         assert_eq!(result.len(), 3);
-        assert!((result[0] - 1.0).abs() < 1e-6); // Alpha
-        assert_eq!(result[1], 0.0); // Observed disagreement
+        assert_approx_eq!(result[0], 1.0, epsilon = 1e-6); // Alpha
+        assert_approx_eq!(result[1], 0.0, epsilon = 1e-12); // Observed disagreement
     }
 }
