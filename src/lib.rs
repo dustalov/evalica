@@ -1,3 +1,7 @@
+#[cfg(feature = "blas")]
+#[allow(unused_extern_crates)]
+extern crate blas_src;
+
 /// Implements Krippendorff's alpha for inter-rater reliability.
 pub mod alpha;
 /// Implements the Bradley–Terry model and related methods.
