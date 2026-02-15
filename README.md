@@ -6,6 +6,7 @@
 [![Read the Docs][rtfd_badge]][rtfd_link]
 [![PyPI Version][pypi_badge]][pypi_link]
 [![Anaconda.org][conda_badge]][conda_link]
+[![crates.io][crates_badge]][crates_link]
 [![Codecov][codecov_badge]][codecov_link]
 [![CodSpeed Badge][codspeed_badge]][codspeed_link]
 
@@ -17,6 +18,8 @@
 [pypi_link]: https://pypi.python.org/pypi/evalica
 [conda_badge]: https://anaconda.org/conda-forge/evalica/badges/version.svg
 [conda_link]: https://anaconda.org/conda-forge/evalica
+[crates_badge]: https://img.shields.io/crates/v/evalica
+[crates_link]: https://crates.io/crates/evalica
 [codecov_badge]: https://codecov.io/gh/dustalov/evalica/branch/master/graph/badge.svg
 [codecov_link]: https://codecov.io/gh/dustalov/evalica
 [codspeed_badge]: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
@@ -38,8 +41,8 @@ The logo was created using [Recraft](https://www.recraft.ai/).
 ## Installation
 
 - [pip](https://pip.pypa.io/): `pip install evalica`
-- [pip](https://pip.pypa.io/) without acceleration: `pip install --no-binary evalica`
 - [Anaconda](https://docs.conda.io/en/latest/): `conda install conda-forge::evalica`
+- [Cargo](https://crates.io/crates/evalica): `cargo add evalica`
 
 ## Pairwise Comparisons
 
@@ -179,6 +182,8 @@ $ source venv/bin/activate
 $ pip install maturin
 $ maturin develop --extras dev,docs,gradio
 ```
+
+It is also possible to omit the Rust-accelerated routines via `pip install --no-binary evalica`.
 
 We welcome pull requests on GitHub: <https://github.com/dustalov/evalica>. To contribute, fork the repository, create a separate branch for your changes, and submit a pull request.
 

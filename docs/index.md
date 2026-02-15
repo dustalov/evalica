@@ -8,11 +8,14 @@
 
 - [pip](https://pip.pypa.io/): `pip install evalica` [![PyPI Version][pypi_badge]][pypi_link]
 - [Anaconda](https://docs.conda.io/en/latest/): `conda install conda-forge::evalica` [![Anaconda.org][conda_badge]][conda_link]
+- [Cargo](https://crates.io/crates/evalica): `cargo add evalica` [![crates.io][crates_badge]][crates_link]
 
 [pypi_badge]: https://badge.fury.io/py/evalica.svg
 [pypi_link]: https://pypi.python.org/pypi/evalica
 [conda_badge]: https://anaconda.org/conda-forge/evalica/badges/version.svg
 [conda_link]: https://anaconda.org/conda-forge/evalica
+[crates_badge]: https://img.shields.io/crates/v/evalica
+[crates_link]: https://crates.io/crates/evalica
 
 ## Usage
 
