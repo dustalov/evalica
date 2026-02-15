@@ -1,6 +1,15 @@
-#[cfg(feature = "blas")]
+#[cfg(feature = "blas-src")]
 #[allow(unused_extern_crates)]
 extern crate blas_src;
+#[cfg(feature = "openblas-src")]
+#[allow(unused_extern_crates)]
+extern crate openblas_src;
+#[cfg(feature = "netlib-src")]
+#[allow(unused_extern_crates)]
+extern crate netlib_src;
+#[cfg(all(target_os = "macos", feature = "accelerate-src"))]
+#[allow(unused_extern_crates)]
+extern crate accelerate_src;
 
 /// Implements Krippendorff's alpha for inter-rater reliability.
 pub mod alpha;
