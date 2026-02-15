@@ -21,9 +21,9 @@ numpy = { version = "^0.28.0", optional = true }
 wasm-bindgen = { version = "^0.2.108", optional = true }
 
 [features]
+blas = ["ndarray/blas"]
 python = ["dep:pyo3", "dep:numpy"]
 wasm = ["dep:wasm-bindgen"]
-blas = ["ndarray/blas"]
 
 [dev-dependencies]
 approx = "^0.5.1"
@@ -38,3 +38,4 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 unreadable_literal = "allow"
 explicit_iter_loop = "allow"
+cast_precision_loss = "allow"

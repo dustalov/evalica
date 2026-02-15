@@ -1,5 +1,4 @@
 use ndarray::{Array2, ArrayView2};
-use num_traits::ToPrimitive;
 use std::collections::HashMap;
 
 /// Function type for custom distance metrics.
@@ -110,10 +109,7 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
             continue;
         }
 
-        let weight = 1.0
-            / (m_u - 1)
-                .to_f64()
-                .expect("usize to f64 conversion should always succeed");
+        let weight = 1.0 / (m_u - 1) as f64;
 
         for i in 0..n_unique {
             let count_i = counts[i];

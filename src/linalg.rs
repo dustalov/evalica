@@ -1,7 +1,7 @@
 use std::ops::DivAssign;
 
 use ndarray::{Array1, Array2, ArrayView2, ErrorKind, ScalarOperand, ShapeError};
-use num_traits::{Float, ToPrimitive};
+use num_traits::Float;
 
 use crate::utils::nan_to_num;
 
@@ -72,10 +72,7 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
         return Array2::<f64>::zeros((0, 0));
     }
 
-    let p = 1.0
-        / matrix.shape()[0]
-            .to_f64()
-            .expect("usize to f64 conversion should always succeed");
+    let p = 1.0 / matrix.shape()[0] as f64;
 
     let mut matrix = matrix.t().to_owned();
 
