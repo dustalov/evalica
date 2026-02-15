@@ -38,6 +38,8 @@ jobs:
       run: cargo clippy --all-targets --all-features -- -D warnings
     - name: Run tests
       run: cargo test --verbose
+    - name: Run tests with BLAS
+      run: cargo test --verbose --features blas
     - name: Generate docs
       run: cargo doc --verbose --no-deps
   wasm:
