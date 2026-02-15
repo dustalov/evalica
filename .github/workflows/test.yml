@@ -124,7 +124,7 @@ jobs:
       uses: codecov/codecov-action@v5.5.2
       with:
         use_oidc: true
-    - if: matrix.python-version == '3.14' && {{ !cancelled() }}
+    - if: matrix.python-version == '3.14' && !cancelled()
       name: Upload test results to Codecov
       uses: codecov/test-results-action@v1
       with:
