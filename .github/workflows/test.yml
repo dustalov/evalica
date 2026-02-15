@@ -113,7 +113,11 @@ jobs:
       run: mypy .
     - name: Lint with Ruff
       run: ruff check
-    - name: Run tests
+    - if: matrix.python-version == '3.8'
+      name: Run tests
+      run: pytest
+    - if: matrix.python-version != '3.8'
+      name: Run tests
       run: pytest --cov
     - if: matrix.python-version == '3.14'
       name: Upload to Codecov
