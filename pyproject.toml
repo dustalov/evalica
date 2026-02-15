@@ -4,6 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "evalica"
+version = "0.4.0rc1"
 license = "Apache-2.0"
 description = "Evalica, your favourite evaluation toolkit."
 keywords = [
@@ -42,7 +43,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
 ]
-dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [

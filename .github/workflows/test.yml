@@ -160,7 +160,7 @@ jobs:
         mode: simulation
     - name: Run tests (naïve)
       run: find python/evalica -name "*.so" -delete -o -name "*.pyd" -delete && pytest
-  cff:
+  meta:
     runs-on: ubuntu-slim
     steps:
     - uses: actions/checkout@v6
@@ -170,3 +170,5 @@ jobs:
         enable-cache: false
     - name: Validate CITATION.cff
       run: uvx cffconvert --validate
+    - name: Validate versions
+      run: python3 scripts/version.py
