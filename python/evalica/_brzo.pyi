@@ -8,6 +8,9 @@ from . import DistanceName
 __version__: str = ...
 """The version of Evalica Brzo module."""
 
+HAS_BLAS: bool = ...
+"""Whether BLAS support is enabled."""
+
 def matrices(
     xs: Collection[int],
     ys: Collection[int],

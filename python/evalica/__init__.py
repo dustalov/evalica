@@ -146,6 +146,9 @@ class DistanceFunc(Protocol[T_distance_contra]):
 SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
+HAS_BLAS: bool = _brzo.HAS_BLAS if PYO3_AVAILABLE and hasattr(_brzo, "HAS_BLAS") else False
+"""Whether BLAS support is enabled in the Rust extension."""
+
 from ._alpha import _alpha_naive, _as_unit_matrix, _custom_distance, _factorize_values  # noqa: E402
 from ._pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
 from ._pairwise import counting as counting_naive  # noqa: E402

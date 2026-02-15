@@ -358,6 +358,7 @@ fn alpha_pyo3(
 #[pyo3(name = "_brzo")]
 fn _brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add("HAS_BLAS", crate::has_blas())?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;

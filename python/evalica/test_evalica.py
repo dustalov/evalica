@@ -35,6 +35,10 @@ def test_version() -> None:
     assert len(evalica.__version__) > 0
 
 
+def test_has_blas() -> None:
+    assert isinstance(evalica.HAS_BLAS, bool)
+
+
 @pytest.mark.parametrize(
     "algorithm", ["counting", "average_win_rate", "bradley_terry", "newman", "elo", "eigen", "pagerank"],
 )

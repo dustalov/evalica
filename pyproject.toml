@@ -89,11 +89,16 @@ Documentation = "https://evalica.readthedocs.io/"
 Download = "https://pypi.org/project/evalica/#files"
 Repository = "https://github.com/dustalov/evalica"
 
+[tool.coverage.run]
+source = ["python/evalica"]
+omit = ["python/evalica/__main__.py", "python/evalica/gradio/*.py"]
+
 [tool.coverage.report]
 exclude_also = [
     "if TYPE_CHECKING:",
     "pytest.skip",
 ]
+fail_under = 100
 
 [tool.maturin]
 features = ["python"]
