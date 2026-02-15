@@ -1,4 +1,4 @@
-"""Evalica, your favourite evaluation suite."""
+"""Evalica, your favourite evaluation toolkit."""
 
 from __future__ import annotations
 

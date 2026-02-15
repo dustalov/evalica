@@ -25,7 +25,7 @@
 [codspeed_badge]: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
 [codspeed_link]: https://codspeed.io/dustalov/evalica
 
-**Evalica** [&#x025b;&#x02c8;&#x028b;alit&#x0361;sa] (eh-vah-lee-tsah) is a Python library that transforms pairwise comparisons into ranked lists of items. It offers convenient high-performant Rust implementations of the corresponding methods via [PyO3](https://pyo3.rs/), and additionally provides naïve Python code for most of them. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
+**Evalica** [&#x025b;&#x02c8;&#x028b;alit&#x0361;sa] (eh-vah-lee-tsah) is an evaluation toolkit for statistical analysis, combining fast Rust implementations with Python APIs for ranking, reliability, and uncertainty estimation. Evalica is fully compatible with [NumPy](https://numpy.org/) arrays and [pandas](https://pandas.pydata.org/) data frames.
 
 - [Tutorial](docs/tutorial.ipynb)
 - [Chatbot-Arena.ipynb](Chatbot-Arena.ipynb) [![Open in Colab][colab_badge]][colab_link] [![Binder][binder_badge]][binder_link]
