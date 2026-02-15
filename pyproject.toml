@@ -134,6 +134,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = [
+    "EM102",   # f-string-in-exception
+    "RET504",  # unnecessary-assign
+    "T201",    # print
+    "TRY003",  # raise-vanilla-args
+]
 "!__init__.py" = [
     "D", # pydocstyle
 ]
