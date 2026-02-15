@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import unittest.mock
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 
@@ -371,3 +373,18 @@ def test_alpha_custom_distance_solvers_match() -> None:
     assert result_pyo3.alpha == pytest.approx(result_naive.alpha)
     assert result_pyo3.observed == pytest.approx(result_naive.observed)
     assert result_pyo3.expected == pytest.approx(result_naive.expected)
+
+
+def test_alpha_solver_error() -> None:
+    with unittest.mock.patch.dict(sys.modules, {"evalica._brzo": None}):
+        sys.modules.pop("evalica", None)
+
+        with pytest.warns():
+            import evalica  # noqa: PLC0415
+
+        assert not evalica.PYO3_AVAILABLE
+
+        data = pd.DataFrame([[1, 2], [2, 3]])
+
+        with pytest.raises(evalica.SolverError, match="The 'pyo3' solver is not available"):
+            evalica.alpha(data, solver="pyo3")
