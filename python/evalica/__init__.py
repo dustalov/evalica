@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import math
 import os
 import warnings
@@ -15,6 +14,9 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from scipy.stats import bootstrap as scipy_bootstrap
+
+__version__ = "0.4.0rc1"
+"""The version of Evalica."""
 
 
 class Winner(IntEnum):
@@ -79,7 +81,6 @@ try:
         raise ImportError  # noqa: TRY301
 
     from . import _brzo
-    from ._brzo import __version__
 
     PYO3_AVAILABLE = True
     """
@@ -93,11 +94,6 @@ except ImportError:
         RustExtensionWarning,
         stacklevel=1,
     )
-
-    import importlib.metadata
-
-    with contextlib.suppress(importlib.metadata.PackageNotFoundError):
-        __version__ = importlib.metadata.version("evalica")
 
     _brzo = None  # type: ignore[assignment]
 

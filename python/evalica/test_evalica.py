@@ -61,8 +61,9 @@ def test_solver_errors_all_functions(algorithm: str) -> None:
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
-def test_version_consistency() -> None:
-    assert evalica.__version__ == evalica._brzo.__version__  # noqa: SLF001
+def test_brzo_has_version() -> None:
+    assert hasattr(evalica._brzo, "__version__")  # noqa: SLF001
+    assert isinstance(evalica._brzo.__version__, str)  # noqa: SLF001
 
 
 def test_exports() -> None:
@@ -116,3 +117,16 @@ def test_pairwise_scores_solver_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(evalica, "PYO3_AVAILABLE", False)
     with pytest.raises(evalica.SolverError):
         evalica.pairwise_scores(np.array([1.0, 2.0, 3.0]), solver="pyo3")
+
+
+def test_version_without_brzo() -> None:
+    with unittest.mock.patch.dict(sys.modules, {"evalica._brzo": None}):
+        sys.modules.pop("evalica", None)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            import evalica  # noqa: PLC0415
+
+        assert not evalica.PYO3_AVAILABLE
+        assert isinstance(evalica.__version__, str)
+        assert len(evalica.__version__) > 0

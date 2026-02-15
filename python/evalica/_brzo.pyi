@@ -6,7 +6,7 @@ import numpy.typing as npt
 from . import DistanceName
 
 __version__: str = ...
-"""The version of Evalica."""
+"""The version of Evalica Brzo module."""
 
 def matrices(
     xs: Collection[int],
