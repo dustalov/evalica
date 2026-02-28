@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 
 from . import DistanceFunc, DistanceName, InsufficientRatingsError, T_distance_contra, UnknownDistanceError
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+MIN_RATERS = 2
 
 
 def _as_unit_matrix(data: pd.DataFrame) -> npt.NDArray[np.object_]:
@@ -29,29 +33,6 @@ def _as_unit_matrix(data: pd.DataFrame) -> npt.NDArray[np.object_]:
     return frame.to_numpy()
 
 
-def _factorize_values(
-    matrix: npt.NDArray[np.object_],
-) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.object_]]:
-    """
-    Map non-missing values to integer codes and return sorted uniques.
-
-    Args:
-        matrix: The unit matrix with object values and missing entries.
-
-    Returns:
-        A tuple of (coded matrix, unique values) where missing values are -1.
-
-    """
-    codes, uniques = pd.factorize(matrix.ravel(), sort=True)
-
-    try:
-        unique_values = uniques.astype(np.float64).astype(np.object_)
-    except (ValueError, TypeError):
-        unique_values = np.arange(len(uniques), dtype=np.object_)
-
-    return codes.reshape(matrix.shape), unique_values
-
-
 def _coincidence_matrix(
     matrix_indices: npt.NDArray[np.int64],
     n_unique: int,
@@ -67,20 +48,20 @@ def _coincidence_matrix(
         The coincidence matrix.
 
     """
-    coincidence = np.zeros((n_unique, n_unique), dtype=np.float64)
+    c = np.zeros((matrix_indices.shape[0], n_unique), dtype=np.float64)
 
-    min_raters = 2
-    for unit_values in matrix_indices:
-        valid_values = unit_values[unit_values >= 0]
-        m_u = len(valid_values)
-        if m_u < min_raters:
-            continue
+    for i, unit_row in enumerate(matrix_indices):
+        valid = unit_row[unit_row >= 0]
+        if valid.size > 0:
+            c[i] = np.bincount(valid, minlength=n_unique)
 
-        weight = 1.0 / (m_u - 1)
-        counts = np.bincount(valid_values, minlength=n_unique).astype(np.float64)
-        contribution = np.outer(counts, counts)
-        np.fill_diagonal(contribution, np.diag(contribution) - counts)
-        coincidence += weight * contribution
+    m_u = np.sum(c, axis=1)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        weights = np.where(m_u >= MIN_RATERS, 1.0 / (m_u - 1), 0.0)
+
+    cw = c * weights[:, np.newaxis]
+    coincidence: npt.NDArray[np.float64] = cw.T @ c
+    np.fill_diagonal(coincidence, coincidence.diagonal() - np.sum(cw, axis=0))
 
     return coincidence
 
@@ -96,7 +77,8 @@ def _nominal_distance(n_unique: int) -> npt.NDArray[np.float64]:
         Distance matrix where off-diagonal elements are 1.0 and diagonal is 0.0.
 
     """
-    return 1.0 - np.eye(n_unique)
+    result: npt.NDArray[np.float64] = 1.0 - np.eye(n_unique)
+    return result
 
 
 def _ordinal_distance(coincidence: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -129,7 +111,8 @@ def _interval_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np
 
     """
     values = np.asarray(unique_values, dtype=np.float64)
-    return (values[:, None] - values[None, :]) ** 2
+    result: npt.NDArray[np.float64] = (values[:, None] - values[None, :]) ** 2
+    return result
 
 
 def _ratio_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np.float64]:
@@ -149,7 +132,8 @@ def _ratio_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np.fl
     with np.errstate(divide="ignore", invalid="ignore"):
         delta = (diff_matrix / sum_matrix) ** 2
     delta[np.isnan(delta)] = 0.0
-    return delta
+    result: npt.NDArray[np.float64] = delta
+    return result
 
 
 def _custom_distance(
@@ -230,7 +214,31 @@ def _compute_expected_matrix(
         result: npt.NDArray[np.float64] = outer / (n_total - 1)
         return result
 
-    return np.zeros_like(coincidence)
+    result_zeros: npt.NDArray[np.float64] = np.zeros_like(coincidence)
+    return result_zeros
+
+
+def _alpha_components(
+    matrix_indices: npt.NDArray[np.int64],
+    unique_values: npt.NDArray[np.object_],
+    distance: DistanceFunc[T_distance_contra] | DistanceName,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """
+    Compute the components required for Krippendorff's alpha.
+
+    Args:
+        matrix_indices: The coded unit matrix with -1 for missing values.
+        unique_values: The unique values.
+        distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
+
+    Returns:
+        A tuple of (coincidence, expected_matrix, delta).
+
+    """
+    coincidence = _coincidence_matrix(matrix_indices, len(unique_values))
+    expected_matrix = _compute_expected_matrix(coincidence)
+    delta = _compute_delta_matrix(distance, unique_values, coincidence)
+    return coincidence, expected_matrix, delta
 
 
 def _alpha_naive(
@@ -250,14 +258,107 @@ def _alpha_naive(
         A tuple of (alpha, observed_disagreement, expected_disagreement).
 
     """
-    coincidence = _coincidence_matrix(matrix_indices, len(unique_values))
-
-    expected_matrix = _compute_expected_matrix(coincidence)
-    delta = _compute_delta_matrix(distance, unique_values, coincidence)
-
+    coincidence, expected_matrix, delta = _alpha_components(matrix_indices, unique_values, distance)
     observed = float(np.sum(coincidence * delta))
     expected = float(np.sum(expected_matrix * delta))
-
     _alpha = (1.0 if observed == 0.0 else 0.0) if expected == 0.0 else float(1.0 - observed / expected)
-
     return (_alpha, observed, expected)
+
+
+def _alpha_bootstrap_naive(
+    matrix_indices: npt.NDArray[np.int64],
+    unique_values: npt.NDArray[np.object_],
+    distance: DistanceFunc[T_distance_contra] | DistanceName,
+    n_resamples: int,
+    random_state: int | None = None,
+    *,
+    min_resamples: int = 1000,
+) -> npt.NDArray[np.float64]:
+    """
+    Compute confidence intervals for Krippendorff's alpha using bootstrap (naive Python).
+
+    Args:
+        matrix_indices: The coded unit matrix with -1 for missing values.
+        unique_values: The unique values.
+        distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
+        n_resamples: Number of bootstrap samples.
+        random_state: The random seed.
+        min_resamples: Minimum number of bootstrap samples.
+
+    Returns:
+        The alpha bootstrap distribution.
+
+    """
+    _, expected_matrix, delta = _alpha_components(matrix_indices, unique_values, distance)
+
+    expected = float(np.sum(expected_matrix * delta))
+
+    if min_resamples <= 0:
+        msg = "min_resamples must be a positive integer."
+        raise ValueError(msg)
+
+    if n_resamples < min_resamples:
+        msg = f"Number of resamples must be at least {min_resamples}."
+        raise ValueError(msg)
+    if expected <= 0.0:
+        msg = "Bootstrapping is not defined when expected disagreement is zero."
+        raise ValueError(msg)
+
+    unit_counts = np.sum(matrix_indices >= 0, axis=1)
+    valid_units_mask = unit_counts >= MIN_RATERS
+
+    unit_counts = unit_counts[valid_units_mask]
+    matrix_indices = matrix_indices[valid_units_mask]
+
+    draws_per_unit = unit_counts * (unit_counts - 1) // 2
+    total_draws = int(draws_per_unit.sum())
+
+    pair_errors_list = []
+
+    for unit_codes in matrix_indices:
+        valid = unit_codes[unit_codes >= 0]
+        n_valid = len(valid)
+
+        i, j = np.triu_indices(n_valid, k=1)
+
+        errors = 2.0 * delta[valid[i], valid[j]] / expected
+
+        pair_errors_list.append(errors)
+
+    pair_errors = np.concatenate(pair_errors_list)
+    n_pair_errors = pair_errors.size
+
+    rng = np.random.default_rng(random_state)
+
+    draws = rng.integers(
+        0,
+        n_pair_errors,
+        size=(n_resamples, total_draws),
+        dtype=np.int64,
+    )
+
+    alphas = np.ones(n_resamples, dtype=np.float64)
+
+    start = 0
+
+    for unit_count, n_draw in zip(unit_counts, draws_per_unit):
+        end = start + n_draw
+        unit_draws = draws[:, start:end]
+
+        if n_draw >= 2:  # noqa: PLR2004
+            mask = unit_draws[:, 1] == unit_draws[:, 0]
+            if np.any(mask):
+                unit_draws[mask, 1] = rng.integers(
+                    0,
+                    n_pair_errors,
+                    size=mask.sum(),
+                    dtype=np.int64,
+                )
+
+        alphas -= pair_errors[unit_draws].sum(axis=1) / (unit_count - 1)
+        start = end
+
+    np.maximum(alphas, -1.0, out=alphas)
+
+    result: npt.NDArray[np.float64] = alphas
+    return result

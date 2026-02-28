@@ -16,6 +16,7 @@ crate-type = ["cdylib"]
 [dependencies]
 ndarray = { version = "^0.17.2", default-features = false }
 num-traits = "^0.2.19"
+rand = "^0.10.0"
 pyo3 = { version = "^0.28.0", features = ["abi3-py38"], optional = true }
 numpy = { version = "^0.28.0", optional = true }
 wasm-bindgen = { version = "^0.2.108", optional = true }
@@ -25,6 +26,9 @@ netlib-src = { version = "^0.8.0", default-features = false, features = ["cblas"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 accelerate-src = { version = "^0.3.2", optional = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.4.1", features = ["wasm_js"] }
 
 [features]
 blas = ["ndarray/blas"]
@@ -49,3 +53,4 @@ type_complexity = "allow"
 unreadable_literal = "allow"
 explicit_iter_loop = "allow"
 cast_precision_loss = "allow"
+multiple_crate_versions = "allow"

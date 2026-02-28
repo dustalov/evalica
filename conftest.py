@@ -113,7 +113,7 @@ def food_golden() -> pd.DataFrame:
 
 @pytest.fixture
 def llmfao() -> Comparison:
-    df_llmfao = pd.read_csv("https://github.com/dustalov/llmfao/raw/master/crowd-comparisons.csv", dtype=str)
+    df_llmfao = pd.read_csv(Path(__file__).resolve().parent / "llmfao.csv", dtype=str)
 
     xs = df_llmfao["left"].tolist()
     ys = df_llmfao["right"].tolist()

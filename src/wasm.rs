@@ -252,8 +252,8 @@ pub fn alpha_wasm(
 
 #[cfg(test)]
 mod tests {
-    use approx::assert_abs_diff_eq as assert_approx_eq;
     use super::*;
+    use approx::assert_abs_diff_eq as assert_approx_eq;
     use wasm_bindgen_test::*;
 
     #[wasm_bindgen_test]

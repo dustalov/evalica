@@ -119,6 +119,31 @@ class AlphaResult:
     solver: str
 
 
+@dataclass(frozen=True)
+class AlphaBootstrapResult(AlphaResult):
+    """
+    The bootstrap result of Krippendorff's alpha.
+
+    Attributes:
+        alpha: The alpha value.
+        observed: The observed disagreement.
+        expected: The expected disagreement.
+        low: The lower bound of the confidence interval.
+        high: The upper bound of the confidence interval.
+        distribution: The bootstrap alpha distribution.
+        n_resamples: The number of bootstrap samples used.
+        confidence_level: The confidence level.
+        solver: The solver used.
+
+    """
+
+    low: float
+    high: float
+    distribution: npt.NDArray[np.float64]
+    n_resamples: int
+    confidence_level: float
+
+
 T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
 
 
@@ -149,7 +174,12 @@ SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
 HAS_BLAS: bool = _brzo.HAS_BLAS if PYO3_AVAILABLE and hasattr(_brzo, "HAS_BLAS") else False
 """Whether BLAS support is enabled in the Rust extension."""
 
-from ._alpha import _alpha_naive, _as_unit_matrix, _custom_distance, _factorize_values  # noqa: E402
+from ._alpha import (  # noqa: E402
+    _alpha_bootstrap_naive,
+    _alpha_naive,
+    _as_unit_matrix,
+    _custom_distance,
+)
 from ._pairwise import bradley_terry as bradley_terry_naive  # noqa: E402
 from ._pairwise import counting as counting_naive  # noqa: E402
 from ._pairwise import eigen as eigen_naive  # noqa: E402
@@ -1296,6 +1326,7 @@ def bootstrap(
     samples = (np.array(xs, dtype=object), np.array(ys, dtype=object), np.array(winners, dtype=np.uint8), weights_array)
 
     def statistic(*data: tuple[Any, ...]) -> npt.NDArray[np.float64]:
+        """Compute scores for a single bootstrap resample."""
         xs_sample, ys_sample, winners_sample, weights_sample = data
 
         result_sample = method(
@@ -1333,10 +1364,31 @@ def bootstrap(
     )
 
 
+def _factorize_matrix(matrix: npt.NDArray[np.object_]) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.object_]]:
+    """
+    Map non-missing values to integer codes and return sorted uniques.
+
+    Args:
+        matrix: The unit matrix with object values and missing entries.
+
+    Returns:
+        A tuple of (coded matrix, unique values) where missing values are -1.
+
+    """
+    codes_flat, uniques = pd.factorize(matrix.ravel(), sort=True)
+    codes = codes_flat.reshape(matrix.shape)
+    try:
+        unique_values: npt.NDArray[np.object_] = uniques.astype(np.float64).astype(np.object_)
+    except (ValueError, TypeError):
+        unique_values = np.arange(len(uniques), dtype=np.object_)
+
+    return codes, unique_values
+
+
 def alpha(
     data: pd.DataFrame,
     distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
-    solver: Literal["naive", "pyo3"] = "pyo3",
+    solver: Literal["naive", "pyo3"] = SOLVER,
 ) -> AlphaResult:
     """
     Compute Krippendorff's alpha.
@@ -1351,7 +1403,7 @@ def alpha(
 
     """
     matrix = _as_unit_matrix(data)
-    codes, unique_values = _factorize_values(matrix)
+    codes, unique_values = _factorize_matrix(matrix)
 
     if solver == "pyo3":
         if not PYO3_AVAILABLE:
@@ -1378,10 +1430,111 @@ def alpha(
     )
 
 
+def alpha_bootstrap(
+    data: pd.DataFrame,
+    distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
+    solver: Literal["naive", "pyo3"] = SOLVER,
+    *,
+    n_resamples: int = 5000,
+    min_resamples: int = 1000,
+    confidence_level: float = 0.95,
+    random_state: int | None = None,
+) -> AlphaBootstrapResult:
+    """
+    Compute confidence intervals for Krippendorff's alpha using KALPHA-style bootstrap.
+
+    Args:
+        data: Ratings by observer (rows) and unit (columns).
+        distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
+        solver: The solver to use (naive or pyo3).
+        n_resamples: Number of bootstrap samples. Truncated to nearest lower multiple of `min_resamples`.
+        min_resamples: Minimum number of bootstrap samples and truncation step.
+        confidence_level: The confidence level.
+        random_state: The random seed (non-negative integer or None).
+
+    Returns:
+        The alpha bootstrap result.
+
+    """
+    if n_resamples < 0:
+        msg = "n_resamples must be a non-negative integer"
+        raise ValueError(msg)
+    if min_resamples <= 0:
+        msg = "min_resamples must be a positive integer"
+        raise ValueError(msg)
+    if not 0.0 < confidence_level < 1.0:
+        msg = "confidence_level must be in (0, 1)"
+        raise ValueError(msg)
+    if random_state is not None and random_state < 0:
+        msg = "random_state must be a non-negative integer or None"
+        raise ValueError(msg)
+
+    random_seed = random_state
+
+    matrix = _as_unit_matrix(data)
+    codes, unique_values = _factorize_matrix(matrix)
+
+    if solver == "pyo3":
+        if not PYO3_AVAILABLE:
+            raise SolverError(solver)
+
+        numeric_values = np.asarray(unique_values, dtype=np.float64)
+
+        if callable(distance):
+            distance_matrix = _custom_distance(distance, unique_values)
+            _alpha, observed, expected, distribution = _brzo.alpha_bootstrap(
+                codes,
+                numeric_values,
+                distance_matrix,
+                n_resamples,
+                min_resamples,
+                random_seed,
+            )
+        else:
+            _alpha, observed, expected, distribution = _brzo.alpha_bootstrap(
+                codes,
+                numeric_values,
+                distance,
+                n_resamples,
+                min_resamples,
+                random_seed,
+            )
+    else:
+        _alpha, observed, expected = _alpha_naive(codes, unique_values, distance)
+        distribution = _alpha_bootstrap_naive(
+            codes,
+            unique_values,
+            distance,
+            n_resamples,
+            random_seed,
+            min_resamples=min_resamples,
+        )
+
+    distribution = np.asarray(distribution, dtype=np.float64)
+    alpha_tail = (1.0 - confidence_level) / 2.0
+    low_quantile, high_quantile = np.quantile(distribution, [alpha_tail, 1.0 - alpha_tail])
+    low = float(low_quantile)
+    high = float(high_quantile)
+
+    return AlphaBootstrapResult(
+        alpha=float(_alpha),
+        observed=float(observed),
+        expected=float(expected),
+        low=low,
+        high=high,
+        distribution=distribution,
+        n_resamples=len(distribution),
+        confidence_level=confidence_level,
+        solver=solver,
+    )
+
+
 __all__ = [
     "PYO3_AVAILABLE",
     "SOLVER",
     "WINNERS",
+    "AlphaBootstrapResult",
+    "AlphaResult",
     "AverageWinRateResult",
     "BootstrapResult",
     "BradleyTerryResult",
@@ -1402,6 +1555,7 @@ __all__ = [
     "Winner",
     "__version__",
     "alpha",
+    "alpha_bootstrap",
     "average_win_rate",
     "bootstrap",
     "bradley_terry",
