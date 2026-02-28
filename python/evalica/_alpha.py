@@ -317,9 +317,7 @@ def _alpha_bootstrap_naive(
 
     for unit_codes in matrix_indices:
         valid = unit_codes[unit_codes >= 0]
-
-        if (n_valid := len(valid)) < MIN_RATERS:
-            continue
+        n_valid = len(valid)
 
         i, j = np.triu_indices(n_valid, k=1)
 

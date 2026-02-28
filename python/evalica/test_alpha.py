@@ -604,3 +604,55 @@ def test_alpha_bootstrap_non_positive_min_resamples_error(solver: Literal["naive
     df = pd.DataFrame([[1, 2], [2, 1], [1, 1]]).T
     with pytest.raises(ValueError, match="min_resamples must be a positive integer"):
         evalica.alpha_bootstrap(df, n_resamples=1000, min_resamples=0, solver=solver)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+def test_alpha_bootstrap_invalid_confidence_level_error(solver: str) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    df = pd.DataFrame([[1, 2], [2, 1], [1, 1]]).T
+    with pytest.raises(ValueError, match="confidence_level must be in"):
+        evalica.alpha_bootstrap(df, n_resamples=1000, confidence_level=1.5, solver=solver)  # type: ignore[arg-type]
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+def test_alpha_bootstrap_pyo3_custom_distance() -> None:
+    data = [[1, 2], [2, 3], [3, 4]]
+    df = pd.DataFrame(data).T
+
+    def custom_dist(x: float, y: float) -> float:
+        return (x - y) ** 2
+
+    res_custom = evalica.alpha_bootstrap(df, distance=custom_dist, solver="pyo3", n_resamples=1000)
+    assert isinstance(res_custom, AlphaBootstrapResult)
+    assert res_custom.alpha == pytest.approx(0.5454545)
+    assert res_custom.solver == "pyo3"
+
+
+def test_alpha_bootstrap_solver_error() -> None:
+    with unittest.mock.patch.dict(sys.modules, {"evalica._brzo": None}):
+        sys.modules.pop("evalica", None)
+
+        with pytest.warns():
+            import evalica  # noqa: PLC0415
+
+        assert not evalica.PYO3_AVAILABLE
+
+        data = pd.DataFrame([[1, 2], [2, 3]])
+
+        with pytest.raises(evalica.SolverError, match="The 'pyo3' solver is not available"):
+            evalica.alpha_bootstrap(data, solver="pyo3")
+
+
+def test_alpha_bootstrap_naive_internal_checks() -> None:
+    from evalica._alpha import _alpha_bootstrap_naive
+
+    matrix_indices = np.array([[0, 1], [1, 0]], dtype=np.int64)
+    unique_values = np.array([1, 2], dtype=np.object_)
+
+    with pytest.raises(ValueError, match="min_resamples must be a positive integer"):
+        _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 1000, min_resamples=0)
+
+    dist = _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 1000, min_resamples=1000)
+    assert len(dist) == 1000
