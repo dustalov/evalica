@@ -7,7 +7,6 @@ use std::collections::HashMap;
 /// Takes a slice of unique values and returns a distance matrix.
 pub type DistanceFunc = fn(&[f64]) -> Array2<f64>;
 const MIN_RATERS: usize = 2;
-const SECOND_PICK: usize = 2;
 
 /// Distance metric type for Krippendorff's alpha.
 #[derive(Clone)]
@@ -376,11 +375,10 @@ pub fn alpha_bootstrap_from_factorized(
         let weight = 1.0 / (raters_per_unit - 1) as f64;
 
         for draw_index in 1..=n_draws {
-            let current_draws = Array1::from_shape_fn(n_resamples, |_| {
-                rng.random_range(0..pair_errors.len())
-            });
+            let current_draws =
+                Array1::from_shape_fn(n_resamples, |_| rng.random_range(0..pair_errors.len()));
 
-            if draw_index == SECOND_PICK {
+            if draw_index == 2 {
                 let mut current_draws = current_draws;
                 for r in 0..n_resamples {
                     if current_draws[r] == previous_draws[r] {

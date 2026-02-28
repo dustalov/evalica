@@ -27,6 +27,9 @@ netlib-src = { version = "^0.8.0", default-features = false, features = ["cblas"
 [target.'cfg(target_os = "macos")'.dependencies]
 accelerate-src = { version = "^0.3.2", optional = true }
 
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { version = "0.4.1", features = ["wasm_js"] }
+
 [features]
 blas = ["ndarray/blas"]
 blas-src = ["blas", "dep:blas-src"]

@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     import pandas as pd
 
 MIN_RATERS = 2
-SECOND_PICK = 2
 
 
 def _as_unit_matrix(data: pd.DataFrame) -> npt.NDArray[np.object_]:
@@ -61,7 +60,7 @@ def _coincidence_matrix(
         weights = np.where(m_u >= MIN_RATERS, 1.0 / (m_u - 1), 0.0)
 
     cw = c * weights[:, np.newaxis]
-    coincidence = cw.T @ c
+    coincidence: npt.NDArray[np.float64] = cw.T @ c
     np.fill_diagonal(coincidence, coincidence.diagonal() - np.sum(cw, axis=0))
 
     return coincidence
@@ -78,7 +77,8 @@ def _nominal_distance(n_unique: int) -> npt.NDArray[np.float64]:
         Distance matrix where off-diagonal elements are 1.0 and diagonal is 0.0.
 
     """
-    return 1.0 - np.eye(n_unique)
+    result: npt.NDArray[np.float64] = 1.0 - np.eye(n_unique)
+    return result
 
 
 def _ordinal_distance(coincidence: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -111,7 +111,8 @@ def _interval_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np
 
     """
     values = np.asarray(unique_values, dtype=np.float64)
-    return (values[:, None] - values[None, :]) ** 2
+    result: npt.NDArray[np.float64] = (values[:, None] - values[None, :]) ** 2
+    return result
 
 
 def _ratio_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np.float64]:
@@ -131,7 +132,8 @@ def _ratio_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np.fl
     with np.errstate(divide="ignore", invalid="ignore"):
         delta = (diff_matrix / sum_matrix) ** 2
     delta[np.isnan(delta)] = 0.0
-    return delta
+    result: npt.NDArray[np.float64] = delta
+    return result
 
 
 def _custom_distance(
@@ -212,7 +214,8 @@ def _compute_expected_matrix(
         result: npt.NDArray[np.float64] = outer / (n_total - 1)
         return result
 
-    return np.zeros_like(coincidence)
+    result_zeros: npt.NDArray[np.float64] = np.zeros_like(coincidence)
+    return result_zeros
 
 
 def _alpha_components(
@@ -344,7 +347,7 @@ def _alpha_bootstrap_naive(
         end = start + n_draw
         unit_draws = draws[:, start:end]
 
-        if n_draw >= SECOND_PICK:
+        if n_draw >= 2:  # noqa: PLR2004
             mask = unit_draws[:, 1] == unit_draws[:, 0]
             if np.any(mask):
                 unit_draws[mask, 1] = rng.integers(
@@ -359,4 +362,5 @@ def _alpha_bootstrap_naive(
 
     np.maximum(alphas, -1.0, out=alphas)
 
-    return alphas
+    result: npt.NDArray[np.float64] = alphas
+    return result
