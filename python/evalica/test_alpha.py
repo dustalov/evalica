@@ -14,7 +14,7 @@ from hypothesis import assume, given, settings
 import evalica
 from conftest import rating_dataframes
 from evalica import AlphaBootstrapResult, AlphaResult
-from evalica._alpha import _coincidence_matrix, _compute_expected_matrix
+from evalica._alpha import _alpha_bootstrap_naive, _coincidence_matrix, _compute_expected_matrix
 
 if TYPE_CHECKING:
     from pytest_codspeed import BenchmarkFixture
@@ -646,8 +646,6 @@ def test_alpha_bootstrap_solver_error() -> None:
 
 
 def test_alpha_bootstrap_naive_internal_checks() -> None:
-    from evalica._alpha import _alpha_bootstrap_naive
-
     matrix_indices = np.array([[0, 1], [1, 0]], dtype=np.int64)
     unique_values = np.array([1, 2], dtype=np.object_)
 
