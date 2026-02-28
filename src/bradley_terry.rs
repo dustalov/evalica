@@ -36,8 +36,7 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
     }
 
     let n = matrix.nrows();
-    let n_as_a =
-        A::from(n).ok_or_else(|| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
+    let n_as_a = A::from(n).ok_or_else(|| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
     let mut scores = Array1::ones(n);
 
     let mut converged = false;
