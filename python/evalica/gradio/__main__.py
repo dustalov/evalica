@@ -155,7 +155,7 @@ def alpha_handler(
     distance: str,
     n_resamples: int,
     confidence_level: float,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, Figure]:
     if file is None:
         raise gr.Error("File must be uploaded")  # noqa: EM101, TRY003
 
@@ -181,7 +181,17 @@ def alpha_handler(
     except Exception as e:
         raise gr.Error(f"Computation error: {e}") from e  # noqa: EM102, TRY003
 
-    return pd.DataFrame(
+    fig = px.histogram(
+        result.distribution,
+        nbins=50,
+        labels={"value": "Alpha", "count": "Frequency"},
+    )
+    fig.add_vline(x=result.alpha, line_dash="dash", line_color="red", annotation_text="Point Estimate")
+    fig.add_vline(x=result.low, line_dash="dot", line_color="blue", annotation_text="Lower Bound")
+    fig.add_vline(x=result.high, line_dash="dot", line_color="blue", annotation_text="Upper Bound")
+    fig.update_layout(showlegend=False)
+
+    df_result = pd.DataFrame(
         {
             "Metric": [
                 "Alpha",
@@ -193,6 +203,8 @@ def alpha_handler(
             "Value": [result.alpha, result.observed, result.expected, result.low, result.high],
         },
     )
+
+    return df_result, fig
 
 
 def pairwise_interface() -> gr.Interface:
@@ -263,6 +275,9 @@ def alpha_interface() -> gr.Interface:
             gr.Dataframe(
                 headers=["Metric", "Value"],
                 label="Inter-Rater Reliability",
+            ),
+            gr.Plot(
+                label="Distribution",
             ),
         ],
         title="Krippendorff's Alpha",
