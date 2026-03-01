@@ -610,5 +610,8 @@ def test_alpha_bootstrap_naive_internal_checks() -> None:
     matrix_indices = np.array([[0, 1], [1, 0]], dtype=np.int64)
     unique_values = np.array([1, 2], dtype=np.object_)
 
+    with pytest.raises(ValueError, match="n_resamples must be a positive integer"):
+        _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 0)
+
     dist = _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 1000)
     assert len(dist) == 1000
