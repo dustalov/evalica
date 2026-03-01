@@ -139,7 +139,7 @@ class AlphaBootstrapResult(AlphaResult):
 
     low: float
     high: float
-    distribution: npt.NDArray[np.float64]
+    distribution: pd.Series
     n_resamples: int
     confidence_level: float
 
@@ -1529,7 +1529,7 @@ def alpha_bootstrap(
         expected=float(expected),
         low=low,
         high=high,
-        distribution=distribution,
+        distribution=pd.Series(distribution, name="alpha"),
         n_resamples=len(distribution),
         confidence_level=confidence_level,
         solver=solver,

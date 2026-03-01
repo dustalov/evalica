@@ -9,6 +9,7 @@
 ::: evalica.MatricesResult
 ::: evalica.RankingMethod
 ::: evalica.Result
+::: evalica.SolverName
 ::: evalica.pairwise_frame
 ::: evalica.pairwise_scores
 ::: evalica.__version__

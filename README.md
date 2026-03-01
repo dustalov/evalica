@@ -101,9 +101,13 @@ Evalica also supports computing [Krippendorff's alpha](https://en.wikipedia.org/
 >>> result = alpha(data, distance='nominal')
 >>> result.alpha
 0.7434210526315788
+>>> from evalica import alpha_bootstrap
+>>> bootstrap_result = alpha_bootstrap(data, distance='nominal', n_resamples=1000, random_state=42)
+>>> (bootstrap_result.low, bootstrap_result.high)
+(0.4431818181818182, 0.9411764705882353)
 ```
 
-This example demonstrates computing alpha with nominal distance for categorical ratings. The result indicates substantial agreement among raters (alpha ≈ 0.74). Evalica supports multiple distance metrics: `nominal`, `ordinal`, `interval`, `ratio`, or custom distance functions.
+This example demonstrates computing alpha and its [bootstrap confidence intervals](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) with nominal distance for categorical ratings. Evalica supports multiple distance metrics: `nominal`, `ordinal`, `interval`, `ratio`, or custom distance functions.
 
 ## Command-Line Interface
 
