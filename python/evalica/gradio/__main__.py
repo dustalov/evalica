@@ -153,6 +153,8 @@ def handler(
 def alpha_handler(
     file: str | None,
     distance: str,
+    n_resamples: int,
+    confidence_level: float,
 ) -> pd.DataFrame:
     if file is None:
         raise gr.Error("File must be uploaded")  # noqa: EM101, TRY003
@@ -166,7 +168,12 @@ def alpha_handler(
         raise gr.Error("The file is empty")  # noqa: EM101, TRY003
 
     try:
-        result = evalica.alpha(df_ratings, distance=distance)  # type: ignore[arg-type]
+        result = evalica.alpha_bootstrap(
+            df_ratings,
+            distance=distance,  # type: ignore[arg-type]
+            n_resamples=n_resamples,
+            confidence_level=confidence_level,
+        )
     except evalica.InsufficientRatingsError as e:
         raise gr.Error("Insufficient ratings: no units have at least 2 ratings") from e  # noqa: EM101, TRY003
     except evalica.UnknownDistanceError as e:
@@ -176,8 +183,14 @@ def alpha_handler(
 
     return pd.DataFrame(
         {
-            "Metric": ["Alpha", "Observed Disagreement", "Expected Disagreement"],
-            "Value": [result.alpha, result.observed, result.expected],
+            "Metric": [
+                "Alpha",
+                "Observed Disagreement",
+                "Expected Disagreement",
+                f"Lower Bound ({confidence_level:.0%})",
+                f"Upper Bound ({confidence_level:.0%})",
+            ],
+            "Value": [result.alpha, result.observed, result.expected, result.low, result.high],
         },
     )
 
@@ -230,6 +243,20 @@ def alpha_interface() -> gr.Interface:
                 value="nominal",
                 label="Distance Metric",
                 info="Nominal for categorical, ordinal for ordered categories, interval/ratio for numeric scales",
+            ),
+            gr.Slider(
+                minimum=100,
+                maximum=10000,
+                step=100,
+                value=5000,
+                label="Number of Resamples",
+            ),
+            gr.Slider(
+                minimum=0.01,
+                maximum=0.99,
+                step=0.01,
+                value=0.95,
+                label="Confidence Level",
             ),
         ],
         outputs=[
