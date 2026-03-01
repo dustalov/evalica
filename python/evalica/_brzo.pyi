@@ -106,6 +106,5 @@ def alpha_bootstrap(
     unique_values: npt.NDArray[np.float64],
     distance: DistanceName | npt.NDArray[np.float64],
     n_resamples: int,
-    min_resamples: int = 1000,
-    random_state: int | None = None,
+    random_state: int | None = ...,
 ) -> tuple[float, float, float, npt.NDArray[np.float64]]: ...

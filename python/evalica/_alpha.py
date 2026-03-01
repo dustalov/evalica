@@ -271,8 +271,6 @@ def _alpha_bootstrap_naive(
     distance: DistanceFunc[T_distance_contra] | DistanceName,
     n_resamples: int,
     random_state: int | None = None,
-    *,
-    min_resamples: int = 1000,
 ) -> npt.NDArray[np.float64]:
     """
     Compute confidence intervals for Krippendorff's alpha using bootstrap (naive Python).
@@ -283,7 +281,6 @@ def _alpha_bootstrap_naive(
         distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
         n_resamples: Number of bootstrap samples.
         random_state: The random seed.
-        min_resamples: Minimum number of bootstrap samples.
 
     Returns:
         The alpha bootstrap distribution.
@@ -293,12 +290,8 @@ def _alpha_bootstrap_naive(
 
     expected = float(np.sum(expected_matrix * delta))
 
-    if min_resamples <= 0:
-        msg = "min_resamples must be a positive integer."
-        raise ValueError(msg)
-
-    if n_resamples < min_resamples:
-        msg = f"Number of resamples must be at least {min_resamples}."
+    if n_resamples <= 0:
+        msg = "n_resamples must be a positive integer."
         raise ValueError(msg)
     if expected <= 0.0:
         msg = "Bootstrapping is not defined when expected disagreement is zero."

@@ -116,7 +116,7 @@ class AlphaResult:
     alpha: float
     observed: float
     expected: float
-    solver: str
+    solver: SolverName
 
 
 @dataclass(frozen=True)
@@ -150,6 +150,9 @@ T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
 DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
 
 
+SolverName = Literal["naive", "pyo3"]
+
+
 class DistanceFunc(Protocol[T_distance_contra]):
     """The distance function protocol."""
 
@@ -168,7 +171,7 @@ class DistanceFunc(Protocol[T_distance_contra]):
         ...
 
 
-SOLVER: Literal["naive", "pyo3"] = "pyo3" if PYO3_AVAILABLE else "naive"
+SOLVER: SolverName = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
 HAS_BLAS: bool = _brzo.HAS_BLAS if PYO3_AVAILABLE and hasattr(_brzo, "HAS_BLAS") else False
@@ -280,7 +283,7 @@ def matrices(
     winners: Collection[Winner],
     index: pd.Index,
     weights: Collection[float] | None = None,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
 ) -> MatricesResult:
     """
     Build win and tie matrices from the given elements.
@@ -390,7 +393,7 @@ class CountingResult:
     index: pd.Index
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
 
 
 def counting(
@@ -401,7 +404,7 @@ def counting(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> CountingResult:
     """
@@ -482,7 +485,7 @@ class AverageWinRateResult:
     index: pd.Index
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
 
 
 def average_win_rate(
@@ -493,7 +496,7 @@ def average_win_rate(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> AverageWinRateResult:
     """
@@ -593,7 +596,7 @@ class BradleyTerryResult:
     index: pd.Index
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
     tolerance: float
     iterations: int
     limit: int
@@ -607,7 +610,7 @@ def bradley_terry(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
     **kwargs: Any,  # noqa: ANN401, ARG001
@@ -721,7 +724,7 @@ class NewmanResult:
     v_init: float
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
     tolerance: float
     iterations: int
     limit: int
@@ -736,7 +739,7 @@ def newman(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 1.0,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
     **kwargs: Any,  # noqa: ANN401, ARG001
@@ -854,7 +857,7 @@ class EloResult:
     k: float
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
 
 
 def elo(
@@ -869,7 +872,7 @@ def elo(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     **kwargs: Any,  # noqa: ANN401, ARG001
 ) -> EloResult:
     """
@@ -969,7 +972,7 @@ class EigenResult:
     index: pd.Index
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
     tolerance: float
     iterations: int
     limit: int
@@ -983,7 +986,7 @@ def eigen(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
     **kwargs: Any,  # noqa: ANN401, ARG001
@@ -1085,7 +1088,7 @@ class PageRankResult:
     damping: float
     win_weight: float
     tie_weight: float
-    solver: str
+    solver: SolverName
     tolerance: float
     iterations: int
     limit: int
@@ -1100,7 +1103,7 @@ def pagerank(
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
     **kwargs: Any,  # noqa: ANN401, ARG001
@@ -1204,7 +1207,7 @@ class ScoreDimensionError(ValueError):
 
 def pairwise_scores(
     scores: npt.NDArray[np.float64],
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
 ) -> npt.NDArray[np.float64]:
     """
     Estimate the pairwise scores.
@@ -1276,7 +1279,7 @@ def bootstrap(
     index: pd.Index | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     *,
     n_resamples: int = 1000,
     confidence_level: float = 0.95,
@@ -1388,7 +1391,7 @@ def _factorize_matrix(matrix: npt.NDArray[np.object_]) -> tuple[npt.NDArray[np.i
 def alpha(
     data: pd.DataFrame,
     distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
 ) -> AlphaResult:
     """
     Compute Krippendorff's alpha.
@@ -1437,10 +1440,9 @@ def alpha(
 def alpha_bootstrap(
     data: pd.DataFrame,
     distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
-    solver: Literal["naive", "pyo3"] = SOLVER,
+    solver: SolverName = SOLVER,
     *,
     n_resamples: int = 5000,
-    min_resamples: int = 1000,
     confidence_level: float = 0.95,
     random_state: int | None = None,
 ) -> AlphaBootstrapResult:
@@ -1448,7 +1450,7 @@ def alpha_bootstrap(
     Compute confidence intervals for Krippendorff's alpha using KALPHA-style bootstrap.
 
     Quote:
-        Krippendorff, K.: Bootstrapping Distributions for Krippendorff’s Alpha. (2006).
+        Krippendorff, K.: Bootstrapping Distributions for Krippendorff's Alpha. (2006).
         <https://www.asc.upenn.edu/sites/default/files/2021-03/Algorithm%20for%20Bootstrapping%20a%20Distribution%20of%20Alpha.pdf>.
 
     Quote:
@@ -1459,8 +1461,7 @@ def alpha_bootstrap(
         data: Ratings by observer (rows) and unit (columns).
         distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
         solver: The solver to use (naive or pyo3).
-        n_resamples: Number of bootstrap samples. Truncated to nearest lower multiple of `min_resamples`.
-        min_resamples: Minimum number of bootstrap samples and truncation step.
+        n_resamples: Number of bootstrap samples.
         confidence_level: The confidence level.
         random_state: The random seed (non-negative integer or None).
 
@@ -1468,11 +1469,8 @@ def alpha_bootstrap(
         The alpha bootstrap result.
 
     """
-    if n_resamples < 0:
-        msg = "n_resamples must be a non-negative integer"
-        raise ValueError(msg)
-    if min_resamples <= 0:
-        msg = "min_resamples must be a positive integer"
+    if n_resamples <= 0:
+        msg = "n_resamples must be a positive integer"
         raise ValueError(msg)
     if not 0.0 < confidence_level < 1.0:
         msg = "confidence_level must be in (0, 1)"
@@ -1499,7 +1497,6 @@ def alpha_bootstrap(
                 numeric_values,
                 distance_matrix,
                 n_resamples,
-                min_resamples,
                 random_seed,
             )
         else:
@@ -1508,7 +1505,6 @@ def alpha_bootstrap(
                 numeric_values,
                 distance,
                 n_resamples,
-                min_resamples,
                 random_seed,
             )
     else:
@@ -1519,7 +1515,6 @@ def alpha_bootstrap(
             distance,
             n_resamples,
             random_seed,
-            min_resamples=min_resamples,
         )
 
     distribution = np.asarray(distribution, dtype=np.float64)

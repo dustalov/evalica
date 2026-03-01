@@ -341,8 +341,7 @@ pub fn alpha_from_factorized(
 /// * `matrix_indices` - Coded matrix with -1 for missing values
 /// * `unique_values` - Unique values corresponding to the codes
 /// * `distance` - Distance metric to use
-/// * `n_resamples` - Number of bootstrap samples; truncated to nearest lower multiple of `min_resamples`
-/// * `min_resamples` - Minimum bootstrap sample count and truncation step
+/// * `n_resamples` - Number of bootstrap samples
 /// * `seed` - Optional RNG seed
 ///
 /// # Errors
@@ -353,17 +352,10 @@ pub fn alpha_bootstrap_from_factorized(
     unique_values: &[f64],
     distance: Distance,
     n_resamples: usize,
-    min_resamples: usize,
     seed: Option<u64>,
 ) -> Result<AlphaBootstrap, String> {
-    if min_resamples == 0 {
-        return Err("min_resamples must be a positive integer.".to_string());
-    }
-
-    if n_resamples < min_resamples {
-        return Err(format!(
-            "Number of resamples must be at least {min_resamples}."
-        ));
+    if n_resamples == 0 {
+        return Err("Number of resamples must be a positive integer.".to_string());
     }
 
     let computed = alpha_compute_from_factorized(matrix_indices, unique_values, distance);
@@ -577,7 +569,6 @@ mod tests {
             &unique_values,
             Distance::Nominal,
             5000,
-            1000,
             Some(12345),
         )
         .unwrap();
@@ -594,43 +585,6 @@ mod tests {
             &codes.view(),
             &unique_values,
             Distance::Nominal,
-            999,
-            1000,
-            Some(1),
-        );
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_alpha_bootstrap_custom_minimum_bootstrap_count() {
-        let data = array![[1.0, 2.0], [2.0, 3.0]];
-        let (codes, unique_values) = factorize_values(&data.view());
-        let result = alpha_bootstrap_from_factorized(
-            &codes.view(),
-            &unique_values,
-            Distance::Nominal,
-            1499,
-            1500,
-            Some(1),
-        );
-
-        assert!(result.is_err());
-        assert!(result
-            .err()
-            .expect("error expected")
-            .contains("at least 1500"));
-    }
-
-    #[test]
-    fn test_alpha_bootstrap_invalid_min_resamples() {
-        let data = array![[1.0, 2.0], [2.0, 3.0]];
-        let (codes, unique_values) = factorize_values(&data.view());
-        let result = alpha_bootstrap_from_factorized(
-            &codes.view(),
-            &unique_values,
-            Distance::Nominal,
-            1000,
             0,
             Some(1),
         );
@@ -639,6 +593,6 @@ mod tests {
         assert!(result
             .err()
             .expect("error expected")
-            .contains("min_resamples must be a positive integer"));
+            .contains("positive integer"));
     }
 }

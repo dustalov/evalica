@@ -40,7 +40,8 @@ def test_has_blas() -> None:
 
 
 @pytest.mark.parametrize(
-    "algorithm", ["counting", "average_win_rate", "bradley_terry", "newman", "elo", "eigen", "pagerank"],
+    "algorithm",
+    ["counting", "average_win_rate", "bradley_terry", "newman", "elo", "eigen", "pagerank"],
 )
 def test_solver_errors_all_functions(algorithm: str) -> None:
     with unittest.mock.patch.dict(sys.modules, {"evalica._brzo": None}):

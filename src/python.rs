@@ -411,14 +411,13 @@ fn alpha_pyo3<'py>(
 }
 
 #[pyfunction(name = "alpha_bootstrap")]
-#[pyo3(signature = (codes, unique_values, distance, n_resamples, min_resamples=1000, random_state=None))]
+#[pyo3(signature = (codes, unique_values, distance, n_resamples, random_state=None))]
 fn alpha_bootstrap_pyo3<'py>(
     py: Python<'py>,
     codes: &Bound<'py, PyAny>,
     unique_values: &Bound<'py, PyAny>,
     distance: &Bound<'py, PyAny>,
     n_resamples: i64,
-    min_resamples: i64,
     random_state: Option<i64>,
 ) -> PyResult<(f64, f64, f64, Py<PyArray1<f64>>)> {
     let codes: PyArrayLike2<'py, i64> = codes.extract()?;
@@ -431,18 +430,12 @@ fn alpha_bootstrap_pyo3<'py>(
 
     let distance_enum = alpha_distance_from_py(py, distance, unique_slice)?;
 
-    if n_resamples < 0 {
+    if n_resamples <= 0 {
         return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "n_resamples must be a non-negative integer",
+            "n_resamples must be a positive integer",
         ));
     }
-    let n_resamples = usize::try_from(n_resamples).expect("non-negative i64 should fit into usize");
-    if min_resamples <= 0 {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "min_resamples must be a positive integer",
-        ));
-    }
-    let min_resamples = usize::try_from(min_resamples).expect("positive i64 should fit into usize");
+    let n_resamples = usize::try_from(n_resamples).expect("positive i64 should fit into usize");
 
     let random_seed = match random_state {
         Some(value) if value < 0 => {
@@ -459,7 +452,6 @@ fn alpha_bootstrap_pyo3<'py>(
         unique_slice,
         distance_enum,
         n_resamples,
-        min_resamples,
         random_seed,
     ) {
         Ok(result) => Ok((

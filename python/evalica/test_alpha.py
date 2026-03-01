@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import unittest.mock
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import hypothesis.strategies as st
 import numpy as np
@@ -13,7 +13,7 @@ from hypothesis import assume, given, settings
 
 import evalica
 from conftest import rating_dataframes
-from evalica import AlphaBootstrapResult, AlphaResult
+from evalica import AlphaBootstrapResult, AlphaResult, DistanceName, SolverName
 from evalica._alpha import _alpha_bootstrap_naive, _coincidence_matrix, _compute_expected_matrix
 
 if TYPE_CHECKING:
@@ -228,7 +228,7 @@ def test_alpha_solvers_hypothesis(data: pd.DataFrame, distance: str) -> None:
 )
 def test_alpha_bootstrap_solvers_hypothesis(
     data: pd.DataFrame,
-    distance: Literal["nominal", "ordinal", "interval", "ratio"],
+    distance: DistanceName,
 ) -> None:
     alpha_pyo3 = evalica.alpha(data, distance=distance, solver="pyo3")
     alpha_naive = evalica.alpha(data, distance=distance, solver="naive")
@@ -296,8 +296,8 @@ def test_alpha_perfect_agreement_bounds(data: pd.DataFrame, solver: str) -> None
 )
 def test_alpha_performance(
     codings: pd.DataFrame,
-    distance: Literal["nominal", "ordinal", "interval", "ratio"],
-    solver: Literal["naive", "pyo3"],
+    distance: DistanceName,
+    solver: SolverName,
     benchmark: BenchmarkFixture,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
@@ -359,11 +359,14 @@ def test_alpha_n_total_edge_case(solver: str) -> None:
 
 
 def test_coincidence_matrix_skip_insufficient_raters() -> None:
-    matrix_indices = np.array([
-        [0, 1, -1],
-        [-1, -1, -1],
-        [2, 3, 4],
-    ], dtype=np.int64)
+    matrix_indices = np.array(
+        [
+            [0, 1, -1],
+            [-1, -1, -1],
+            [2, 3, 4],
+        ],
+        dtype=np.int64,
+    )
 
     result = _coincidence_matrix(matrix_indices, n_unique=5)
 
@@ -477,7 +480,7 @@ def test_alpha_bootstrap_nominal_reference(solver: str) -> None:
 @pytest.mark.parametrize("distance", ["nominal", "ordinal", "interval", "ratio"])
 def test_alpha_bootstrap_solvers_match(
     codings: pd.DataFrame,
-    distance: Literal["nominal", "ordinal", "interval", "ratio"],
+    distance: DistanceName,
 ) -> None:
     n_resamples = 1000
     confidence_level = 0.95
@@ -519,18 +522,7 @@ def test_alpha_bootstrap_solvers_match(
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_no_truncation(solver: str) -> None:
-    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
-        pytest.skip("Rust extension is not available")
-
-    df = pd.DataFrame([[1, 1, 2], [2, 2, 2], [3, 3, 3], [1, 2, 1]]).T
-    result = evalica.alpha_bootstrap(df, n_resamples=2300, random_state=7, solver=solver)  # type: ignore[arg-type]
-    assert result.n_resamples == 2300
-    assert len(result.distribution) == 2300
-
-
-@pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_no_truncation_with_min_resamples(solver: Literal["naive", "pyo3"]) -> None:
+def test_alpha_bootstrap_no_truncation(solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
@@ -538,7 +530,6 @@ def test_alpha_bootstrap_no_truncation_with_min_resamples(solver: Literal["naive
     result = evalica.alpha_bootstrap(
         df,
         n_resamples=2300,
-        min_resamples=500,
         random_state=7,
         solver=solver,
     )
@@ -547,73 +538,43 @@ def test_alpha_bootstrap_no_truncation_with_min_resamples(solver: Literal["naive
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_requires_minimum_bootstraps(solver: str) -> None:
-    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
-        pytest.skip("Rust extension is not available")
-
-    df = pd.DataFrame([[1, 2], [2, 1], [3, 3]]).T
-    with pytest.raises(ValueError, match="at least 1000"):
-        evalica.alpha_bootstrap(df, n_resamples=999, solver=solver)  # type: ignore[arg-type]
-
-
-@pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_requires_custom_minimum_bootstraps(solver: Literal["naive", "pyo3"]) -> None:
-    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
-        pytest.skip("Rust extension is not available")
-
-    df = pd.DataFrame([[1, 2], [2, 1], [3, 3]]).T
-    with pytest.raises(ValueError, match="at least 1500"):
-        evalica.alpha_bootstrap(df, n_resamples=1499, min_resamples=1500, solver=solver)
-
-
-@pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_zero_expected_error(solver: str) -> None:
+def test_alpha_bootstrap_zero_expected_error(solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
     df = pd.DataFrame([["A", "A"], ["A", "A"]]).T
     with pytest.raises(ValueError, match="expected disagreement is zero"):
-        evalica.alpha_bootstrap(df, n_resamples=1000, solver=solver)  # type: ignore[arg-type]
+        evalica.alpha_bootstrap(df, n_resamples=1000, solver=solver)
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_negative_random_state_error(solver: str) -> None:
+def test_alpha_bootstrap_negative_random_state_error(solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
     df = pd.DataFrame([[1, 2], [2, 1], [1, 1]]).T
     with pytest.raises(ValueError, match="non-negative integer"):
-        evalica.alpha_bootstrap(df, n_resamples=1000, random_state=-1, solver=solver)  # type: ignore[arg-type]
+        evalica.alpha_bootstrap(df, n_resamples=1000, random_state=-1, solver=solver)
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_negative_resamples_error(solver: str) -> None:
+def test_alpha_bootstrap_invalid_n_resamples_error(solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
     df = pd.DataFrame([[1, 2], [2, 1], [1, 1]]).T
-    with pytest.raises(ValueError, match="n_resamples must be a non-negative integer"):
-        evalica.alpha_bootstrap(df, n_resamples=-1, solver=solver)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="n_resamples must be a positive integer"):
+        evalica.alpha_bootstrap(df, n_resamples=0, solver=solver)
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_non_positive_min_resamples_error(solver: Literal["naive", "pyo3"]) -> None:
-    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
-        pytest.skip("Rust extension is not available")
-
-    df = pd.DataFrame([[1, 2], [2, 1], [1, 1]]).T
-    with pytest.raises(ValueError, match="min_resamples must be a positive integer"):
-        evalica.alpha_bootstrap(df, n_resamples=1000, min_resamples=0, solver=solver)
-
-
-@pytest.mark.parametrize("solver", ["naive", "pyo3"])
-def test_alpha_bootstrap_invalid_confidence_level_error(solver: str) -> None:
+def test_alpha_bootstrap_invalid_confidence_level_error(solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
     df = pd.DataFrame([[1, 2], [2, 1], [1, 1]]).T
     with pytest.raises(ValueError, match="confidence_level must be in"):
-        evalica.alpha_bootstrap(df, n_resamples=1000, confidence_level=1.5, solver=solver)  # type: ignore[arg-type]
+        evalica.alpha_bootstrap(df, n_resamples=1000, confidence_level=1.5, solver=solver)
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
@@ -649,8 +610,5 @@ def test_alpha_bootstrap_naive_internal_checks() -> None:
     matrix_indices = np.array([[0, 1], [1, 0]], dtype=np.int64)
     unique_values = np.array([1, 2], dtype=np.object_)
 
-    with pytest.raises(ValueError, match="min_resamples must be a positive integer"):
-        _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 1000, min_resamples=0)
-
-    dist = _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 1000, min_resamples=1000)
+    dist = _alpha_bootstrap_naive(matrix_indices, unique_values, "nominal", 1000)
     assert len(dist) == 1000

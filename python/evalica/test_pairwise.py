@@ -18,6 +18,7 @@ from pandas._testing import assert_series_equal
 
 import evalica
 from conftest import Comparison, comparisons
+from evalica import SolverName
 
 if TYPE_CHECKING:
     from pytest_codspeed import BenchmarkFixture
@@ -64,7 +65,7 @@ def test_reindexing_unknown(comparison: Comparison) -> None:
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
 @given(comparison=comparisons())
-def test_matrices(comparison: Comparison, solver: Literal["naive", "pyo3"]) -> None:
+def test_matrices(comparison: Comparison, solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
@@ -400,7 +401,7 @@ def test_pagerank(comparison: Comparison, damping: float, win_weight: float, tie
         ("pagerank", "naive"),
     ],
 )
-def test_misshaped(comparison: Comparison, algorithm: str, solver: Literal["naive", "pyo3"]) -> None:
+def test_misshaped(comparison: Comparison, algorithm: str, solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
@@ -427,7 +428,7 @@ def test_misshaped(comparison: Comparison, algorithm: str, solver: Literal["naiv
         ("pagerank", "pyo3"),
     ],
 )
-def test_incomplete_index(algorithm: str, solver: Literal["naive", "pyo3"]) -> None:
+def test_incomplete_index(algorithm: str, solver: SolverName) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
 
@@ -455,7 +456,7 @@ def test_incomplete_index(algorithm: str, solver: Literal["naive", "pyo3"]) -> N
 def test_counting_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -479,7 +480,7 @@ def test_counting_dataset(
 def test_average_win_rate_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -503,7 +504,7 @@ def test_average_win_rate_dataset(
 def test_bradley_terry_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -529,7 +530,7 @@ def test_bradley_terry_dataset(
 def test_newman_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -553,7 +554,7 @@ def test_newman_dataset(
 def test_elo_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -577,7 +578,7 @@ def test_elo_dataset(
 def test_eigen_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -601,7 +602,7 @@ def test_eigen_dataset(
 def test_pagerank_dataset(
     comparison: Comparison,
     comparison_golden: pd.Series[str],
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
         pytest.skip("Rust extension is not available")
@@ -648,7 +649,7 @@ def test_llmfao_matrices(llmfao: Comparison, benchmark: BenchmarkFixture) -> Non
 def test_llmfao_performance(
     llmfao: Comparison,
     algorithm: str,
-    solver: Literal["naive", "pyo3"],
+    solver: SolverName,
     benchmark: BenchmarkFixture,
 ) -> None:
     if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
