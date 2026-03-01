@@ -1,3 +1,19 @@
+//! Implements Krippendorff's alpha for inter-rater reliability.
+//!
+//! Krippendorff's alpha is a statistical measure of the agreement achieved when coding a set
+//! of units. Unlike many other reliability coefficients, it generalizes across different
+//! measurement scales (nominal, ordinal, interval, ratio) and can handle missing data.
+//!
+//! # References
+//!
+//! - Krippendorff, K. (2018). *Content Analysis: An Introduction to Its Methodology*.
+//!   Sage Publications, Thousand Oaks, CA.
+//! - Krippendorff, K. (2006). [*Bootstrapping Distributions for Krippendorff’s Alpha*][boot-algo].
+//! - Hayes, A. F. [*Statistical Methods and Macros for SPSS, SAS, and R*][hayes-macros].
+//!
+//! [boot-algo]: https://www.asc.upenn.edu/sites/default/files/2021-03/Algorithm%20for%20Bootstrapping%20a%20Distribution%20of%20Alpha.pdf
+//! [hayes-macros]: https://afhayes.com/spss-sas-and-r-macros-and-code.html
+
 use ndarray::{Array1, Array2, ArrayView2, Axis};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
@@ -279,6 +295,9 @@ fn compute_pair_errors(
 
 /// Compute Krippendorff's alpha from factorized data.
 ///
+/// This function calculates the inter-rater reliability coefficient &alpha; based on
+/// coincidence and expected disagreement matrices, as described by Krippendorff (2018).
+///
 /// # Arguments
 ///
 /// * `matrix_indices` - Coded matrix with -1 for missing values
@@ -313,6 +332,9 @@ pub fn alpha_from_factorized(
 }
 
 /// Compute Krippendorff's alpha confidence intervals with KALPHA-style bootstrap.
+///
+/// This method implements the bootstrapping algorithm described by Krippendorff (2006)
+/// and Hayes & Krippendorff (2007) to estimate the reliability of the alpha coefficient.
 ///
 /// # Arguments
 ///
@@ -416,6 +438,10 @@ pub fn alpha_bootstrap_from_factorized(
 }
 
 /// Compute Krippendorff's alpha.
+///
+/// This is a statistical measure of inter-rater reliability that generalizes several
+/// known reliability coefficients. It can handle missing data and different types of
+/// measurements (nominal, ordinal, interval, ratio).
 ///
 /// # Arguments
 ///

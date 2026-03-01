@@ -1393,6 +1393,10 @@ def alpha(
     """
     Compute Krippendorff's alpha.
 
+    Quote:
+        Krippendorff, K.: Content Analysis: An Introduction to Its Methodology.
+        Sage Publications, Thousand Oaks, CA (2018).
+
     Args:
         data: Ratings by observer (rows) and unit (columns).
         distance: Distance metric (nominal, ordinal, interval, ratio) or a custom function.
@@ -1442,6 +1446,14 @@ def alpha_bootstrap(
 ) -> AlphaBootstrapResult:
     """
     Compute confidence intervals for Krippendorff's alpha using KALPHA-style bootstrap.
+
+    Quote:
+        Krippendorff, K.: Bootstrapping Distributions for Krippendorff’s Alpha. (2006).
+        <https://www.asc.upenn.edu/sites/default/files/2021-03/Algorithm%20for%20Bootstrapping%20a%20Distribution%20of%20Alpha.pdf>.
+
+    Quote:
+        Hayes, A.F.: Statistical Methods and Macros for SPSS, SAS, and R.
+        <https://afhayes.com/spss-sas-and-r-macros-and-code.html>.
 
     Args:
         data: Ratings by observer (rows) and unit (columns).
