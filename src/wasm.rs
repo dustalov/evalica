@@ -250,6 +250,44 @@ pub fn alpha_wasm(
     Ok(vec![alpha, observed, expected])
 }
 
+#[wasm_bindgen(js_name = "alphaBootstrap")]
+/// Runs Krippendorff's alpha bootstrap in WebAssembly.
+///
+/// Returns a vector with point estimate components followed by bootstrap samples:
+/// `[alpha, observed, expected, ...distribution]`.
+///
+/// # Errors
+///
+/// Returns an error string when distance parsing fails, input shapes are invalid,
+/// resample count is invalid, or expected disagreement is zero.
+pub fn alpha_bootstrap_wasm(
+    codes: &[i64],
+    unique_values: &[f64],
+    n_units: usize,
+    n_raters: usize,
+    distance: &str,
+    n_resamples: usize,
+    seed: u64,
+) -> Result<Vec<f64>, String> {
+    let distance_enum = Distance::parse(distance)?;
+    let codes_array =
+        Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
+    let result = alpha::alpha_bootstrap_from_factorized(
+        &codes_array.view(),
+        unique_values,
+        distance_enum,
+        n_resamples,
+        Some(seed),
+    )?;
+
+    let mut payload = Vec::with_capacity(3 + result.distribution.len());
+    payload.push(result.alpha);
+    payload.push(result.observed);
+    payload.push(result.expected);
+    payload.extend(result.distribution);
+    Ok(payload)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -306,11 +344,7 @@ mod tests {
         //      Unit 3: 2, 2
         // Unique values: [1.0, 2.0, 3.0]
 
-        let codes = vec![
-            0, 0, // Unit 1
-            1, 1, // Unit 2
-            2, 2, // Unit 3
-        ];
+        let codes = vec![0, 0, 1, 1, 2, 2];
         let unique_values = vec![1.0, 2.0, 3.0];
 
         let result = alpha_wasm(&codes, &unique_values, 3, 2, "nominal").unwrap();
@@ -318,5 +352,21 @@ mod tests {
         assert_eq!(result.len(), 3);
         assert_approx_eq!(result[0], 1.0, epsilon = 1e-6); // Alpha
         assert_approx_eq!(result[1], 0.0, epsilon = 1e-12); // Observed disagreement
+    }
+
+    #[wasm_bindgen_test]
+    fn test_alpha_bootstrap() {
+        let codes = vec![
+            0, 0, -1, 0, 1, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0, 1, 2, 3, 3, 3, 3, 3, 0,
+            0, 1, 0, 1, 1, 1, 1, -1, 4, 4, 4, -1, -1, 0, 0,
+        ];
+        let unique_values = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+
+        let result =
+            alpha_bootstrap_wasm(&codes, &unique_values, 11, 4, "nominal", 1000, 12345).unwrap();
+
+        assert_eq!(result.len(), 1003);
+        assert_approx_eq!(result[0], 0.7434211, epsilon = 1e-6);
+        assert!(result.iter().skip(3).all(|v| v.is_finite()));
     }
 }
