@@ -82,7 +82,7 @@ jobs:
         mkdir examples/wasm/pkg
         cp pkg/* examples/wasm/pkg/
     - name: Upload Wasm
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: wasm-example
         path: examples/wasm
@@ -157,7 +157,7 @@ jobs:
         cp Evalica.svg jupyter/
     - if: matrix.python-version == '3.14'
       name: Upload Jupyter
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: jupyter
         path: jupyter
