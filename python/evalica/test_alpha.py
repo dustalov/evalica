@@ -76,7 +76,7 @@ def test_alpha_interval(solver: str) -> None:
     assert res_nom.alpha == pytest.approx(-0.1538462)
     assert res_nom.solver == solver
 
-    res_int = evalica.alpha(df, distance="interval", solver=solver)  # type: ignore[arg-type]
+    res_int = evalica.alpha(df, distance="interval", solver=solver)
     assert res_int.alpha == pytest.approx(0.5454545)
     assert res_int.solver == solver
 
