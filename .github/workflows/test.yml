@@ -108,6 +108,8 @@ jobs:
         cache-dependency-glob: |
           **/Cargo.toml
           **/pyproject.toml
+    - name: Set up pandoc
+      uses: pandoc/actions/setup@v1
     - name: Set up Maturin
       run: |
         uv venv --allow-existing
