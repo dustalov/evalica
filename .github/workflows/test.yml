@@ -109,6 +109,8 @@ jobs:
         cache-dependency-glob: |
           **/Cargo.toml
           **/pyproject.toml
+    - name: Set up pandoc
+      uses: pandoc/actions/setup@v1
     - name: Set up Maturin
       run: |
         uv venv --allow-existing
@@ -132,8 +134,9 @@ jobs:
         use_oidc: true
     - if: matrix.python-version == '3.14' && !cancelled()
       name: Upload test results to Codecov
-      uses: codecov/test-results-action@v1
+      uses: codecov/codecov-action@v6.0.0
       with:
+        report_type: test_results
         use_oidc: true
     - name: Run Module
       run: |
@@ -163,9 +166,8 @@ jobs:
         path: jupyter
         if-no-files-found: error
         retention-days: 5
-    - if: matrix.python-version != '3.8'
-      name: Run MkDocs
-      run: mkdocs build --strict
+    - name: Run Sphinx
+      run: sphinx-build -W --keep-going -b html docs/ site/
     - if: matrix.python-version == '3.14'
       name: Make a release build
       run: maturin develop --uv --release --extras dev,docs

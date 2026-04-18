@@ -620,12 +620,12 @@ def bradley_terry(
 
     Quote:
         Bradley, R.A., Terry, M.E.: Rank Analysis of Incomplete Block Designs: I.
-        The Method of Paired Comparisons. Biometrika. 39, 324&ndash;345 (1952).
+        The Method of Paired Comparisons. Biometrika. 39, 324–345 (1952).
         <https://doi.org/10.2307/2334029>.
 
     Quote:
         Newman, M.E.J.: Efficient Computation of Rankings from Pairwise Comparisons.
-        Journal of Machine Learning Research. 24, 1&ndash;25 (2023).
+        Journal of Machine Learning Research. 24, 1–25 (2023).
         <https://www.jmlr.org/papers/v24/22-1086.html>.
 
     Args:
@@ -749,7 +749,7 @@ def newman(
 
     Quote:
         Newman, M.E.J.: Efficient Computation of Rankings from Pairwise Comparisons.
-        Journal of Machine Learning Research. 24, 1&ndash;25 (2023).
+        Journal of Machine Learning Research. 24, 1–25 (2023).
         <https://www.jmlr.org/papers/v24/22-1086.html>.
 
     Args:
@@ -1113,7 +1113,7 @@ def pagerank(
 
     Quote:
         Brin, S., Page, L.: The anatomy of a large-scale hypertextual Web search engine.
-        Computer Networks and ISDN Systems. 30, 107&ndash;117 (1998).
+        Computer Networks and ISDN Systems. 30, 107–117 (1998).
         <https://doi.org/10.1016/S0169-7552(98)00110-X>.
 
     Args:
