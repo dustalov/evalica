@@ -8,6 +8,10 @@ import plotly.io as pio
 project = "Evalica"
 author = "Dmitry Ustalov"
 copyright = "2024\u20132026 Dmitry Ustalov"
+release = evalica.__version__
+version = release
+
+exclude_patterns = ["_build"]
 
 extensions = [
     "sphinx.ext.autodoc",
