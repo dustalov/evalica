@@ -107,3 +107,18 @@ Refer to the [codings.csv](https://github.com/dustalov/evalica/blob/master/codin
 ## Web Application
 
 Evalica has a built-in [Gradio](https://www.gradio.app/) application that can be launched as `python3 -m evalica.gradio`. Please ensure that the library was installed as `pip install evalica[gradio]`.
+
+```{toctree}
+:hidden:
+:caption: Documentation
+
+tutorial
+counting
+bradley-terry
+elo
+linalg
+alpha
+utils
+errors
+migration
+```

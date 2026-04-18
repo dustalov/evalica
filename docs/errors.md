@@ -1,9 +1,15 @@
-::: evalica.InsufficientRatingsError
-::: evalica.LengthMismatchError
-::: evalica.ScoreDimensionError
-::: evalica.SolverError
-::: evalica.RustExtensionWarning
-    options:
-      filters:
-      - "!^__"
-::: evalica.UnknownDistanceError
+# Errors
+
+```{eval-rst}
+.. autoclass:: evalica.InsufficientRatingsError
+
+.. autoclass:: evalica.LengthMismatchError
+
+.. autoclass:: evalica.ScoreDimensionError
+
+.. autoclass:: evalica.SolverError
+
+.. autoclass:: evalica.RustExtensionWarning
+
+.. autoclass:: evalica.UnknownDistanceError
+```

@@ -7,8 +7,9 @@ build:
   tools:
     python: latest
     rust: latest
-mkdocs:
-  configuration: mkdocs.yml
+sphinx:
+  configuration: docs/conf.py
+  fail_on_warning: true
 python:
   install:
   - method: pip
