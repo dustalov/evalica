@@ -150,6 +150,21 @@ jobs:
       run: nbqa mypy *.ipynb docs/*.ipynb
     - name: Lint with abi3audit
       run: python3 -c "import evalica;print(evalica._brzo.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
+    - name: Run Jupyter
+      run: |
+        mkdir jupyter
+        jupyter trust docs/tutorial.ipynb
+        jupyter nbconvert --to html --output index.html --execute docs/tutorial.ipynb
+        mv docs/index.html jupyter/
+        cp Evalica.svg jupyter/
+    - if: matrix.python-version == '3.14'
+      name: Upload Jupyter
+      uses: actions/upload-artifact@v7
+      with:
+        name: jupyter
+        path: jupyter
+        if-no-files-found: error
+        retention-days: 5
     - name: Run Sphinx
       run: sphinx-build -W --keep-going -b html docs/ site/
     - if: matrix.python-version == '3.14'
