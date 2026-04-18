@@ -142,6 +142,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"python/evalica/__init__.py" = [
+    "RUF002",  # ambiguous-unicode-character-docstring
+]
 "docs/conf.py" = [
     "A001",    # builtin-variable-shadowing
     "INP001",  # implicit-namespace-package
@@ -153,12 +156,12 @@ ignore = [
     "TRY003",  # raise-vanilla-args
 ]
 "!__init__.py" = [
-    "D", # pydocstyle
+    "D",  # pydocstyle
 ]
 "*.ipynb" = [
-    "B018",   # useless-expression
-    "RUF001", # ambiguous-unicode-character-string
+    "B018",    # useless-expression
+    "RUF001",  # ambiguous-unicode-character-string
 ]
 "test_*.py" = [
-    "PLR2004", # magic-value-comparison
+    "PLR2004",  # magic-value-comparison
 ]
