@@ -62,11 +62,12 @@ dev = [
     "ty",
 ]
 docs = [
-    "sphinx",
     "furo",
+    "ipykernel",
     "myst-parser",
     "nbsphinx",
     "plotly",
+    "sphinx",
 ]
 gradio = [
     "gradio",
