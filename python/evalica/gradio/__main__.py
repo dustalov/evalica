@@ -170,7 +170,7 @@ def alpha_handler(
     try:
         result = evalica.alpha_bootstrap(
             df_ratings,
-            distance=distance,  # type: ignore[arg-type]
+            distance=distance,  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
             n_resamples=n_resamples,
             confidence_level=confidence_level,
         )

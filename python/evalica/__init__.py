@@ -95,7 +95,7 @@ except ImportError:
         stacklevel=1,
     )
 
-    _brzo = None  # type: ignore[assignment]
+    _brzo = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
     PYO3_AVAILABLE = False
 
@@ -1344,7 +1344,10 @@ def bootstrap(
             **kwargs,
         )
 
-        return cast("npt.NDArray[np.float64]", result_sample.scores.to_numpy(dtype=np.float64))
+        return cast(
+            "npt.NDArray[np.float64]",
+            result_sample.scores.reindex(result.scores.index).to_numpy(dtype=np.float64),
+        )
 
     bootstrap_result = scipy_bootstrap(
         data=samples,
@@ -1359,10 +1362,10 @@ def bootstrap(
 
     return BootstrapResult(
         result=result,
-        low=pd.Series(bootstrap_result.confidence_interval.low, index=index, name="low"),
-        high=pd.Series(bootstrap_result.confidence_interval.high, index=index, name="high"),
-        stderr=pd.Series(bootstrap_result.standard_error, index=index, name="stderr"),
-        distribution=pd.DataFrame(bootstrap_result.bootstrap_distribution.T, columns=index),
+        low=pd.Series(bootstrap_result.confidence_interval.low, index=result.scores.index, name="low"),
+        high=pd.Series(bootstrap_result.confidence_interval.high, index=result.scores.index, name="high"),
+        stderr=pd.Series(bootstrap_result.standard_error, index=result.scores.index, name="stderr"),
+        distribution=pd.DataFrame(bootstrap_result.bootstrap_distribution.T, columns=result.scores.index),
         index=index,
     )
 
