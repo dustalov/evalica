@@ -95,7 +95,7 @@ except ImportError:
         stacklevel=1,
     )
 
-    _brzo = None  # type: ignore[assignment]
+    _brzo = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
     PYO3_AVAILABLE = False
 

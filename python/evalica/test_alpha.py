@@ -127,7 +127,7 @@ def test_alpha_unknown_distance(solver: SolverName) -> None:
     data = [[1, 2], [2, 3]]
     df = pd.DataFrame(data).T
     with pytest.raises(evalica.UnknownDistanceError, match="Unknown distance"):
-        evalica.alpha(df, distance="mystery", solver=solver)  # type: ignore[arg-type]
+        evalica.alpha(df, distance="mystery", solver=solver)  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])

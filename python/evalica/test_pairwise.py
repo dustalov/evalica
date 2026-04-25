@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import hypothesis.strategies as st
 import numpy as np
@@ -21,8 +21,6 @@ from conftest import Comparison, comparisons
 from evalica import SolverName
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
-
     from pytest_codspeed import BenchmarkFixture
 
 
@@ -35,8 +33,8 @@ def test_bootstrap_score_order(labels: list[str]) -> None:
     # We use reversed order to ensure it's often non-alphabetical
     expected_order = labels[::-1]
 
-    def mock_method(**kwargs: Any) -> evalica.CountingResult:
-        index = kwargs["index"]
+    def mock_method(**kwargs: object) -> evalica.CountingResult:
+        index = cast("pd.Index", kwargs["index"])
         scores = pd.Series(
             np.arange(len(labels), 0, -1, dtype=float),
             index=expected_order,
