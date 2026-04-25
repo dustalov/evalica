@@ -21,7 +21,43 @@ from conftest import Comparison, comparisons
 from evalica import SolverName
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from pytest_codspeed import BenchmarkFixture
+
+
+@given(labels=st.lists(st.text(min_size=1), min_size=2, max_size=10, unique=True))
+def test_bootstrap_score_order(labels: list[str]) -> None:
+    xs = labels
+    ys = labels[1:] + labels[:1]
+    winners = [evalica.Winner.X] * len(labels)
+
+    # We use reversed order to ensure it's often non-alphabetical
+    expected_order = labels[::-1]
+
+    def mock_method(**kwargs: Any) -> evalica.CountingResult:
+        index = kwargs["index"]
+        scores = pd.Series(
+            np.arange(len(labels), 0, -1, dtype=float),
+            index=expected_order,
+            name="mock",
+        )
+        return evalica.CountingResult(scores=scores, index=index, win_weight=1.0, tie_weight=0.5, solver="naive")
+
+    result = evalica.bootstrap(
+        cast("evalica.RankingMethod[str]", mock_method),
+        xs,
+        ys,
+        winners,
+        n_resamples=5,
+        bootstrap_method="percentile",
+        random_state=42,
+    )
+
+    assert list(result.low.index) == expected_order
+    assert list(result.high.index) == expected_order
+    assert list(result.stderr.index) == expected_order
+    assert list(result.distribution.columns) == expected_order
 
 
 @given(comparison=comparisons())
@@ -737,7 +773,7 @@ def test_pairwise_scores_shape(solver: Literal["pyo3", "naive"], shape: tuple[in
 
 
 @given(series(dtype=np.float64))
-def test_pairwise_frame(scores: pd.Series[Any]) -> None:
+def test_pairwise_frame(scores: pd.Series[float]) -> None:
     with np.errstate(all="ignore"):
         df_pairwise = evalica.pairwise_frame(scores)
 
@@ -785,11 +821,11 @@ def test_bootstrap(comparison: Comparison, method: evalica.RankingMethod[str]) -
             random_state=42,
         )
 
-    assert_array_equal(result.result.scores.index.sort_values(), result.index.sort_values())
-    assert_array_equal(result.low.index, result.index)
-    assert_array_equal(result.high.index, result.index)
-    assert_array_equal(result.stderr.index, result.index)
-    assert_array_equal(result.distribution.columns, result.index)
+    assert_array_equal(result.index, result.result.index)
+    assert_array_equal(result.low.index, result.result.scores.index)
+    assert_array_equal(result.high.index, result.result.scores.index)
+    assert_array_equal(result.stderr.index, result.result.scores.index)
+    assert_array_equal(result.distribution.columns, result.result.scores.index)
 
     assert len(result.distribution) == n_resamples
 
