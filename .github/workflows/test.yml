@@ -173,7 +173,7 @@ jobs:
       run: maturin develop --uv --release --extras dev,docs
     - if: matrix.python-version == '3.14'
       name: Run benchmarks
-      uses: CodSpeedHQ/action@v4.13.1
+      uses: CodSpeedHQ/action@v4.14.0
       with:
         run: pytest --codspeed
         mode: simulation
