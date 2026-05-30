@@ -129,12 +129,12 @@ jobs:
       run: pytest
     - if: matrix.python-version == '3.14'
       name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v6.0.0
+      uses: codecov/codecov-action@v6.0.1
       with:
         use_oidc: true
     - if: matrix.python-version == '3.14' && !cancelled()
       name: Upload test results to Codecov
-      uses: codecov/codecov-action@v6.0.0
+      uses: codecov/codecov-action@v6.0.1
       with:
         report_type: test_results
         use_oidc: true
