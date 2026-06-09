@@ -14,10 +14,10 @@
 //! [boot-algo]: https://www.asc.upenn.edu/sites/default/files/2021-03/Algorithm%20for%20Bootstrapping%20a%20Distribution%20of%20Alpha.pdf
 //! [hayes-macros]: https://afhayes.com/spss-sas-and-r-macros-and-code.html
 
-use ndarray::{Array1, Array2, ArrayView2, Axis};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, Zip};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// Function type for custom distance metrics.
 /// Takes a slice of unique values and returns a distance matrix.
@@ -62,30 +62,23 @@ impl Distance {
 ///
 /// A tuple of (`coded_matrix`, `unique_values`) where missing values are coded as `-1`.
 fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
-    let mut value_to_code: HashMap<u64, usize> = HashMap::new();
+    let mut seen: HashSet<u64> = HashSet::new();
     let mut unique_values: Vec<f64> = Vec::new();
     let mut coded = Array2::from_elem(data.dim(), -1i64);
 
-    for &val in data.iter() {
-        if !val.is_nan() {
-            let bits = val.to_bits();
-            value_to_code.entry(bits).or_insert_with(|| {
-                let code = unique_values.len();
-                unique_values.push(val);
-                code
-            });
+    for &val in data.iter().filter(|v| !v.is_nan()) {
+        if seen.insert(val.to_bits()) {
+            unique_values.push(val);
         }
     }
 
     unique_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let mut remap: HashMap<u64, i64> = HashMap::new();
-    for (new_idx, &val) in unique_values.iter().enumerate() {
-        remap.insert(
-            val.to_bits(),
-            i64::try_from(new_idx).expect("index should fit into i64"),
-        );
-    }
+    let remap: HashMap<u64, i64> = unique_values
+        .iter()
+        .enumerate()
+        .map(|(i, &v)| (v.to_bits(), i64::try_from(i).expect("index should fit into i64")))
+        .collect();
 
     for ((i, j), &val) in data.indexed_iter() {
         if !val.is_nan() {
@@ -112,10 +105,8 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
 
     for (i, unit_row) in matrix_indices.rows().into_iter().enumerate() {
         for &val in unit_row {
-            if val >= 0 {
-                if let Ok(val_idx) = usize::try_from(val) {
-                    c[(i, val_idx)] += 1.0;
-                }
+            if let Ok(val_idx) = usize::try_from(val) {
+                c[(i, val_idx)] += 1.0;
             }
         }
     }
@@ -134,20 +125,14 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
     let mut coincidence = cw.t().dot(&c);
 
     let diag_adj = cw.sum_axis(Axis(0));
-    for i in 0..n_unique {
-        coincidence[[i, i]] -= diag_adj[i];
-    }
+    Zip::from(coincidence.diag_mut()).and(&diag_adj).for_each(|d, &a| *d -= a);
 
     coincidence
 }
 
 /// Compute nominal distance matrix.
 fn nominal_distance(n_unique: usize) -> Array2<f64> {
-    let mut delta = Array2::<f64>::ones((n_unique, n_unique));
-    for i in 0..n_unique {
-        delta[[i, i]] = 0.0;
-    }
-    delta
+    Array2::<f64>::ones((n_unique, n_unique)) - Array2::<f64>::eye(n_unique)
 }
 
 /// Compute ordinal distance matrix based on cumulative frequencies.
@@ -168,27 +153,23 @@ fn ordinal_distance(coincidence: &ArrayView2<f64>) -> Array2<f64> {
 
 /// Compute interval distance matrix.
 fn interval_distance(unique_values: &[f64]) -> Array2<f64> {
-    let values = Array1::from_vec(unique_values.to_vec());
-    let v_col = values.view().insert_axis(Axis(1));
-    let v_row = values.view().insert_axis(Axis(0));
+    let values = ArrayView1::from(unique_values);
+    let v_col = values.insert_axis(Axis(1));
+    let v_row = values.insert_axis(Axis(0));
     (&v_col - &v_row).mapv(|x| x.powi(2))
 }
 
 /// Compute ratio distance matrix.
 fn ratio_distance(unique_values: &[f64]) -> Array2<f64> {
-    let values = Array1::from_vec(unique_values.to_vec());
-    let v_col = values.view().insert_axis(Axis(1));
-    let v_row = values.view().insert_axis(Axis(0));
+    let values = ArrayView1::from(unique_values);
+    let v_col = values.insert_axis(Axis(1));
+    let v_row = values.insert_axis(Axis(0));
     let sum_matrix = &v_col + &v_row;
     let diff_matrix = &v_col - &v_row;
 
-    let mut delta = Array2::<f64>::zeros(sum_matrix.dim());
-    for ((i, j), &s) in sum_matrix.indexed_iter() {
-        if s != 0.0 {
-            delta[(i, j)] = (diff_matrix[(i, j)] / s).powi(2);
-        }
-    }
-    delta
+    Zip::from(&diff_matrix)
+        .and(&sum_matrix)
+        .map_collect(|&d, &s| if s == 0.0 { 0.0 } else { (d / s).powi(2) })
 }
 
 /// Compute the expected disagreement matrix.
@@ -200,9 +181,7 @@ fn compute_expected_matrix(coincidence: &ArrayView2<f64>) -> Array2<f64> {
         let n_c_col = n_c.view().insert_axis(Axis(1));
         let n_c_row = n_c.view().insert_axis(Axis(0));
         let mut expected = &n_c_col * &n_c_row;
-        for i in 0..n_c.len() {
-            expected[[i, i]] = n_c[i] * (n_c[i] - 1.0);
-        }
+        Zip::from(expected.diag_mut()).and(&n_c).for_each(|d, &n| *d = n * (n - 1.0));
         expected / (n_total - 1.0)
     } else {
         Array2::<f64>::zeros(coincidence.dim())
@@ -389,31 +368,28 @@ pub fn alpha_bootstrap_from_factorized(
         let weight = 1.0 / (raters_per_unit - 1) as f64;
 
         for draw_index in 1..=n_draws {
-            let current_draws =
+            let mut current_draws =
                 Array1::from_shape_fn(n_resamples, |_| rng.random_range(0..pair_errors.len()));
 
-            if draw_index == 2 {
-                let mut current_draws = current_draws;
-                for r in 0..n_resamples {
-                    if current_draws[r] == previous_draws[r] {
-                        current_draws[r] = rng.random_range(0..pair_errors.len());
+            match draw_index {
+                1 => previous_draws.assign(&current_draws),
+                2 => {
+                    for r in 0..n_resamples {
+                        if current_draws[r] == previous_draws[r] {
+                            current_draws[r] = rng.random_range(0..pair_errors.len());
+                        }
                     }
                 }
-                for r in 0..n_resamples {
-                    distribution[r] = pair_errors[current_draws[r]].mul_add(-weight, distribution[r]);
-                }
-            } else {
-                if draw_index == 1 {
-                    previous_draws.assign(&current_draws);
-                }
-                for r in 0..n_resamples {
-                    distribution[r] = pair_errors[current_draws[r]].mul_add(-weight, distribution[r]);
-                }
+                _ => {}
+            }
+
+            for r in 0..n_resamples {
+                distribution[r] = pair_errors[current_draws[r]].mul_add(-weight, distribution[r]);
             }
         }
     }
 
-    distribution.mapv_inplace(|a: f64| if a < -1.0 { -1.0 } else { a });
+    distribution.mapv_inplace(|a| a.max(-1.0));
 
     let alpha = if computed.expected_disagreement == 0.0 {
         0.0

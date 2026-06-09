@@ -65,21 +65,13 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
             scores_new[i] = numerator / denominator;
         }
 
-        let mut log_sum = A::zero();
-        for &value in &scores_new {
-            log_sum += value.ln();
-        }
-        let geometric_mean = (log_sum / n_as_a).exp();
+        let geometric_mean = (scores_new.mapv(Float::ln).sum() / n_as_a).exp();
         scores_new /= geometric_mean;
 
         nan_to_num(&mut scores_new, tolerance);
 
-        let mut squared_difference = A::zero();
-        for (&new_value, &old_value) in scores_new.iter().zip(scores.iter()) {
-            let difference = new_value - old_value;
-            squared_difference += difference * difference;
-        }
-        converged = squared_difference.sqrt() < tolerance;
+        let diff = &scores_new - &scores;
+        converged = diff.dot(&diff).sqrt() < tolerance;
 
         scores.assign(&scores_new);
     }

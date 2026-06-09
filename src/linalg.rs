@@ -54,17 +54,13 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
 
         nan_to_num(&mut scores_new, tolerance);
 
-        let mut squared_difference = A::zero();
-        for (&new_value, &old_value) in scores_new.iter().zip(scores.iter()) {
-            let difference = new_value - old_value;
-            squared_difference = squared_difference + difference * difference;
-        }
-        converged = squared_difference.sqrt() < tolerance;
+        let diff = &scores_new - &scores;
+        converged = diff.dot(&diff).sqrt() < tolerance;
 
         scores.assign(&scores_new);
     }
 
-    Ok((scores, limit))
+    Ok((scores, iterations))
 }
 
 fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
@@ -123,14 +119,10 @@ pub fn pagerank(
 
     let result = eigen(&pagerank_matrix.view(), tolerance, limit);
 
-    match result {
-        Ok((mut scores, iterations)) => {
-            scores /= scores.sum();
-
-            Ok((scores, iterations))
-        }
-        Err(error) => Err(error),
-    }
+    result.map(|(mut scores, iterations)| {
+        scores /= scores.sum();
+        (scores, iterations)
+    })
 }
 
 #[cfg(test)]

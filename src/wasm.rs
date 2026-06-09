@@ -4,7 +4,7 @@ use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, win_plus_tie_matrix};
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ArrayView1};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "counting")]
@@ -23,10 +23,10 @@ pub fn counting_wasm(
     tie_weight: f64,
 ) -> Result<Vec<f64>, String> {
     counting(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
         win_weight,
         tie_weight,
@@ -51,10 +51,10 @@ pub fn average_win_rate_wasm(
     tie_weight: f64,
 ) -> Result<Vec<f64>, String> {
     average_win_rate(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
         win_weight,
         tie_weight,
@@ -81,10 +81,10 @@ pub fn bradley_terry_wasm(
     limit: usize,
 ) -> Result<Vec<f64>, String> {
     let (wins, ties) = matrices(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
     )
     .map_err(|e| e.to_string())?;
@@ -112,10 +112,10 @@ pub fn newman_wasm(
     limit: usize,
 ) -> Result<Vec<f64>, String> {
     let (wins, ties) = matrices(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
     )
     .map_err(|e| e.to_string())?;
@@ -143,10 +143,10 @@ pub fn eigen_wasm(
     limit: usize,
 ) -> Result<Vec<f64>, String> {
     let (wins, ties) = matrices(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
     )
     .map_err(|e| e.to_string())?;
@@ -176,10 +176,10 @@ pub fn pagerank_wasm(
     limit: usize,
 ) -> Result<Vec<f64>, String> {
     let (wins, ties) = matrices(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
     )
     .map_err(|e| e.to_string())?;
@@ -210,10 +210,10 @@ pub fn elo_wasm(
     tie_weight: f64,
 ) -> Result<Vec<f64>, String> {
     elo(
-        &Array1::from_vec(xs.to_vec()).view(),
-        &Array1::from_vec(ys.to_vec()).view(),
-        &Array1::from_vec(winners.to_vec()).view(),
-        &Array1::from_vec(weights.to_vec()).view(),
+        &ArrayView1::from(xs),
+        &ArrayView1::from(ys),
+        &ArrayView1::from(winners),
+        &ArrayView1::from(weights),
         total,
         initial,
         base,
