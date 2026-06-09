@@ -4,7 +4,7 @@ use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, win_plus_tie_matrix};
-use ndarray::{Array1, Array2, ArrayView1};
+use ndarray::{Array2, ArrayView1};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "counting")]
