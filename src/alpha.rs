@@ -400,14 +400,14 @@ pub fn alpha_bootstrap_from_factorized(
                     }
                 }
                 for r in 0..n_resamples {
-                    distribution[r] -= pair_errors[current_draws[r]] * weight;
+                    distribution[r] = pair_errors[current_draws[r]].mul_add(-weight, distribution[r]);
                 }
             } else {
                 if draw_index == 1 {
                     previous_draws.assign(&current_draws);
                 }
                 for r in 0..n_resamples {
-                    distribution[r] -= pair_errors[current_draws[r]] * weight;
+                    distribution[r] = pair_errors[current_draws[r]].mul_add(-weight, distribution[r]);
                 }
             }
         }
