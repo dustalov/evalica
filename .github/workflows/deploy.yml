@@ -22,7 +22,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - run: cargo publish --dry-run
     - if: github.event_name == 'release'
       uses: rust-lang/crates-io-auth-action@v1
@@ -35,7 +35,7 @@ jobs:
     name: build sdist
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - uses: PyO3/maturin-action@v1
       with:
         command: sdist
@@ -86,7 +86,7 @@ jobs:
           target: aarch64
     runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
