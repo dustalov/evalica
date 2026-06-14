@@ -464,7 +464,7 @@ fn alpha_bootstrap_pyo3<'py>(
     }
 }
 
-#[pymodule]
+#[pymodule(gil_used = false)]
 #[pyo3(name = "_brzo")]
 fn _brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
