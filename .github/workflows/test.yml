@@ -167,7 +167,8 @@ jobs:
         path: jupyter
         if-no-files-found: error
         retention-days: 5
-    - name: Run Sphinx
+    - if: matrix.python-version != '3.8' && matrix.python-version != '3.9'
+      name: Run Sphinx
       run: sphinx-build -W --keep-going -b html docs/ site/
     - if: matrix.python-version == '3.14'
       name: Make a release build
