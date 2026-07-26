@@ -129,6 +129,7 @@ exclude = [
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "CPY001",  # missing-copyright-notice
     "D203",    # one-blank-line-before-class
     "D212",    # multi-line-summary-first-line
     "D406",    # new-line-after-section-name
@@ -136,6 +137,7 @@ ignore = [
     "ERA001",  # commented-out-code
     "FIX002",  # line-contains-todo
     "PLR0913", # too-many-arguments
+    "PLR0917", # too-many-positional-arguments
     "PYI021",  # docstring-in-stub
     "S101",    # assert
     "TD002",   # missing-todo-author
