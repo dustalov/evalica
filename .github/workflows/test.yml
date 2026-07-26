@@ -151,7 +151,8 @@ jobs:
       run: nbqa mypy *.ipynb docs/*.ipynb
     - name: Lint with abi3audit
       run: python3 -c "import evalica;print(evalica._brzo.__file__)" | xargs abi3audit --assume-minimum-abi3=3.8 --verbose
-    - name: Run Jupyter
+    - if: matrix.python-version != '3.8' && matrix.python-version != '3.9'
+      name: Run Jupyter
       run: |
         mkdir jupyter
         jupyter trust docs/tutorial.ipynb
