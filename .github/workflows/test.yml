@@ -90,12 +90,12 @@ jobs:
         retention-days: 5
   python:
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.python-version == '3.14' }}
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     needs: rust
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15" ]
     steps:
     - uses: actions/checkout@v7.0.1
     - name: Set up Python
@@ -121,18 +121,18 @@ jobs:
       run: mypy .
     - name: Lint with Ruff
       run: ruff check
-    - if: matrix.python-version == '3.14'
+    - if: matrix.python-version == '3.15'
       name: Run tests with coverage
       run: pytest --cov --junitxml=junit.xml -o junit_family=legacy
-    - if: matrix.python-version != '3.14'
+    - if: matrix.python-version != '3.15'
       name: Run tests only
       run: pytest
-    - if: matrix.python-version == '3.14'
+    - if: matrix.python-version == '3.15'
       name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7.1.1
       with:
         use_oidc: true
-    - if: matrix.python-version == '3.14' && !cancelled()
+    - if: matrix.python-version == '3.15' && !cancelled()
       name: Upload test results to Codecov
       uses: codecov/codecov-action@v7.1.1
       with:
@@ -159,7 +159,7 @@ jobs:
         jupyter nbconvert --to html --output index.html --execute docs/tutorial.ipynb
         mv docs/index.html jupyter/
         cp Evalica.svg jupyter/
-    - if: matrix.python-version == '3.14'
+    - if: matrix.python-version == '3.15'
       name: Upload Jupyter
       uses: actions/upload-artifact@v7
       with:
@@ -170,10 +170,10 @@ jobs:
     - if: matrix.python-version != '3.8' && matrix.python-version != '3.9'
       name: Run Sphinx
       run: sphinx-build -W --keep-going -b html docs/ site/
-    - if: matrix.python-version == '3.14'
+    - if: matrix.python-version == '3.15'
       name: Make a release build
       run: maturin develop --uv --release --extras dev,docs
-    - if: matrix.python-version == '3.14'
+    - if: matrix.python-version == '3.15'
       name: Run benchmarks
       uses: CodSpeedHQ/action@v5.6.0
       with:

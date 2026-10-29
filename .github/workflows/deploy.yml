@@ -80,7 +80,7 @@ jobs:
         # windows
         - os: windows
           target: x86_64
-          interpreter: 3.10 3.11 3.12 3.13 3.14
+          interpreter: 3.10 3.11 3.12 3.13 3.14 3.15
         exclude:
         - os: windows
           target: aarch64
@@ -90,7 +90,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v7.1.0
       with:
-        python-version: "3.14"
+        python-version: "3.15"
         architecture: ${{ matrix.python-architecture || 'x64' }}
     - name: Set up uv
       uses: astral-sh/setup-uv@v10.3.2
@@ -104,7 +104,7 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 3.14' }} --compatibility pypi
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.15' }} --compatibility pypi
         rust-toolchain: stable
         docker-options: -e CI
     - name: List wheels

@@ -776,8 +776,8 @@ def test_pairwise_frame(scores: pd.Series[float]) -> None:
         df_pairwise = evalica.pairwise_frame(scores)
 
     assert df_pairwise.shape == (len(scores), len(scores))
-    assert df_pairwise.index is scores.index
-    assert df_pairwise.columns is scores.index
+    assert df_pairwise.index.equals(scores.index)
+    assert df_pairwise.columns.equals(scores.index)
 
 
 @given(comparison=comparisons())
