@@ -93,7 +93,7 @@ jobs:
         python-version: "3.15"
         architecture: ${{ matrix.python-architecture || 'x64' }}
     - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.2
+      uses: astral-sh/setup-uv@v10.3.3
       with:
         activate-environment: true
         enable-cache: false
