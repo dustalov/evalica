@@ -137,7 +137,7 @@ def handler(
         .astype(int)
     )
 
-    df_result["rank"] = df_result["score"].rank(na_option="bottom", ascending=False).astype(int)
+    df_result["rank"] = df_result["score"].rank(method="min", na_option="bottom", ascending=False).astype(int)
 
     if truncate:
         df_result = pd.concat([df_result.head(5), df_result.tail(5)])
