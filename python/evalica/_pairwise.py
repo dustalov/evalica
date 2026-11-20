@@ -178,6 +178,9 @@ def newman(
 
         scores[:] = scores_new
 
+    if np.isfinite(v_new):
+        v = v_new
+
     return scores, v, iterations
 
 
