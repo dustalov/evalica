@@ -161,6 +161,10 @@ pub fn newman(
         scores.assign(&scores_new);
     }
 
+    if v_new.is_finite() {
+        v = v_new;
+    }
+
     Ok((scores, v, iterations))
 }
 
