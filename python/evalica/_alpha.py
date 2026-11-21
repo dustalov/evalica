@@ -334,7 +334,7 @@ def _alpha_bootstrap_naive(
 
     start = 0
 
-    for unit_count, n_draw in zip(unit_counts, draws_per_unit):
+    for unit_count, n_draw in zip(unit_counts, draws_per_unit, strict=True):
         end = start + n_draw
         unit_draws = draws[:, start:end]
 

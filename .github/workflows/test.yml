@@ -149,7 +149,7 @@ jobs:
     - name: Lint Jupyter with Mypy
       run: nbqa mypy *.ipynb docs/*.ipynb
     - name: Lint with abi3audit
-      run: python3 -c "import evalica;print(evalica._brzo.__file__)" | xargs abi3audit --assume-minimum-abi3=3.9 --verbose
+      run: python3 -c "import evalica;print(evalica._brzo.__file__)" | xargs abi3audit --assume-minimum-abi3=3.10 --verbose
     - name: Run Jupyter
       run: |
         mkdir jupyter

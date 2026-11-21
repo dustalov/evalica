@@ -44,7 +44,7 @@ def matrices(
     tie_matrix = np.zeros((total, total), dtype=np.float64)
 
     with np.errstate(all="ignore"):
-        for x, y, w, weight in zip(xs, ys, winners, weights):
+        for x, y, w, weight in zip(xs, ys, winners, weights, strict=True):
             if w == Winner.X:
                 win_matrix[x, y] += weight
             elif w == Winner.Y:
@@ -73,7 +73,7 @@ def counting(
     scores = np.zeros(total)
 
     with np.errstate(all="ignore"):
-        for x, y, w, weight in zip(xs, ys, winners, weights):
+        for x, y, w, weight in zip(xs, ys, winners, weights, strict=True):
             if w == Winner.X:
                 scores[x] += weight * win_weight
             elif w == Winner.Y:
@@ -205,7 +205,7 @@ def elo(
     scores = np.ones(total) * initial
 
     with np.errstate(all="ignore"):
-        for x, y, w, weight in zip(xs, ys, winners, weights):
+        for x, y, w, weight in zip(xs, ys, winners, weights, strict=True):
             q_x = np.nan_to_num(np.power(base, scores[x] / scale))
             q_y = np.nan_to_num(np.power(base, scores[y] / scale))
 

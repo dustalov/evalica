@@ -19,7 +19,7 @@ keywords = [
     "rating",
     "statistics",
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 dependencies = ["numpy>=1.16.0", "pandas", "scipy"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -120,7 +120,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py39"
+target-version = "py310"
 exclude = [
     "coling2025",
 ]

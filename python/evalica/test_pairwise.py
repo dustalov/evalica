@@ -110,8 +110,11 @@ def test_matrices(comparison: Comparison, solver: SolverName) -> None:
     if weights is None:
         weights = [1.0] * len(winners)
 
-    wins = sum(int(winner in [evalica.Winner.X, evalica.Winner.Y]) * weight for winner, weight in zip(winners, weights))
-    ties = sum(int(winner == evalica.Winner.Draw) * weight for winner, weight in zip(winners, weights))
+    wins = sum(
+        int(winner in [evalica.Winner.X, evalica.Winner.Y]) * weight
+        for winner, weight in zip(winners, weights, strict=True)
+    )
+    ties = sum(int(winner == evalica.Winner.Draw) * weight for winner, weight in zip(winners, weights, strict=True))
 
     assume(np.isfinite(wins) and np.isfinite(ties))
 
