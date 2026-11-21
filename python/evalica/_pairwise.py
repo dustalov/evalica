@@ -65,7 +65,7 @@ def counting(
 ) -> npt.NDArray[np.float64]:
     _check_lengths(xs, ys, winners, weights)
 
-    if not xs:
+    if len(xs) == 0:
         return np.zeros(0)
 
     scores = np.zeros(total)
@@ -197,7 +197,7 @@ def elo(
 ) -> npt.NDArray[np.float64]:
     _check_lengths(xs, ys, winners, weights)
 
-    if not xs:
+    if len(xs) == 0:
         return np.zeros(0)
 
     scores = np.ones(total) * initial

@@ -1,9 +1,9 @@
-use std::ops::{AddAssign, DivAssign};
+use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError};
+use ndarray::{Array1, ArrayView2, ErrorKind, ScalarOperand, ShapeError, Zip};
 use num_traits::{Float, FromPrimitive};
 
-use crate::utils::{nan_to_num, one_nan_to_num, win_plus_tie_matrix};
+use crate::utils::{one_nan_to_num, win_plus_tie_matrix};
 
 /// Implements the Bradley–Terry model for pairwise comparisons.
 ///
@@ -26,7 +26,7 @@ use crate::utils::{nan_to_num, one_nan_to_num, win_plus_tie_matrix};
 /// # Errors
 ///
 /// Returns an error if the matrix is not square or if numeric conversion fails.
-pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivAssign>(
+pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign>(
     matrix: &ArrayView2<A>,
     tolerance: A,
     limit: usize,
@@ -46,10 +46,16 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
         return Ok((scores, iterations));
     }
 
+    let matrix_t = matrix.t();
+    let matrix_t = matrix_t.as_standard_layout();
+    let mut scores_new = Array1::zeros(n);
+    let mut logs = Array1::zeros(n);
+    let mut diff = Array1::zeros(n);
+
     while !converged && iterations < limit {
         iterations += 1;
 
-        let mut scores_new = scores.clone();
+        scores_new.assign(&scores);
 
         for i in 0..n {
             let mut numerator = A::zero();
@@ -59,21 +65,27 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign + DivA
             for j in 0..n {
                 let sum_scores = score_i + scores_new[j];
                 numerator += matrix[[i, j]] * scores_new[j] / sum_scores;
-                denominator += matrix[[j, i]] / sum_scores;
+                denominator += matrix_t[[i, j]] / sum_scores;
             }
 
             scores_new[i] = numerator / denominator;
         }
 
-        let geometric_mean = (scores_new.mapv(Float::ln).sum() / n_as_a).exp();
-        scores_new /= geometric_mean;
+        Zip::from(&mut logs)
+            .and(&scores_new)
+            .for_each(|l, &x| *l = x.ln());
+        let geometric_mean = (logs.sum() / n_as_a).exp();
 
-        nan_to_num(&mut scores_new, tolerance);
-
-        let diff = &scores_new - &scores;
+        Zip::from(&mut diff)
+            .and(&mut scores_new)
+            .and(&scores)
+            .for_each(|d, new, &old| {
+                *new = one_nan_to_num(*new / geometric_mean, tolerance);
+                *d = *new - old;
+            });
         converged = diff.dot(&diff).sqrt() < tolerance;
 
-        scores.assign(&scores_new);
+        std::mem::swap(&mut scores, &mut scores_new);
     }
 
     Ok((scores, iterations))
@@ -113,7 +125,8 @@ pub fn newman(
         return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
     }
 
-    let mut scores = Array1::<f64>::ones(win_matrix.shape()[0]);
+    let n = win_matrix.nrows();
+    let mut scores = Array1::<f64>::ones(n);
     let mut v = v_init;
 
     let mut converged = false;
@@ -123,8 +136,11 @@ pub fn newman(
         return Ok((scores, v, iterations));
     }
 
-    let win_tie_half = win_plus_tie_matrix(win_matrix, tie_matrix, 1.0, 0.5, tolerance);
+    let win_tie_half = win_plus_tie_matrix(win_matrix.to_owned(), tie_matrix, 1.0, 0.5, tolerance);
+    let win_tie_half_t = win_tie_half.t();
+    let win_tie_half_t = win_tie_half_t.as_standard_layout();
 
+    let mut scores_new = Array1::<f64>::zeros(n);
     let mut v_new = v;
 
     while !converged && iterations < limit {
@@ -132,33 +148,40 @@ pub fn newman(
 
         v = one_nan_to_num(v_new, tolerance);
 
-        let broadcast_scores_t = scores.view().insert_axis(Axis(0));
-        let sqrt_scores_outer =
-            (&broadcast_scores_t * &broadcast_scores_t.t()).mapv_into(f64::sqrt);
-        let sum_scores = &broadcast_scores_t + &broadcast_scores_t.t();
-        let sqrt_div_scores_outer_t =
-            (&broadcast_scores_t / &broadcast_scores_t.t()).mapv_into(f64::sqrt);
-        let common_denominator = &sum_scores + 2.0 * v * &sqrt_scores_outer;
+        let mut v_numerator = 0.0;
+        let mut v_denominator = 0.0;
+        let mut squared_difference = 0.0;
 
-        let scores_numerator = (&win_tie_half * (&broadcast_scores_t + v * &sqrt_scores_outer)
-            / &common_denominator)
-            .sum_axis(Axis(1));
+        for i in 0..n {
+            let score_i = scores[i];
+            let mut scores_numerator = 0.0;
+            let mut scores_denominator = 0.0;
 
-        let scores_denominator = (&win_tie_half.t() * (1.0 + v * &sqrt_div_scores_outer_t)
-            / &common_denominator)
-            .sum_axis(Axis(1));
+            for j in 0..n {
+                let score_j = scores[j];
+                let sqrt_scores_outer = (score_j * score_i).sqrt();
+                let sum_scores = score_j + score_i;
+                let common_denominator = (2.0 * v).mul_add(sqrt_scores_outer, sum_scores);
 
-        let mut scores_new = &scores_numerator / &scores_denominator;
-        nan_to_num(&mut scores_new, tolerance);
+                scores_numerator += win_tie_half[[i, j]] * v.mul_add(sqrt_scores_outer, score_j)
+                    / common_denominator;
+                scores_denominator += win_tie_half_t[[i, j]]
+                    * v.mul_add((score_j / score_i).sqrt(), 1.0)
+                    / common_denominator;
+                v_numerator += tie_matrix[[i, j]] * sum_scores / common_denominator;
+                v_denominator += win_matrix[[i, j]] * sqrt_scores_outer / common_denominator;
+            }
 
-        let v_numerator = (tie_matrix * &sum_scores / &common_denominator).sum() / 2.0;
-        let v_denominator = (win_matrix * &sqrt_scores_outer / &common_denominator).sum() * 2.0;
-        v_new = v_numerator / v_denominator;
+            scores_new[i] = one_nan_to_num(scores_numerator / scores_denominator, tolerance);
 
-        let difference = &scores_new - &scores;
-        converged = difference.dot(&difference).sqrt() < tolerance;
+            let difference = scores_new[i] - score_i;
+            squared_difference = difference.mul_add(difference, squared_difference);
+        }
 
-        scores.assign(&scores_new);
+        v_new = v_numerator / (4.0 * v_denominator);
+        converged = squared_difference.sqrt() < tolerance;
+
+        std::mem::swap(&mut scores, &mut scores_new);
     }
 
     if v_new.is_finite() {
@@ -190,8 +213,7 @@ mod tests {
         let (win_matrix, tie_matrix) =
             matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix =
-            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
+        let matrix = win_plus_tie_matrix(win_matrix, &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.050799672530389396,

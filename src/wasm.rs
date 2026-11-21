@@ -4,7 +4,7 @@ use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, win_plus_tie_matrix};
-use ndarray::{Array2, ArrayView1};
+use ndarray::{ArrayView1, ArrayView2};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "counting")]
@@ -89,7 +89,7 @@ pub fn bradley_terry_wasm(
     )
     .map_err(|e| e.to_string())?;
 
-    let matrix = win_plus_tie_matrix(&wins.view(), &ties.view(), win_weight, tie_weight, 0.0);
+    let matrix = win_plus_tie_matrix(wins, &ties.view(), win_weight, tie_weight, 0.0);
     bradley_terry(&matrix.view(), tolerance, limit)
         .map(|(a, _)| a.to_vec())
         .map_err(|e| e.to_string())
@@ -151,7 +151,7 @@ pub fn eigen_wasm(
     )
     .map_err(|e| e.to_string())?;
 
-    let matrix = win_plus_tie_matrix(&wins.view(), &ties.view(), win_weight, tie_weight, 0.0);
+    let matrix = win_plus_tie_matrix(wins, &ties.view(), win_weight, tie_weight, 0.0);
     eigen(&matrix.view(), tolerance, limit)
         .map(|(a, _)| a.to_vec())
         .map_err(|e| e.to_string())
@@ -184,7 +184,7 @@ pub fn pagerank_wasm(
     )
     .map_err(|e| e.to_string())?;
 
-    let matrix = win_plus_tie_matrix(&wins.view(), &ties.view(), win_weight, tie_weight, 0.0);
+    let matrix = win_plus_tie_matrix(wins, &ties.view(), win_weight, tie_weight, 0.0);
     pagerank(&matrix.view(), alpha, tolerance, limit)
         .map(|(a, _)| a.to_vec())
         .map_err(|e| e.to_string())
@@ -242,10 +242,10 @@ pub fn alpha_wasm(
     let distance_enum = Distance::parse(distance)?;
 
     let codes_array =
-        Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
+        ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())?;
 
     let (alpha, observed, expected) =
-        alpha::alpha_from_factorized(&codes_array.view(), unique_values, distance_enum)?;
+        alpha::alpha_from_factorized(&codes_array, unique_values, distance_enum)?;
 
     Ok(vec![alpha, observed, expected])
 }
@@ -271,9 +271,9 @@ pub fn alpha_bootstrap_wasm(
 ) -> Result<Vec<f64>, String> {
     let distance_enum = Distance::parse(distance)?;
     let codes_array =
-        Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
+        ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())?;
     let result = alpha::alpha_bootstrap_from_factorized(
-        &codes_array.view(),
+        &codes_array,
         unique_values,
         distance_enum,
         n_resamples,

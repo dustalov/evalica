@@ -142,7 +142,7 @@ fn bradley_terry_pyo3<'py>(
     ) {
         Ok((win_matrix, tie_matrix)) => {
             let matrix = win_plus_tie_matrix(
-                &win_matrix.view(),
+                win_matrix,
                 &tie_matrix.view(),
                 win_weight,
                 tie_weight,
@@ -274,7 +274,7 @@ fn eigen_pyo3<'py>(
     ) {
         Ok((win_matrix, tie_matrix)) => {
             let matrix = win_plus_tie_matrix(
-                &win_matrix.view(),
+                win_matrix,
                 &tie_matrix.view(),
                 win_weight,
                 tie_weight,
@@ -318,7 +318,7 @@ fn pagerank_pyo3<'py>(
     ) {
         Ok((win_matrix, tie_matrix)) => {
             let matrix = win_plus_tie_matrix(
-                &win_matrix.view(),
+                win_matrix,
                 &tie_matrix.view(),
                 win_weight,
                 tie_weight,
@@ -468,7 +468,6 @@ fn alpha_bootstrap_pyo3<'py>(
 #[pyo3(name = "_brzo")]
 fn brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("HAS_BLAS", crate::has_blas())?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;

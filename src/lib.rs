@@ -1,16 +1,3 @@
-#[cfg(all(target_os = "macos", feature = "accelerate-src"))]
-#[allow(unused_extern_crates)]
-extern crate accelerate_src;
-#[cfg(feature = "blas-src")]
-#[allow(unused_extern_crates)]
-extern crate blas_src;
-#[cfg(feature = "netlib-src")]
-#[allow(unused_extern_crates)]
-extern crate netlib_src;
-#[cfg(feature = "openblas-src")]
-#[allow(unused_extern_crates)]
-extern crate openblas_src;
-
 /// Implements Krippendorff's alpha for inter-rater reliability.
 pub mod alpha;
 /// Implements the Bradley–Terry model and related methods.
@@ -27,31 +14,6 @@ mod python;
 pub mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
-
-/// Returns whether BLAS support is enabled.
-#[must_use]
-pub const fn has_blas() -> bool {
-    cfg!(feature = "blas")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_has_blas() {
-        let result = has_blas();
-
-        #[cfg(feature = "blas")]
-        assert!(result, "BLAS should be available when feature is enabled");
-
-        #[cfg(not(feature = "blas"))]
-        assert!(
-            !result,
-            "BLAS should not be available when feature is disabled"
-        );
-    }
-}
 
 /// The outcome of the pairwise comparison.
 #[repr(u8)]

@@ -1,9 +1,9 @@
-use std::ops::{AddAssign, MulAssign};
+use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView1, Axis, ErrorKind, ScalarOperand, ShapeError};
+use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError, Zip};
 use num_traits::Float;
 
-use crate::utils::{matrices, nan_mean, nan_to_num, win_plus_tie_matrix};
+use crate::utils::{matrices, nan_mean, nan_to_num, one_nan_to_num, win_plus_tie_matrix};
 use crate::{Winner, check_lengths, check_total};
 
 /// Counts the number of wins and ties for each item.
@@ -98,7 +98,7 @@ pub fn average_win_rate<A, W>(
     tie_weight: A,
 ) -> Result<Array1<A>, ShapeError>
 where
-    A: Float + AddAssign + MulAssign + ScalarOperand,
+    A: Float + AddAssign,
     W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
@@ -109,20 +109,29 @@ where
 
     let (win_matrix, tie_matrix) = matrices(xs, ys, winners, weights, total)?;
 
-    let mut matrix = win_plus_tie_matrix(
-        &win_matrix.view(),
+    let matrix = win_plus_tie_matrix(
+        win_matrix,
         &tie_matrix.view(),
         win_weight,
         tie_weight,
         A::zero(),
     );
 
-    let mut denominator = &matrix + &matrix.t();
-    nan_to_num(&mut denominator, A::zero());
+    let mut scores = Array1::zeros(matrix.nrows());
+    let mut ratios = Array1::zeros(matrix.ncols());
 
-    matrix = &matrix / &denominator;
-
-    let mut scores = matrix.map_axis(Axis(1), |row| nan_mean(&row));
+    Zip::from(&mut scores)
+        .and(matrix.rows())
+        .and(matrix.columns())
+        .for_each(|score, row, column| {
+            Zip::from(&mut ratios)
+                .and(&row)
+                .and(&column)
+                .for_each(|ratio, &wins, &losses| {
+                    *ratio = wins / one_nan_to_num(wins + losses, A::zero());
+                });
+            *score = nan_mean(&ratios.view());
+        });
 
     nan_to_num(&mut scores, A::zero());
 

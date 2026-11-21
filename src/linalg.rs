@@ -1,9 +1,10 @@
 use std::ops::DivAssign;
 
-use ndarray::{Array1, Array2, ArrayView2, ErrorKind, ScalarOperand, ShapeError};
+use ndarray::linalg::general_mat_vec_mul;
+use ndarray::{Array1, Array2, ArrayView2, Axis, ErrorKind, ScalarOperand, ShapeError, Zip};
 use num_traits::Float;
 
-use crate::utils::nan_to_num;
+use crate::utils::one_nan_to_num;
 
 /// Calculates the eigenvector of a matrix.
 ///
@@ -34,9 +35,11 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     let n = matrix.shape()[0];
     let n_as_a = A::from(n).ok_or_else(|| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
     let matrix_t = matrix.t();
+    let matrix_t = matrix_t.as_standard_layout();
 
     let mut scores = Array1::from_elem(n, A::one() / n_as_a);
-    let mut scores_new = scores.clone();
+    let mut scores_new = Array1::zeros(n);
+    let mut diff = Array1::zeros(n);
 
     let mut converged = false;
     let mut iterations = 0;
@@ -44,7 +47,7 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     while !converged && iterations < limit {
         iterations += 1;
 
-        scores_new.assign(&matrix_t.dot(&scores));
+        general_mat_vec_mul(A::one(), &matrix_t, &scores, A::zero(), &mut scores_new);
 
         let norm = scores_new.dot(&scores_new).sqrt();
 
@@ -52,12 +55,16 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
             scores_new /= norm;
         }
 
-        nan_to_num(&mut scores_new, tolerance);
-
-        let diff = &scores_new - &scores;
+        Zip::from(&mut diff)
+            .and(&mut scores_new)
+            .and(&scores)
+            .for_each(|d, new, &old| {
+                *new = one_nan_to_num(*new, tolerance);
+                *d = *new - old;
+            });
         converged = diff.dot(&diff).sqrt() < tolerance;
 
-        scores.assign(&scores_new);
+        std::mem::swap(&mut scores, &mut scores_new);
     }
 
     Ok((scores, iterations))
@@ -70,19 +77,17 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
 
     let p = 1.0 / matrix.shape()[0] as f64;
 
-    let mut matrix = matrix.t().to_owned();
+    let sums = matrix.sum_axis(Axis(0));
+    let mut matrix = matrix.to_owned();
 
-    for mut row in matrix.outer_iter_mut() {
-        let sum = row.sum();
+    Zip::from(&mut matrix)
+        .and_broadcast(&sums)
+        .for_each(|x, &sum| *x = if sum == 0.0 { p } else { *x / sum });
 
-        if sum == 0.0 {
-            row.fill(p);
-        } else {
-            row /= sum;
-        }
-    }
-
-    damping * matrix + (1.0 - damping) * p
+    matrix *= damping;
+    matrix += (1.0 - damping) * p;
+    // Transposed so that eigen's matrix.t() is contiguous.
+    matrix.reversed_axes()
 }
 
 /// Implements the `PageRank` algorithm.
@@ -147,8 +152,7 @@ mod tests {
         let (win_matrix, tie_matrix) =
             matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix =
-            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
+        let matrix = win_plus_tie_matrix(win_matrix, &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.6955953825629276,
@@ -180,8 +184,7 @@ mod tests {
         let (win_matrix, tie_matrix) =
             matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix =
-            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
+        let matrix = win_plus_tie_matrix(win_matrix, &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.13280040999661397,

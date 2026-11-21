@@ -1,12 +1,9 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::num::FpCategory;
-use std::ops::{AddAssign, MulAssign};
+use std::ops::AddAssign;
 
-use ndarray::{
-    Array, Array2, ArrayView1, ArrayView2, Axis, Dimension, ErrorKind, ScalarOperand, ShapeError,
-    Zip,
-};
+use ndarray::{Array, Array2, ArrayView1, ArrayView2, Dimension, ErrorKind, ShapeError, Zip};
 use num_traits::{Float, Num};
 
 use crate::Winner;
@@ -192,7 +189,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `win_matrix` - The matrix of wins.
+/// * `win_matrix` - The matrix of wins, reused for the result.
 /// * `tie_matrix` - The matrix of ties.
 /// * `win_weight` - The weight to apply to wins.
 /// * `tie_weight` - The weight to apply to ties.
@@ -201,23 +198,20 @@ where
 /// # Returns
 ///
 /// A combined win+tie matrix.
-pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
-    win_matrix: &ArrayView2<A>,
+pub fn win_plus_tie_matrix<A: Float>(
+    mut win_matrix: Array2<A>,
     tie_matrix: &ArrayView2<A>,
     win_weight: A,
     tie_weight: A,
     nan: A,
 ) -> Array2<A> {
-    let mut matrix = Array2::zeros(win_matrix.raw_dim());
-
-    Zip::from(&mut matrix)
-        .and(win_matrix)
+    Zip::from(&mut win_matrix)
         .and(tie_matrix)
-        .for_each(|r, &w, &t| {
-            let val = one_nan_to_num(w, nan) * win_weight + one_nan_to_num(t, nan) * tie_weight;
-            *r = one_nan_to_num(val, nan);
+        .for_each(|w, &t| {
+            let val = one_nan_to_num(*w, nan) * win_weight + one_nan_to_num(t, nan) * tie_weight;
+            *w = one_nan_to_num(val, nan);
         });
-    matrix
+    win_matrix
 }
 
 /// Calculates the pairwise scores from a 1D array of scores.
@@ -233,18 +227,11 @@ pub fn win_plus_tie_matrix<A: Float + MulAssign + ScalarOperand>(
 /// A 2D array of pairwise scores.
 #[must_use]
 pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
-    if scores.is_empty() {
-        return Array2::zeros((0, 0));
-    }
+    let n = scores.len();
 
-    let scores_col = scores.view().insert_axis(Axis(1));
-    let scores_row = scores.view().insert_axis(Axis(0));
-
-    let mut pairwise = &scores_col / (&scores_col + &scores_row);
-
-    nan_to_num(&mut pairwise, A::zero());
-
-    pairwise
+    Array2::from_shape_fn((n, n), |(i, j)| {
+        one_nan_to_num(scores[i] / (scores[i] + scores[j]), A::zero())
+    })
 }
 
 #[cfg(test)]
