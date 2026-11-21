@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import hypothesis.strategies as st
 import numpy as np
@@ -842,7 +842,7 @@ def test_bootstrap_weights_error(comparison: Comparison) -> None:
 
     with pytest.raises(ValueError, match=r"each sample in `data` must contain two or more observations along `axis`."):
         evalica.bootstrap(
-            cast("evalica.RankingMethod[str]", evalica.counting),
+            evalica.counting,
             error_comparison.xs,
             error_comparison.ys,
             error_comparison.winners,
@@ -864,7 +864,7 @@ def test_bootstrap_weights(comparison: Comparison) -> None:
         warnings.simplefilter("ignore")
 
         result = evalica.bootstrap(
-            cast("evalica.RankingMethod[str]", evalica.counting),
+            evalica.counting,
             comparison.xs,
             comparison.ys,
             comparison.winners,
@@ -874,3 +874,23 @@ def test_bootstrap_weights(comparison: Comparison) -> None:
         )
 
     assert len(result.distribution) == n_resamples
+
+
+@pytest.mark.parametrize("wrap", [list, tuple, np.array, pd.Series])
+def test_weights_collections(wrap: type) -> None:
+    result = evalica.counting(["a", "b"], ["b", "c"], [evalica.Winner.X] * 2, weights=wrap([1.0, 2.0]))
+
+    assert result.scores.to_dict() == {"a": 1.0, "b": 2.0, "c": 0.0}
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"weights": [1.0, float("nan")]}, "weights must be finite"),
+        ({"win_weight": float("inf")}, "win_weight must be finite"),
+        ({"tie_weight": float("nan")}, "tie_weight must be finite"),
+    ],
+)
+def test_non_finite_weights(kwargs: dict[str, Any], match: str) -> None:
+    with pytest.raises(ValueError, match=match):
+        evalica.counting(["a", "b"], ["b", "c"], [evalica.Winner.X] * 2, **kwargs)

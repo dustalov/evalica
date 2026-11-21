@@ -1,5 +1,4 @@
 import os
-from collections.abc import Collection
 
 import evalica
 import pandas as pd
@@ -45,10 +44,6 @@ intersphinx_mapping = {
 
 nbsphinx_execute = "always"
 nbsphinx_timeout = 120
-
-# evalica uses TYPE_CHECKING-only imports (Collection), so get_type_hints() fails
-# unless we inject them into the module namespace before autodoc runs.
-evalica.Collection = Collection  # type: ignore[attr-defined]
 
 # pandas 3.x removed Series.__class_getitem__, so pd.Series[float] is not subscriptable
 # at runtime. Inject it so get_type_hints() can evaluate dataclass field annotations.

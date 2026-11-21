@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import os
 import warnings
-from collections.abc import Hashable
+from collections.abc import Collection, Hashable
 from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, runtime_checkable
@@ -140,12 +140,12 @@ class AlphaBootstrapResult(AlphaResult):
 
     low: float
     high: float
-    distribution: pd.Series
+    distribution: pd.Series[float]
     n_resamples: int
     confidence_level: float
 
 
-T_distance_contra = TypeVar("T_distance_contra", contravariant=True)
+T_distance_contra = TypeVar("T_distance_contra", bound=float, contravariant=True)
 
 
 DistanceName = Literal["interval", "nominal", "ordinal", "ratio"]
@@ -193,27 +193,31 @@ from ._pairwise import newman as newman_naive  # noqa: E402
 from ._pairwise import pagerank as pagerank_naive  # noqa: E402
 from ._pairwise import pairwise_scores as pairwise_scores_naive  # noqa: E402
 
-if TYPE_CHECKING:
-    from collections.abc import Collection
-
 WINNERS = list(Winner)
 """Known values of Winner."""
 
+T = TypeVar("T", bound=Hashable)
 T_contra = TypeVar("T_contra", bound=Hashable, contravariant=True)
 
 
-def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> Collection[float]:
+def _check_finite(**values: float) -> None:
+    for name, value in values.items():
+        if not math.isfinite(value):
+            msg = f"{name} must be finite"
+            raise ValueError(msg)
+
+
+def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> list[float]:
     if weights is None:
         return [1.0] * n
 
-    if isinstance(weights, np.ndarray):
-        weights = weights.tolist()
+    array = np.asarray(weights, dtype=np.float64)
 
-    assert isinstance(weights, list), "weights must be a list"
+    if not np.isfinite(array).all():
+        msg = "weights must be finite"
+        raise ValueError(msg)
 
-    assert all(math.isfinite(w) for w in weights), "weights must be finite"
-
-    return weights
+    return cast("list[float]", array.tolist())
 
 
 def _make_matrix(
@@ -231,8 +235,8 @@ def _make_matrix(
 
 
 def indexing(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     index: pd.Index | None = None,
 ) -> tuple[list[int], list[int], pd.Index]:
     """
@@ -251,8 +255,8 @@ def indexing(
         labels = list(dict.fromkeys([*xs, *ys]))
         index = pd.Index(labels)
 
-    xi = index.get_indexer(cast("pd.Index", xs))
-    yi = index.get_indexer(cast("pd.Index", ys))
+    xi = index.get_indexer(pd.Index(list(xs)))
+    yi = index.get_indexer(pd.Index(list(ys)))
 
     if (xi < 0).any() or (yi < 0).any():
         msg = "Unknown element in reindexing"
@@ -396,15 +400,15 @@ class CountingResult:
 
 
 def counting(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: SolverName = SOLVER,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> CountingResult:
     """
     Count individual elements.
@@ -424,12 +428,9 @@ def counting(
         The counting result.
 
     """
-    assert np.isfinite(win_weight), "win_weight must be finite"
-    assert np.isfinite(tie_weight), "tie_weight must be finite"
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -488,15 +489,15 @@ class AverageWinRateResult:
 
 
 def average_win_rate(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     weights: Collection[float] | None = None,
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: SolverName = SOLVER,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> AverageWinRateResult:
     """
     Count pairwise win rates between the elements and average per element.
@@ -516,12 +517,9 @@ def average_win_rate(
         The average win rate result.
 
     """
-    assert np.isfinite(win_weight), "win_weight must be finite"
-    assert np.isfinite(tie_weight), "tie_weight must be finite"
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -602,8 +600,8 @@ class BradleyTerryResult:
 
 
 def bradley_terry(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     weights: Collection[float] | None = None,
@@ -612,7 +610,7 @@ def bradley_terry(
     solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> BradleyTerryResult:
     """
     Compute the Bradley-Terry scores for the given pairwise comparison.
@@ -644,12 +642,9 @@ def bradley_terry(
         The Bradley-Terry result.
 
     """
-    assert np.isfinite(win_weight), "win_weight must be finite"
-    assert np.isfinite(tie_weight), "tie_weight must be finite"
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -730,8 +725,8 @@ class NewmanResult:
 
 
 def newman(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     v_init: float = 0.5,
@@ -741,7 +736,7 @@ def newman(
     solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> NewmanResult:
     """
     Compute the scores for the given pairwise comparison using the Newman's algorithm.
@@ -769,12 +764,9 @@ def newman(
         The Newman's result.
 
     """
-    assert np.isfinite(win_weight), "win_weight must be finite"
-    assert np.isfinite(tie_weight), "tie_weight must be finite"
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -860,8 +852,8 @@ class EloResult:
 
 
 def elo(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     initial: float = 1000.0,
@@ -872,7 +864,7 @@ def elo(
     win_weight: float = 1.0,
     tie_weight: float = 0.5,
     solver: SolverName = SOLVER,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> EloResult:
     """
     Compute the Elo scores.
@@ -900,8 +892,6 @@ def elo(
 
     """
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -978,8 +968,8 @@ class EigenResult:
 
 
 def eigen(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     weights: Collection[float] | None = None,
@@ -988,7 +978,7 @@ def eigen(
     solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> EigenResult:
     """
     Compute the eigenvalue-based scores.
@@ -1010,12 +1000,9 @@ def eigen(
         The eigenvalue result.
 
     """
-    assert np.isfinite(win_weight), "win_weight must be finite"
-    assert np.isfinite(tie_weight), "tie_weight must be finite"
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -1094,8 +1081,8 @@ class PageRankResult:
 
 
 def pagerank(
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     index: pd.Index | None = None,
     damping: float = 0.85,
@@ -1105,7 +1092,7 @@ def pagerank(
     solver: SolverName = SOLVER,
     tolerance: float = 1e-6,
     limit: int = 100,
-    **kwargs: Any,  # noqa: ANN401, ARG001
+    **kwargs: object,  # noqa: ARG001
 ) -> PageRankResult:
     """
     Compute the PageRank scores.
@@ -1133,12 +1120,9 @@ def pagerank(
         The PageRank result.
 
     """
-    assert np.isfinite(win_weight), "win_weight must be finite"
-    assert np.isfinite(tie_weight), "tie_weight must be finite"
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
     xs_indexed, ys_indexed, index = indexing(xs, ys, index)
-
-    assert index is not None, "index is None"
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -1270,9 +1254,9 @@ class BootstrapResult:
 
 
 def bootstrap(
-    method: RankingMethod[T_contra],
-    xs: Collection[T_contra],
-    ys: Collection[T_contra],
+    method: RankingMethod[T],
+    xs: Collection[T],
+    ys: Collection[T],
     winners: Collection[Winner],
     weights: Collection[float] | None = None,
     index: pd.Index | None = None,
@@ -1284,7 +1268,7 @@ def bootstrap(
     confidence_level: float = 0.95,
     bootstrap_method: Literal["percentile", "basic", "BCa"] = "BCa",
     random_state: int | np.random.Generator | None = None,
-    **kwargs: Any,  # noqa: ANN401
+    **kwargs: object,
 ) -> BootstrapResult:
     """
     Compute weighted bootstrap confidence intervals for the given pairwise comparison.
@@ -1327,7 +1311,7 @@ def bootstrap(
 
     samples = (np.array(xs, dtype=object), np.array(ys, dtype=object), np.array(winners, dtype=np.uint8), weights_array)
 
-    def statistic(*data: tuple[Any, ...]) -> npt.NDArray[np.float64]:
+    def statistic(*data: npt.NDArray[np.generic]) -> npt.NDArray[np.float64]:
         """Compute scores for a single bootstrap resample."""
         xs_sample, ys_sample, winners_sample, weights_sample = data
 
@@ -1392,7 +1376,7 @@ def _factorize_matrix(matrix: npt.NDArray[np.object_]) -> tuple[npt.NDArray[np.i
 
 def alpha(
     data: pd.DataFrame,
-    distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
+    distance: DistanceFunc[float] | DistanceName = "nominal",
     solver: SolverName = SOLVER,
 ) -> AlphaResult:
     """
@@ -1441,7 +1425,7 @@ def alpha(
 
 def alpha_bootstrap(
     data: pd.DataFrame,
-    distance: DistanceFunc[T_distance_contra] | DistanceName = "nominal",
+    distance: DistanceFunc[float] | DistanceName = "nominal",
     solver: SolverName = SOLVER,
     *,
     n_resamples: int = 5000,
@@ -1548,6 +1532,8 @@ __all__ = [
     "BootstrapResult",
     "BradleyTerryResult",
     "CountingResult",
+    "DistanceFunc",
+    "DistanceName",
     "EigenResult",
     "EloResult",
     "InsufficientRatingsError",
@@ -1560,6 +1546,7 @@ __all__ = [
     "RustExtensionWarning",
     "ScoreDimensionError",
     "SolverError",
+    "SolverName",
     "UnknownDistanceError",
     "Winner",
     "__version__",

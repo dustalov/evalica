@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
 
-from . import DistanceFunc, DistanceName, InsufficientRatingsError, T_distance_contra, UnknownDistanceError
+from . import DistanceFunc, DistanceName, InsufficientRatingsError, UnknownDistanceError
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -135,7 +135,7 @@ def _ratio_distance(unique_values: npt.NDArray[np.object_]) -> npt.NDArray[np.fl
 
 
 def _custom_distance(
-    distance_func: DistanceFunc[T_distance_contra],
+    distance_func: DistanceFunc[float],
     unique_values: npt.NDArray[np.object_],
 ) -> npt.NDArray[np.float64]:
     """
@@ -159,7 +159,7 @@ def _custom_distance(
 
 
 def _compute_delta_matrix(
-    distance: Any,  # noqa: ANN401
+    distance: DistanceFunc[float] | DistanceName,
     unique_values: npt.NDArray[np.object_],
     coincidence: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]:
@@ -219,7 +219,7 @@ def _compute_expected_matrix(
 def _alpha_components(
     matrix_indices: npt.NDArray[np.int64],
     unique_values: npt.NDArray[np.object_],
-    distance: DistanceFunc[T_distance_contra] | DistanceName,
+    distance: DistanceFunc[float] | DistanceName,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """
     Compute the components required for Krippendorff's alpha.
@@ -242,7 +242,7 @@ def _alpha_components(
 def _alpha_naive(
     matrix_indices: npt.NDArray[np.int64],
     unique_values: npt.NDArray[np.object_],
-    distance: DistanceFunc[T_distance_contra] | DistanceName,
+    distance: DistanceFunc[float] | DistanceName,
 ) -> tuple[float, float, float]:
     """
     Compute Krippendorff's alpha (naive Python implementation).
@@ -266,7 +266,7 @@ def _alpha_naive(
 def _alpha_bootstrap_naive(
     matrix_indices: npt.NDArray[np.int64],
     unique_values: npt.NDArray[np.object_],
-    distance: DistanceFunc[T_distance_contra] | DistanceName,
+    distance: DistanceFunc[float] | DistanceName,
     n_resamples: int,
     random_state: int | None = None,
 ) -> npt.NDArray[np.float64]:

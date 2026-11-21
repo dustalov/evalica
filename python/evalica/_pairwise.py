@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -8,9 +8,7 @@ import numpy.typing as npt
 from . import LengthMismatchError, Winner
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
-
-    T = TypeVar("T")
+    from collections.abc import Collection, Sized
 
 
 def pairwise_scores(scores: npt.NDArray[np.floating]) -> npt.NDArray[np.float64]:
@@ -23,7 +21,7 @@ def pairwise_scores(scores: npt.NDArray[np.floating]) -> npt.NDArray[np.float64]
     ).astype(np.float64, copy=False)
 
 
-def _check_lengths(xs: Collection[Any], *rest: Collection[Any]) -> None:
+def _check_lengths(xs: Sized, *rest: Sized) -> None:
     length = len(xs)
 
     for collection in rest:
