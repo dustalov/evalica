@@ -17,11 +17,15 @@ permissions:
 jobs:
   rust:
     runs-on: ubuntu-latest
-    environment: crates-io
+    environment:
+      name: crates-io
+      url: https://crates.io/crates/evalica/${{ steps.version.outputs.version }}
     permissions:
       id-token: write
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - id: version
+      run: echo "version=$(cargo metadata --locked --no-deps --format-version 1 | jq -r '.packages[0].version')" >> "$GITHUB_OUTPUT"
     - run: cargo publish --locked --dry-run
     - if: github.event_name == 'release'
       uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
