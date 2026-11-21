@@ -1,9 +1,9 @@
-use std::ops::{AddAssign, MulAssign};
+use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView1, Axis, ErrorKind, ScalarOperand, ShapeError};
+use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError, Zip};
 use num_traits::Float;
 
-use crate::utils::{matrices, nan_mean, nan_to_num, win_plus_tie_matrix};
+use crate::utils::{matrices, nan_mean, nan_to_num, one_nan_to_num, win_plus_tie_matrix};
 use crate::{Winner, check_lengths, check_total};
 
 /// Counts the number of wins and ties for each item.
@@ -25,10 +25,10 @@ use crate::{Winner, check_lengths, check_total};
 /// # Errors
 ///
 /// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
-pub fn counting<A, W>(
+pub fn counting<A>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<W>,
+    winners: &ArrayView1<Winner>,
     weights: &ArrayView1<A>,
     total: usize,
     win_weight: A,
@@ -36,7 +36,6 @@ pub fn counting<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign,
-    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -48,19 +47,16 @@ where
 
     let mut scores = Array1::zeros(total);
 
-    for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        let winner = w
-            .try_into()
-            .map_err(|_| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
-        match winner {
+    Zip::from(xs).and(ys).and(winners).and(weights).for_each(
+        |&x, &y, &winner, &weight| match winner {
             Winner::X => scores[x] += weight * win_weight,
             Winner::Y => scores[y] += weight * win_weight,
             Winner::Draw => {
                 scores[x] += weight * tie_weight;
                 scores[y] += weight * tie_weight;
             }
-        }
-    }
+        },
+    );
 
     nan_to_num(&mut scores, A::zero());
 
@@ -88,18 +84,17 @@ where
 /// # Errors
 ///
 /// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
-pub fn average_win_rate<A, W>(
+pub fn average_win_rate<A>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<W>,
+    winners: &ArrayView1<Winner>,
     weights: &ArrayView1<A>,
     total: usize,
     win_weight: A,
     tie_weight: A,
 ) -> Result<Array1<A>, ShapeError>
 where
-    A: Float + AddAssign + MulAssign + ScalarOperand,
-    W: Copy + TryInto<Winner>,
+    A: Float + AddAssign,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -109,7 +104,7 @@ where
 
     let (win_matrix, tie_matrix) = matrices(xs, ys, winners, weights, total)?;
 
-    let mut matrix = win_plus_tie_matrix(
+    let matrix = win_plus_tie_matrix(
         &win_matrix.view(),
         &tie_matrix.view(),
         win_weight,
@@ -117,12 +112,21 @@ where
         A::zero(),
     );
 
-    let mut denominator = &matrix + &matrix.t();
-    nan_to_num(&mut denominator, A::zero());
+    let mut scores = Array1::zeros(matrix.nrows());
+    let mut ratios = Array1::zeros(matrix.ncols());
 
-    matrix = &matrix / &denominator;
-
-    let mut scores = matrix.map_axis(Axis(1), |row| nan_mean(&row));
+    Zip::from(&mut scores)
+        .and(matrix.rows())
+        .and(matrix.columns())
+        .for_each(|score, row, column| {
+            Zip::from(&mut ratios)
+                .and(&row)
+                .and(&column)
+                .for_each(|ratio, &wins, &losses| {
+                    *ratio = wins / one_nan_to_num(wins + losses, A::zero());
+                });
+            *score = nan_mean(&ratios.view());
+        });
 
     nan_to_num(&mut scores, A::zero());
 

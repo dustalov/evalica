@@ -30,10 +30,6 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Install OpenBLAS
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopenblas-dev
     - name: Check formatting
       run: cargo fmt --check
     - name: Build
@@ -42,8 +38,6 @@ jobs:
       run: cargo clippy --locked --all-targets --all-features -- -D warnings
     - name: Run tests
       run: cargo test --locked --verbose
-    - name: Run tests with OpenBLAS
-      run: cargo test --locked --verbose --features openblas-src
     - name: Generate docs
       run: cargo doc --locked --verbose --no-deps
   wasm:

@@ -1,11 +1,16 @@
+use crate::Winner;
 use crate::alpha::{self, Distance};
 use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
 use crate::elo::elo;
 use crate::linalg::{eigen, pagerank};
 use crate::utils::{matrices, win_plus_tie_matrix};
-use ndarray::{Array2, ArrayView1};
+use ndarray::{ArrayView1, ArrayView2};
 use wasm_bindgen::prelude::*;
+
+fn winners_view(winners: &[u8]) -> Result<ArrayView1<'_, Winner>, String> {
+    Winner::view_from(&ArrayView1::from(winners)).map_err(str::to_owned)
+}
 
 #[wasm_bindgen(js_name = "counting")]
 /// Runs the counting method in WebAssembly.
@@ -25,7 +30,7 @@ pub fn counting_wasm(
     counting(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
         win_weight,
@@ -53,7 +58,7 @@ pub fn average_win_rate_wasm(
     average_win_rate(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
         win_weight,
@@ -83,7 +88,7 @@ pub fn bradley_terry_wasm(
     let (wins, ties) = matrices(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
     )
@@ -114,7 +119,7 @@ pub fn newman_wasm(
     let (wins, ties) = matrices(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
     )
@@ -145,7 +150,7 @@ pub fn eigen_wasm(
     let (wins, ties) = matrices(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
     )
@@ -178,7 +183,7 @@ pub fn pagerank_wasm(
     let (wins, ties) = matrices(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
     )
@@ -212,7 +217,7 @@ pub fn elo_wasm(
     elo(
         &ArrayView1::from(xs),
         &ArrayView1::from(ys),
-        &ArrayView1::from(winners),
+        &winners_view(winners)?,
         &ArrayView1::from(weights),
         total,
         initial,
@@ -242,10 +247,10 @@ pub fn alpha_wasm(
     let distance_enum = Distance::parse(distance)?;
 
     let codes_array =
-        Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
+        ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())?;
 
     let (alpha, observed, expected) =
-        alpha::alpha_from_factorized(&codes_array.view(), unique_values, distance_enum)?;
+        alpha::alpha_from_factorized(&codes_array, unique_values, distance_enum)?;
 
     Ok(vec![alpha, observed, expected])
 }
@@ -271,9 +276,9 @@ pub fn alpha_bootstrap_wasm(
 ) -> Result<Vec<f64>, String> {
     let distance_enum = Distance::parse(distance)?;
     let codes_array =
-        Array2::from_shape_vec((n_units, n_raters), codes.to_vec()).map_err(|e| e.to_string())?;
+        ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())?;
     let result = alpha::alpha_bootstrap_from_factorized(
-        &codes_array.view(),
+        &codes_array,
         unique_values,
         distance_enum,
         n_resamples,

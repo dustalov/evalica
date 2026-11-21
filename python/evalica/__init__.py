@@ -5,9 +5,10 @@ from __future__ import annotations
 import math
 import os
 import warnings
-from collections.abc import Collection, Hashable
+from collections.abc import Collection, Hashable, Iterable
 from dataclasses import dataclass, field
 from enum import IntEnum
+from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import numpy as np
@@ -175,8 +176,6 @@ class DistanceFunc(Protocol[T_distance_contra]):
 SOLVER: SolverName = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
-HAS_BLAS: bool = _brzo.HAS_BLAS if PYO3_AVAILABLE and hasattr(_brzo, "HAS_BLAS") else False
-"""Whether BLAS support is enabled in the Rust extension."""
 
 from ._alpha import (  # noqa: E402
     _alpha_bootstrap_naive,
@@ -207,9 +206,9 @@ def _check_finite(**values: float) -> None:
             raise ValueError(msg)
 
 
-def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> list[float]:
+def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> npt.NDArray[np.float64]:
     if weights is None:
-        return [1.0] * n
+        return np.ones(n, dtype=np.float64)
 
     array = np.asarray(weights, dtype=np.float64)
 
@@ -217,7 +216,7 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
         msg = "weights must be finite"
         raise ValueError(msg)
 
-    return cast("list[float]", array.tolist())
+    return array
 
 
 def _make_matrix(
@@ -251,18 +250,37 @@ def indexing(
         The tuple containing the numerical representations of the input elements and the corresponding index.
 
     """
-    if index is None:
-        labels = list(dict.fromkeys([*xs, *ys]))
-        index = pd.Index(labels)
+    xi, yi, index = _indexing(xs, ys, index)
+    return xi.tolist(), yi.tolist(), index
 
-    xi = index.get_indexer(pd.Index(list(xs)))
-    yi = index.get_indexer(pd.Index(list(ys)))
+
+_ARRAY_TYPES = (np.ndarray, pd.Series, pd.Index)
+
+
+def _unique(xs: Collection[T]) -> Iterable[T]:
+    return pd.unique(xs) if isinstance(xs, _ARRAY_TYPES) else xs
+
+
+def _as_index(xs: Collection[T]) -> pd.Index:
+    return pd.Index(xs if isinstance(xs, _ARRAY_TYPES) else list(xs))
+
+
+def _indexing(
+    xs: Collection[T],
+    ys: Collection[T],
+    index: pd.Index | None = None,
+) -> tuple[npt.NDArray[np.uintp], npt.NDArray[np.uintp], pd.Index]:
+    if index is None:
+        index = pd.Index(list(dict.fromkeys(chain(_unique(xs), _unique(ys)))))
+
+    xi = index.get_indexer(_as_index(xs))
+    yi = index.get_indexer(_as_index(ys))
 
     if (xi < 0).any() or (yi < 0).any():
         msg = "Unknown element in reindexing"
         raise TypeError(msg)
 
-    return xi.tolist(), yi.tolist(), index
+    return xi.astype(np.uintp), yi.astype(np.uintp), index
 
 
 @dataclass(frozen=True)
@@ -430,7 +448,7 @@ def counting(
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -519,7 +537,7 @@ def average_win_rate(
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -644,7 +662,7 @@ def bradley_terry(
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -766,7 +784,7 @@ def newman(
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -891,7 +909,7 @@ def elo(
         The Elo result.
 
     """
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -1002,7 +1020,7 @@ def eigen(
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -1122,7 +1140,7 @@ def pagerank(
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
 
-    xs_indexed, ys_indexed, index = indexing(xs, ys, index)
+    xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -1293,7 +1311,7 @@ def bootstrap(
         The bootstrap result.
 
     """
-    _, _, index = indexing(xs, ys, index)
+    _, _, index = _indexing(xs, ys, index)
 
     result = method(
         xs=xs,

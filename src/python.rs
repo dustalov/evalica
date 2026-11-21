@@ -1,7 +1,10 @@
+use ndarray::ArrayView1;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1, PyArrayLike2};
+use pyo3::exceptions::PyValueError;
 use pyo3::import_exception;
 use pyo3::prelude::*;
 
+use crate::Winner;
 use crate::alpha;
 use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
@@ -12,6 +15,10 @@ use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
 import_exception!(evalica, LengthMismatchError);
 import_exception!(evalica, InsufficientRatingsError);
 import_exception!(evalica, UnknownDistanceError);
+
+fn winners_view<'a>(winners: &'a PyArrayLike1<'_, u8>) -> PyResult<ArrayView1<'a, Winner>> {
+    Winner::view_from(&winners.as_array()).map_err(PyValueError::new_err)
+}
 
 #[pyfunction(name = "matrices")]
 fn matrices_pyo3<'py>(
@@ -25,12 +32,13 @@ fn matrices_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -67,12 +75,13 @@ fn counting_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     counting(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
         win_weight,
@@ -98,12 +107,13 @@ fn average_win_rate_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     average_win_rate(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
         win_weight,
@@ -131,12 +141,13 @@ fn bradley_terry_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -175,12 +186,13 @@ fn newman_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -226,12 +238,13 @@ fn elo_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     elo(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
         initial,
@@ -263,12 +276,13 @@ fn eigen_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -307,12 +321,13 @@ fn pagerank_pyo3<'py>(
     let xs: PyArrayLike1<'py, usize> = xs.extract()?;
     let ys: PyArrayLike1<'py, usize> = ys.extract()?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -468,7 +483,6 @@ fn alpha_bootstrap_pyo3<'py>(
 #[pyo3(name = "_brzo")]
 fn brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("HAS_BLAS", crate::has_blas())?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;

@@ -1,15 +1,4 @@
-#[cfg(all(target_os = "macos", feature = "accelerate-src"))]
-#[allow(unused_extern_crates)]
-extern crate accelerate_src;
-#[cfg(feature = "blas-src")]
-#[allow(unused_extern_crates)]
-extern crate blas_src;
-#[cfg(feature = "netlib-src")]
-#[allow(unused_extern_crates)]
-extern crate netlib_src;
-#[cfg(feature = "openblas-src")]
-#[allow(unused_extern_crates)]
-extern crate openblas_src;
+use ndarray::ArrayView1;
 
 /// Implements Krippendorff's alpha for inter-rater reliability.
 pub mod alpha;
@@ -27,31 +16,6 @@ mod python;
 pub mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
-
-/// Returns whether BLAS support is enabled.
-#[must_use]
-pub const fn has_blas() -> bool {
-    cfg!(feature = "blas")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_has_blas() {
-        let result = has_blas();
-
-        #[cfg(feature = "blas")]
-        assert!(result, "BLAS should be available when feature is enabled");
-
-        #[cfg(not(feature = "blas"))]
-        assert!(
-            !result,
-            "BLAS should not be available when feature is disabled"
-        );
-    }
-}
 
 /// The outcome of the pairwise comparison.
 #[repr(u8)]
@@ -78,6 +42,22 @@ impl TryFrom<u8> for Winner {
     }
 }
 
+impl Winner {
+    /// Reinterprets the winner codes as winners without copying.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any code is not a valid winner.
+    pub fn view_from<'a>(codes: &ArrayView1<'a, u8>) -> Result<ArrayView1<'a, Self>, &'static str> {
+        if codes.iter().any(|&code| Self::try_from(code).is_err()) {
+            return Err("invalid winner value");
+        }
+
+        // SAFETY: Winner is repr(u8) and every code is a valid discriminant.
+        Ok(unsafe { codes.raw_view().cast::<Self>().deref_into_view() })
+    }
+}
+
 impl From<Winner> for u8 {
     fn from(val: Winner) -> Self {
         match val {
@@ -85,5 +65,25 @@ impl From<Winner> for u8 {
             Winner::X => 1,
             Winner::Y => 2,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Winner;
+    use ndarray::{array, s};
+
+    #[test]
+    fn test_view_from() {
+        let codes = array![1u8, 0, 2, 7, 2];
+
+        let winners = Winner::view_from(&codes.slice(s![..3])).unwrap();
+        assert_eq!(winners, array![Winner::X, Winner::Draw, Winner::Y]);
+
+        let strided = Winner::view_from(&codes.slice(s![..;2])).unwrap();
+        assert_eq!(strided, array![Winner::X, Winner::Y, Winner::Y]);
+
+        let invalid = Winner::view_from(&codes.slice(s![1..;2])).unwrap_err();
+        assert_eq!(invalid, "invalid winner value");
     }
 }
