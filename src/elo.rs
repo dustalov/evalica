@@ -75,8 +75,8 @@ where
             Winner::Draw => (weight * tie_weight, weight * tie_weight),
         };
 
-        scores[x] += k * (scored_x - expected_x);
-        scores[y] += k * (scored_y - expected_y);
+        scores[x] += k * (scored_x - weight * expected_x);
+        scores[y] += k * (scored_y - weight * expected_y);
     }
 
     nan_to_num(&mut scores, A::zero());
