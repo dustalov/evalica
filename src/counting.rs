@@ -25,10 +25,10 @@ use crate::{Winner, check_lengths, check_total};
 /// # Errors
 ///
 /// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
-pub fn counting<A, W>(
+pub fn counting<A>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<W>,
+    winners: &ArrayView1<Winner>,
     weights: &ArrayView1<A>,
     total: usize,
     win_weight: A,
@@ -36,7 +36,6 @@ pub fn counting<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign,
-    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -48,19 +47,16 @@ where
 
     let mut scores = Array1::zeros(total);
 
-    for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        let winner = w
-            .try_into()
-            .map_err(|_| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
-        match winner {
+    Zip::from(xs).and(ys).and(winners).and(weights).for_each(
+        |&x, &y, &winner, &weight| match winner {
             Winner::X => scores[x] += weight * win_weight,
             Winner::Y => scores[y] += weight * win_weight,
             Winner::Draw => {
                 scores[x] += weight * tie_weight;
                 scores[y] += weight * tie_weight;
             }
-        }
-    }
+        },
+    );
 
     nan_to_num(&mut scores, A::zero());
 
@@ -88,10 +84,10 @@ where
 /// # Errors
 ///
 /// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
-pub fn average_win_rate<A, W>(
+pub fn average_win_rate<A>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<W>,
+    winners: &ArrayView1<Winner>,
     weights: &ArrayView1<A>,
     total: usize,
     win_weight: A,
@@ -99,7 +95,6 @@ pub fn average_win_rate<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign,
-    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 

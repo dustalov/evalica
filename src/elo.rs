@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
+use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError, Zip};
 use num_traits::Float;
 
 use crate::utils::nan_to_num;
@@ -31,10 +31,10 @@ use crate::{Winner, check_lengths, check_total, utils::one_nan_to_num};
 /// # Errors
 ///
 /// Returns an error if input arrays have mismatched lengths or contain out-of-range indices.
-pub fn elo<A, W>(
+pub fn elo<A>(
     xs: &ArrayView1<usize>,
     ys: &ArrayView1<usize>,
-    winners: &ArrayView1<W>,
+    winners: &ArrayView1<Winner>,
     weights: &ArrayView1<A>,
     total: usize,
     initial: A,
@@ -46,7 +46,6 @@ pub fn elo<A, W>(
 ) -> Result<Array1<A>, ShapeError>
 where
     A: Float + AddAssign,
-    W: Copy + TryInto<Winner>,
 {
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
@@ -57,27 +56,28 @@ where
     check_total!(total, xs, ys);
 
     let mut scores = Array1::from_elem(total, initial);
-    for (((&x, &y), &w), &weight) in xs.iter().zip(ys.iter()).zip(winners.iter()).zip(weights) {
-        let winner = w
-            .try_into()
-            .map_err(|_| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
-        let q_x = one_nan_to_num(base.powf(scores[x] / scale), A::zero());
-        let q_y = one_nan_to_num(base.powf(scores[y] / scale), A::zero());
+    Zip::from(xs)
+        .and(ys)
+        .and(winners)
+        .and(weights)
+        .for_each(|&x, &y, &winner, &weight| {
+            let q_x = one_nan_to_num(base.powf(scores[x] / scale), A::zero());
+            let q_y = one_nan_to_num(base.powf(scores[y] / scale), A::zero());
 
-        let q = one_nan_to_num(q_x + q_y, A::zero());
+            let q = one_nan_to_num(q_x + q_y, A::zero());
 
-        let expected_x = one_nan_to_num(q_x / q, A::zero());
-        let expected_y = one_nan_to_num(q_y / q, A::zero());
+            let expected_x = one_nan_to_num(q_x / q, A::zero());
+            let expected_y = one_nan_to_num(q_y / q, A::zero());
 
-        let (scored_x, scored_y) = match winner {
-            Winner::X => (weight * win_weight, A::zero()),
-            Winner::Y => (A::zero(), weight * win_weight),
-            Winner::Draw => (weight * tie_weight, weight * tie_weight),
-        };
+            let (scored_x, scored_y) = match winner {
+                Winner::X => (weight * win_weight, A::zero()),
+                Winner::Y => (A::zero(), weight * win_weight),
+                Winner::Draw => (weight * tie_weight, weight * tie_weight),
+            };
 
-        scores[x] += k * (scored_x - weight * expected_x);
-        scores[y] += k * (scored_y - weight * expected_y);
-    }
+            scores[x] += k * (scored_x - weight * expected_x);
+            scores[y] += k * (scored_y - weight * expected_y);
+        });
 
     nan_to_num(&mut scores, A::zero());
 
