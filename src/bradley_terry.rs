@@ -178,7 +178,7 @@ pub fn newman(
             squared_difference = difference.mul_add(difference, squared_difference);
         }
 
-        v_new = v_numerator / (4.0 * v_denominator);
+        v_new = (v_numerator / 2.0) / (v_denominator * 2.0);
         converged = squared_difference.sqrt() < tolerance;
 
         std::mem::swap(&mut scores, &mut scores_new);
