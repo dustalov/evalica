@@ -110,7 +110,7 @@ where
     let (win_matrix, tie_matrix) = matrices(xs, ys, winners, weights, total)?;
 
     let matrix = win_plus_tie_matrix(
-        win_matrix,
+        &win_matrix.view(),
         &tie_matrix.view(),
         win_weight,
         tie_weight,

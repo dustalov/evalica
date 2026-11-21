@@ -136,7 +136,7 @@ pub fn newman(
         return Ok((scores, v, iterations));
     }
 
-    let win_tie_half = win_plus_tie_matrix(win_matrix.to_owned(), tie_matrix, 1.0, 0.5, tolerance);
+    let win_tie_half = win_plus_tie_matrix(win_matrix, tie_matrix, 1.0, 0.5, tolerance);
     let win_tie_half_t = win_tie_half.t();
     let win_tie_half_t = win_tie_half_t.as_standard_layout();
 
@@ -213,7 +213,8 @@ mod tests {
         let (win_matrix, tie_matrix) =
             matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix = win_plus_tie_matrix(win_matrix, &tie_matrix.view(), 1.0, 0.5, tolerance);
+        let matrix =
+            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.050799672530389396,

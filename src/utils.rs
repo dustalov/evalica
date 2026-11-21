@@ -3,7 +3,7 @@ use std::hash::Hash;
 use std::num::FpCategory;
 use std::ops::AddAssign;
 
-use ndarray::{Array, Array2, ArrayView1, ArrayView2, Dimension, ErrorKind, ShapeError, Zip};
+use ndarray::{Array, Array2, ArrayView1, ArrayView2, Axis, Dimension, ErrorKind, ShapeError, Zip};
 use num_traits::{Float, Num};
 
 use crate::Winner;
@@ -189,7 +189,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `win_matrix` - The matrix of wins, reused for the result.
+/// * `win_matrix` - The matrix of wins.
 /// * `tie_matrix` - The matrix of ties.
 /// * `win_weight` - The weight to apply to wins.
 /// * `tie_weight` - The weight to apply to ties.
@@ -199,19 +199,16 @@ where
 ///
 /// A combined win+tie matrix.
 pub fn win_plus_tie_matrix<A: Float>(
-    mut win_matrix: Array2<A>,
+    win_matrix: &ArrayView2<A>,
     tie_matrix: &ArrayView2<A>,
     win_weight: A,
     tie_weight: A,
     nan: A,
 ) -> Array2<A> {
-    Zip::from(&mut win_matrix)
-        .and(tie_matrix)
-        .for_each(|w, &t| {
-            let val = one_nan_to_num(*w, nan) * win_weight + one_nan_to_num(t, nan) * tie_weight;
-            *w = one_nan_to_num(val, nan);
-        });
-    win_matrix
+    Zip::from(win_matrix).and(tie_matrix).map_collect(|&w, &t| {
+        let val = one_nan_to_num(w, nan) * win_weight + one_nan_to_num(t, nan) * tie_weight;
+        one_nan_to_num(val, nan)
+    })
 }
 
 /// Calculates the pairwise scores from a 1D array of scores.
@@ -228,10 +225,14 @@ pub fn win_plus_tie_matrix<A: Float>(
 #[must_use]
 pub fn pairwise_scores<A: Float>(scores: &ArrayView1<A>) -> Array2<A> {
     let n = scores.len();
+    let mut pairwise = Array2::zeros((n, n));
 
-    Array2::from_shape_fn((n, n), |(i, j)| {
-        one_nan_to_num(scores[i] / (scores[i] + scores[j]), A::zero())
-    })
+    Zip::from(&mut pairwise)
+        .and_broadcast(scores.view().insert_axis(Axis(1)))
+        .and_broadcast(scores)
+        .for_each(|p, &x, &y| *p = one_nan_to_num(x / (x + y), A::zero()));
+
+    pairwise
 }
 
 #[cfg(test)]

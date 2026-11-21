@@ -89,7 +89,7 @@ pub fn bradley_terry_wasm(
     )
     .map_err(|e| e.to_string())?;
 
-    let matrix = win_plus_tie_matrix(wins, &ties.view(), win_weight, tie_weight, 0.0);
+    let matrix = win_plus_tie_matrix(&wins.view(), &ties.view(), win_weight, tie_weight, 0.0);
     bradley_terry(&matrix.view(), tolerance, limit)
         .map(|(a, _)| a.to_vec())
         .map_err(|e| e.to_string())
@@ -151,7 +151,7 @@ pub fn eigen_wasm(
     )
     .map_err(|e| e.to_string())?;
 
-    let matrix = win_plus_tie_matrix(wins, &ties.view(), win_weight, tie_weight, 0.0);
+    let matrix = win_plus_tie_matrix(&wins.view(), &ties.view(), win_weight, tie_weight, 0.0);
     eigen(&matrix.view(), tolerance, limit)
         .map(|(a, _)| a.to_vec())
         .map_err(|e| e.to_string())
@@ -184,7 +184,7 @@ pub fn pagerank_wasm(
     )
     .map_err(|e| e.to_string())?;
 
-    let matrix = win_plus_tie_matrix(wins, &ties.view(), win_weight, tie_weight, 0.0);
+    let matrix = win_plus_tie_matrix(&wins.view(), &ties.view(), win_weight, tie_weight, 0.0);
     pagerank(&matrix.view(), alpha, tolerance, limit)
         .map(|(a, _)| a.to_vec())
         .map_err(|e| e.to_string())

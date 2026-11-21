@@ -142,7 +142,7 @@ fn bradley_terry_pyo3<'py>(
     ) {
         Ok((win_matrix, tie_matrix)) => {
             let matrix = win_plus_tie_matrix(
-                win_matrix,
+                &win_matrix.view(),
                 &tie_matrix.view(),
                 win_weight,
                 tie_weight,
@@ -274,7 +274,7 @@ fn eigen_pyo3<'py>(
     ) {
         Ok((win_matrix, tie_matrix)) => {
             let matrix = win_plus_tie_matrix(
-                win_matrix,
+                &win_matrix.view(),
                 &tie_matrix.view(),
                 win_weight,
                 tie_weight,
@@ -318,7 +318,7 @@ fn pagerank_pyo3<'py>(
     ) {
         Ok((win_matrix, tie_matrix)) => {
             let matrix = win_plus_tie_matrix(
-                win_matrix,
+                &win_matrix.view(),
                 &tie_matrix.view(),
                 win_weight,
                 tie_weight,

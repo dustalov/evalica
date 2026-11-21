@@ -152,7 +152,8 @@ mod tests {
         let (win_matrix, tie_matrix) =
             matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix = win_plus_tie_matrix(win_matrix, &tie_matrix.view(), 1.0, 0.5, tolerance);
+        let matrix =
+            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.6955953825629276,
@@ -184,7 +185,8 @@ mod tests {
         let (win_matrix, tie_matrix) =
             matrices(&xs, &ys, &winners, &weights, utils::fixtures::TOTAL).unwrap();
 
-        let matrix = win_plus_tie_matrix(win_matrix, &tie_matrix.view(), 1.0, 0.5, tolerance);
+        let matrix =
+            win_plus_tie_matrix(&win_matrix.view(), &tie_matrix.view(), 1.0, 0.5, tolerance);
 
         let expected = array![
             0.13280040999661397,
