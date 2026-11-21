@@ -69,7 +69,6 @@ jobs:
       with:
         version: 1.27.0
     - name: Install wasm-bindgen-cli
-      # The CLI version must match the wasm-bindgen crate version in Cargo.lock
       run: |
         WASM_BINDGEN_VERSION=$(cargo metadata --locked --format-version 1 | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')
         cargo binstall -y --force "wasm-bindgen-cli@$WASM_BINDGEN_VERSION"

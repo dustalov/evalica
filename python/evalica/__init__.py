@@ -95,7 +95,7 @@ except ImportError:
         stacklevel=1,
     )
 
-    if not TYPE_CHECKING:  # type checkers see the extension module, the call sites check PYO3_AVAILABLE
+    if not TYPE_CHECKING:
         _brzo = None
 
     PYO3_AVAILABLE = False

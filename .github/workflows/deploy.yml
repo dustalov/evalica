@@ -59,8 +59,6 @@ jobs:
         - os: linux
           target: aarch64
           manylinux: auto
-        # i686 is cross-compiled with Zig on the host: the manylinux2014 image
-        # installs libatomic from vault.centos.org, which is unreachable from runners
         - os: linux
           target: i686
           manylinux: "2014"
