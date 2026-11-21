@@ -48,7 +48,7 @@ nbsphinx_timeout = 120
 # pandas 3.x removed Series.__class_getitem__, so pd.Series[float] is not subscriptable
 # at runtime. Inject it so get_type_hints() can evaluate dataclass field annotations.
 if not hasattr(pd.Series, "__class_getitem__"):
-    pd.Series.__class_getitem__ = classmethod(lambda cls, _item: cls)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    pd.Series.__class_getitem__ = classmethod(lambda cls, _item: cls)  # type: ignore[attr-defined]  # ty: ignore[missing-attribute]
 
 os.environ.setdefault("PLOTLY_RENDERER", "notebook")
 pio.renderers.default = os.environ["PLOTLY_RENDERER"]
