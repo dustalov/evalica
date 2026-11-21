@@ -57,7 +57,7 @@ def write_csv(f: IO[str], scores: pd.Series[str]) -> pd.DataFrame:
     df_output = pd.DataFrame(scores.rename("score"))
     df_output.index.name = "item"
     df_output = df_output.sort_values(by="score", ascending=False)
-    df_output["rank"] = df_output["score"].rank(na_option="bottom", ascending=False).astype(int)
+    df_output["rank"] = df_output["score"].rank(method="min", na_option="bottom", ascending=False).astype(int)
     df_output[["score", "rank"]].to_csv(f)
     return df_output
 
