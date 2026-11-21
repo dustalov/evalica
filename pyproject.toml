@@ -25,7 +25,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
@@ -70,7 +69,6 @@ docs = [
 ]
 gradio = [
     "gradio",
-    "huggingface-hub >=0.33.5,<1.0 ; python_version < '3.10'",
     "plotly",
 ]
 
@@ -120,7 +118,6 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
 exclude = [
     "coling2025",
 ]

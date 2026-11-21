@@ -59,8 +59,8 @@ Given this hypothetical example, Evalica takes these three columns and computes 
 ```pycon
 >>> from evalica import elo, Winner
 >>> result = elo(
-...     ['pizza', 'burger', 'pizza'],
-...     ['burger', 'sushi', 'sushi'],
+...     ["pizza", "burger", "pizza"],
+...     ["burger", "sushi", "sushi"],
 ...     [Winner.X, Winner.Y, Winner.Draw],
 ... )
 >>> result.scores
@@ -85,24 +85,26 @@ Evalica also supports computing [Krippendorff's alpha](https://en.wikipedia.org/
 ```pycon
 >>> import pandas as pd
 >>> from evalica import alpha
->>> data = pd.DataFrame([
-...     [1, 1, None, 1],
-...     [2, 2, 3, 2],
-...     [3, 3, 3, 3],
-...     [3, 3, 3, 3],
-...     [2, 2, 2, 2],
-...     [1, 2, 3, 4],
-...     [4, 4, 4, 4],
-...     [1, 1, 2, 1],
-...     [2, 2, 2, 2],
-...     [None, 5, 5, 5],
-...     [None, None, 1, 1],
-... ]).T
->>> result = alpha(data, distance='nominal')
+>>> data = pd.DataFrame(
+...     [
+...         [1, 1, None, 1],
+...         [2, 2, 3, 2],
+...         [3, 3, 3, 3],
+...         [3, 3, 3, 3],
+...         [2, 2, 2, 2],
+...         [1, 2, 3, 4],
+...         [4, 4, 4, 4],
+...         [1, 1, 2, 1],
+...         [2, 2, 2, 2],
+...         [None, 5, 5, 5],
+...         [None, None, 1, 1],
+...     ]
+... ).T
+>>> result = alpha(data, distance="nominal")
 >>> result.alpha
 0.7434210526315788
 >>> from evalica import alpha_bootstrap
->>> bootstrap_result = alpha_bootstrap(data, distance='nominal', n_resamples=1000, random_state=42)
+>>> bootstrap_result = alpha_bootstrap(data, distance="nominal", n_resamples=1000, random_state=42)
 >>> (bootstrap_result.low, bootstrap_result.high)
 (0.4431818181818182, 0.9411764705882353)
 ```

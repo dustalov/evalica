@@ -4,7 +4,7 @@ use ndarray::{Array1, ArrayView1, ErrorKind, ShapeError};
 use num_traits::Float;
 
 use crate::utils::nan_to_num;
-use crate::{check_lengths, check_total, utils::one_nan_to_num, Winner};
+use crate::{Winner, check_lengths, check_total, utils::one_nan_to_num};
 
 /// Implements the Elo rating system.
 ///

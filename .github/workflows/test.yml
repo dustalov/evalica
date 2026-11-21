@@ -12,18 +12,16 @@ env:
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   PLOTLY_RENDERER: notebook
-  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   rust:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7.0.1
-    - uses: actions/cache@v6.1.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           ~/.cargo/bin/
@@ -31,27 +29,29 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install OpenBLAS
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenblas-dev
+    - name: Check formatting
+      run: cargo fmt --check
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --locked --verbose
     - name: Run clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo clippy --locked --all-targets --all-features -- -D warnings
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --locked --verbose
     - name: Run tests with OpenBLAS
-      run: cargo test --verbose --features openblas-src
+      run: cargo test --locked --verbose --features openblas-src
     - name: Generate docs
-      run: cargo doc --verbose --no-deps
+      run: cargo doc --locked --verbose --no-deps
   wasm:
     runs-on: ubuntu-latest
     needs: rust
     steps:
-    - uses: actions/checkout@v7.0.1
-    - uses: actions/cache@v6.1.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           ~/.cargo/bin/
@@ -59,22 +59,27 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-wasm-${{ hashFiles('**/Cargo.toml') }}
+        key: ${{ runner.os }}-wasm-${{ hashFiles('**/Cargo.lock') }}
     - name: Install Wasm target
       run: rustup target add wasm32-unknown-unknown
     - name: Check Wasm
-      run: cargo check --target wasm32-unknown-unknown --features wasm
+      run: cargo check --locked --target wasm32-unknown-unknown --features wasm
+    - name: Install cargo-binstall
+      uses: cargo-bins/cargo-binstall@5885714d0a40a14b2535c6ffc051fd8e49aa9665 # v1.27.0
+      with:
+        version: 1.27.0
     - name: Install wasm-bindgen-cli
+      # The CLI version must match the wasm-bindgen crate version in Cargo.lock
       run: |
-        curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-        cargo binstall wasm-bindgen-cli --force
+        WASM_BINDGEN_VERSION=$(cargo metadata --locked --format-version 1 | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')
+        cargo binstall -y --force "wasm-bindgen-cli@$WASM_BINDGEN_VERSION"
     - name: Run Wasm tests
-      run: cargo test --target wasm32-unknown-unknown --features wasm
+      run: cargo test --locked --target wasm32-unknown-unknown --features wasm
       env:
         CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
     - name: Build Wasm package
       run: |
-        cargo build --target wasm32-unknown-unknown --features wasm --release
+        cargo build --locked --target wasm32-unknown-unknown --features wasm --release
         wasm-bindgen target/wasm32-unknown-unknown/release/evalica.wasm --out-dir pkg --target web
         ls -lh pkg/
     - name: Prepare artifact
@@ -82,7 +87,7 @@ jobs:
         mkdir examples/wasm/pkg
         cp pkg/* examples/wasm/pkg/
     - name: Upload Wasm
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: wasm-example
         path: examples/wasm
@@ -90,36 +95,40 @@ jobs:
         retention-days: 5
   python:
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.python-version == '3.15' }}
     needs: rust
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
         python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14", "3.15" ]
     steps:
-    - uses: actions/checkout@v7.0.1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up Python
-      uses: actions/setup-python@v7.1.0
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.3
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       with:
         activate-environment: true
         cache-dependency-glob: |
           **/Cargo.toml
           **/pyproject.toml
     - name: Set up pandoc
-      uses: pandoc/actions/setup@v1
+      uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
     - name: Set up Maturin
       run: |
         uv venv --allow-existing
         uv pip install maturin
-        maturin develop --uv --extras dev,docs,gradio
+        maturin develop --uv --locked --extras dev,docs,gradio
     - name: Lint with Mypy
       run: mypy .
     - name: Lint with Ruff
-      run: ruff check
+      run: |
+        ruff check
+        ruff format --check
     - if: matrix.python-version == '3.15'
       name: Run tests with coverage
       run: pytest --cov --junitxml=junit.xml -o junit_family=legacy
@@ -128,12 +137,12 @@ jobs:
       run: pytest
     - if: matrix.python-version == '3.15'
       name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v7.1.1
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         use_oidc: true
     - if: matrix.python-version == '3.15' && !cancelled()
       name: Upload test results to Codecov
-      uses: codecov/codecov-action@v7.1.1
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         report_type: test_results
         use_oidc: true
@@ -159,7 +168,7 @@ jobs:
         cp Evalica.svg jupyter/
     - if: matrix.python-version == '3.15'
       name: Upload Jupyter
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: jupyter
         path: jupyter
@@ -169,10 +178,10 @@ jobs:
       run: sphinx-build -W --keep-going -b html docs/ site/
     - if: matrix.python-version == '3.15'
       name: Make a release build
-      run: maturin develop --uv --release --extras dev,docs
+      run: maturin develop --uv --locked --release --extras dev,docs
     - if: matrix.python-version == '3.15'
       name: Run benchmarks
-      uses: CodSpeedHQ/action@v5.6.3
+      uses: CodSpeedHQ/action@af75f77f17a054769abefaa42fe8dc2975469b5f # v5.6.3
       with:
         run: pytest --codspeed
         mode: simulation
@@ -181,9 +190,9 @@ jobs:
   meta:
     runs-on: ubuntu-slim
     steps:
-    - uses: actions/checkout@v7.0.1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.3
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       with:
         enable-cache: false
     - name: Validate CITATION.cff

@@ -77,7 +77,12 @@ fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
     let remap: HashMap<u64, i64> = unique_values
         .iter()
         .enumerate()
-        .map(|(i, &v)| (v.to_bits(), i64::try_from(i).expect("index should fit into i64")))
+        .map(|(i, &v)| {
+            (
+                v.to_bits(),
+                i64::try_from(i).expect("index should fit into i64"),
+            )
+        })
         .collect();
 
     for ((i, j), &val) in data.indexed_iter() {
@@ -125,7 +130,9 @@ fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Arra
     let mut coincidence = cw.t().dot(&c);
 
     let diag_adj = cw.sum_axis(Axis(0));
-    Zip::from(coincidence.diag_mut()).and(&diag_adj).for_each(|d, &a| *d -= a);
+    Zip::from(coincidence.diag_mut())
+        .and(&diag_adj)
+        .for_each(|d, &a| *d -= a);
 
     coincidence
 }
@@ -181,7 +188,9 @@ fn compute_expected_matrix(coincidence: &ArrayView2<f64>) -> Array2<f64> {
         let n_c_col = n_c.view().insert_axis(Axis(1));
         let n_c_row = n_c.view().insert_axis(Axis(0));
         let mut expected = &n_c_col * &n_c_row;
-        Zip::from(expected.diag_mut()).and(&n_c).for_each(|d, &n| *d = n * (n - 1.0));
+        Zip::from(expected.diag_mut())
+            .and(&n_c)
+            .for_each(|d, &n| *d = n * (n - 1.0));
         expected / (n_total - 1.0)
     } else {
         Array2::<f64>::zeros(coincidence.dim())
@@ -566,9 +575,11 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result
-            .err()
-            .expect("error expected")
-            .contains("positive integer"));
+        assert!(
+            result
+                .err()
+                .expect("error expected")
+                .contains("positive integer")
+        );
     }
 }

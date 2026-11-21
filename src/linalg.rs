@@ -128,7 +128,7 @@ pub fn pagerank(
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use ndarray::{array, ArrayView1};
+    use ndarray::{ArrayView1, array};
 
     use crate::utils;
     use crate::utils::{matrices, win_plus_tie_matrix};

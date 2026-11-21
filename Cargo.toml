@@ -1,13 +1,13 @@
 [package]
 name = "evalica"
 version = "0.4.2"
-edition = "2021"
+edition = "2024"
 description = "Evalica, your favourite evaluation toolkit."
 repository = "https://github.com/dustalov/evalica"
 license = "Apache-2.0"
 keywords = ["ranking", "evaluation", "bradley-terry", "elo", "leaderboard"]
 categories = ["algorithms", "mathematics", "science"]
-exclude = ["*.csv", "*.ipynb", "*.svg", ".github", ".gitignore", "coling2025", "docs", "examples", "scripts"]
+include = ["/src/**/*.rs", "/Cargo.toml", "/Cargo.lock", "/LICENSE", "/README.md"]
 
 [lib]
 name = "evalica"

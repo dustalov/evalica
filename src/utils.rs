@@ -279,7 +279,7 @@ pub mod fixtures {
 
 #[cfg(test)]
 mod tests {
-    use super::{index, matrices, pairwise_scores, Winner};
+    use super::{Winner, index, matrices, pairwise_scores};
     use ndarray::array;
 
     #[test]

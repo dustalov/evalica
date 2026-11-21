@@ -9,7 +9,6 @@ env:
   CARGO_TERM_COLOR: always
   DO_NOT_TRACK: 1
   PIP_DISABLE_PIP_VERSION_CHECK: 1
-  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
 
 permissions:
   contents: read
@@ -23,12 +22,12 @@ jobs:
       id-token: write
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - run: cargo publish --dry-run
+    - run: cargo publish --locked --dry-run
     - if: github.event_name == 'release'
       uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
       id: auth
     - if: github.event_name == 'release'
-      run: cargo publish
+      run: cargo publish --locked
       env:
         CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
   build-sdist:
@@ -109,7 +108,7 @@ jobs:
         maturin-version: v1.16.0
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux }}
-        args: --release --out dist --compatibility pypi ${{ matrix.maturin-args }}
+        args: --release --locked --out dist --compatibility pypi ${{ matrix.maturin-args }}
         rust-toolchain: stable
         docker-options: -e CI
     - name: List wheels

@@ -4,7 +4,7 @@ use ndarray::{Array1, ArrayView1, Axis, ErrorKind, ScalarOperand, ShapeError};
 use num_traits::Float;
 
 use crate::utils::{matrices, nan_mean, nan_to_num, win_plus_tie_matrix};
-use crate::{check_lengths, check_total, Winner};
+use crate::{Winner, check_lengths, check_total};
 
 /// Counts the number of wins and ties for each item.
 ///
@@ -131,7 +131,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use ndarray::{array, ArrayView1};
+    use ndarray::{ArrayView1, array};
 
     use crate::utils;
 

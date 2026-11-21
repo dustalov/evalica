@@ -9,10 +9,10 @@ Users of the [Crowd-Kit](https://github.com/Toloka/crowd-kit) library can easily
 >>> from crowdkit.aggregation import BradleyTerry
 >>> df = pd.DataFrame(
 ...     [
-...         ['item1', 'item2', 'item1'],
-...         ['item3', 'item2', 'item2']
+...         ["item1", "item2", "item1"],
+...         ["item3", "item2", "item2"],
 ...     ],
-...     columns=['left', 'right', 'label']
+...     columns=["left", "right", "label"],
 ... )
 >>> agg_bt = BradleyTerry(n_iter=100).fit_predict(df)
 ```
@@ -24,12 +24,12 @@ Evalica is not bound to the specific column names, reducing the potentially expe
 >>> from evalica import bradley_terry, Winner
 >>> df = pd.DataFrame(
 ...     [
-...         ['item1', 'item2', Winner.X],
-...         ['item2', 'item3', Winner.Y]
+...         ["item1", "item2", Winner.X],
+...         ["item2", "item3", Winner.Y],
 ...     ],
-...     columns=['left', 'right', 'label']
+...     columns=["left", "right", "label"],
 ... )
->>> scores = bradley_terry(df['left'], df['right'], df['label'], limit=100)
+>>> scores = bradley_terry(df["left"], df["right"], df["label"], limit=100)
 ```
 
 Or simply:
@@ -37,8 +37,8 @@ Or simply:
 ```pycon
 >>> from evalica import bradley_terry, Winner
 >>> scores = bradley_terry(
-...     ['item1', 'item2'],
-...     ['item2', 'item3'],
+...     ["item1", "item2"],
+...     ["item2", "item3"],
 ...     [Winner.X, Winner.Y],
 ...     limit=100,
 ... )
@@ -52,12 +52,12 @@ Users of the [NLTK](https://www.nltk.org/) library computing Krippendorff's alph
 >>> from nltk.metrics import binary_distance
 >>> from nltk.metrics.agreement import AnnotationTask
 >>> data = [
-...     ('coder1', 'item1', 1),
-...     ('coder1', 'item2', 2),
-...     ('coder2', 'item1', 1),
-...     ('coder2', 'item2', 3),
-...     ('coder3', 'item1', 2),
-...     ('coder3', 'item2', 2),
+...     ("coder1", "item1", 1),
+...     ("coder1", "item2", 2),
+...     ("coder2", "item1", 1),
+...     ("coder2", "item2", 3),
+...     ("coder3", "item1", 2),
+...     ("coder3", "item2", 2),
 ... ]
 >>> task = AnnotationTask(data, distance=binary_distance)
 >>> task.alpha()
