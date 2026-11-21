@@ -223,8 +223,8 @@ def elo(
             elif w == Winner.Draw:
                 scored_x = scored_y = weight * tie_weight
 
-            scores[x] += k * (scored_x - expected_x)
-            scores[y] += k * (scored_y - expected_y)
+            scores[x] += k * (scored_x - weight * expected_x)
+            scores[y] += k * (scored_y - weight * expected_y)
 
     return np.nan_to_num(scores, copy=False)
 
