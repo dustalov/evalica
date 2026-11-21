@@ -125,6 +125,9 @@ jobs:
         maturin develop --uv --locked --extras dev,docs,gradio
     - name: Lint with Mypy
       run: mypy .
+    - name: Lint with ty
+      continue-on-error: true
+      run: ty check
     - name: Lint with Ruff
       run: |
         ruff check

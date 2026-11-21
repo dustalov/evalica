@@ -50,10 +50,8 @@ def _coincidence_matrix(
     """
     c = np.zeros((matrix_indices.shape[0], n_unique), dtype=np.float64)
 
-    for i, unit_row in enumerate(matrix_indices):
-        valid = unit_row[unit_row >= 0]
-        if valid.size > 0:
-            c[i] = np.bincount(valid, minlength=n_unique)
+    valid = matrix_indices >= 0
+    np.add.at(c, (np.nonzero(valid)[0], matrix_indices[valid]), 1.0)
 
     m_u = np.sum(c, axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):

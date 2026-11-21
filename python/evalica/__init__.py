@@ -95,7 +95,8 @@ except ImportError:
         stacklevel=1,
     )
 
-    _brzo = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+    if not TYPE_CHECKING:  # type checkers see the extension module, the call sites check PYO3_AVAILABLE
+        _brzo = None
 
     PYO3_AVAILABLE = False
 
@@ -331,17 +332,15 @@ def matrices(
 
 @runtime_checkable
 class Result(Protocol):
-    """
-    The result protocol.
+    """The result protocol."""
 
-    Attributes:
-        scores: The element scores.
-        index: The index.
+    @property
+    def scores(self) -> pd.Series[float]:
+        """The element scores."""
 
-    """
-
-    scores: pd.Series[float]
-    index: pd.Index
+    @property
+    def index(self) -> pd.Index:
+        """The index."""
 
 
 @runtime_checkable
@@ -1362,9 +1361,9 @@ def bootstrap(
 
     return BootstrapResult(
         result=result,
-        low=pd.Series(bootstrap_result.confidence_interval.low, index=result.scores.index, name="low"),
-        high=pd.Series(bootstrap_result.confidence_interval.high, index=result.scores.index, name="high"),
-        stderr=pd.Series(bootstrap_result.standard_error, index=result.scores.index, name="stderr"),
+        low=pd.Series(bootstrap_result.confidence_interval.low, index=result.scores.index, name="low"),  # ty: ignore[invalid-argument-type]
+        high=pd.Series(bootstrap_result.confidence_interval.high, index=result.scores.index, name="high"),  # ty: ignore[invalid-argument-type]
+        stderr=pd.Series(bootstrap_result.standard_error, index=result.scores.index, name="stderr"),  # ty: ignore[invalid-argument-type]
         distribution=pd.DataFrame(bootstrap_result.bootstrap_distribution.T, columns=result.scores.index),
         index=index,
     )

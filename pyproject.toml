@@ -116,6 +116,11 @@ filterwarnings = [
     "ignore:The Rust extension could not be imported",
 ]
 
+[tool.ty.src]
+exclude = [
+    "coling2025",
+]
+
 [tool.ruff]
 line-length = 120
 exclude = [

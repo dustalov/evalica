@@ -72,7 +72,7 @@ fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
         }
     }
 
-    unique_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    unique_values.sort_by(f64::total_cmp);
 
     let remap: HashMap<u64, i64> = unique_values
         .iter()

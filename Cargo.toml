@@ -2,6 +2,7 @@
 name = "evalica"
 version = "0.4.3-rc.1"
 edition = "2024"
+rust-version = "1.85"
 description = "Evalica, your favourite evaluation toolkit."
 repository = "https://github.com/dustalov/evalica"
 license = "Apache-2.0"
