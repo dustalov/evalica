@@ -1,0 +1,27 @@
+changelog:
+  exclude:
+    authors:
+      - dependabot
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: New Features
+      labels:
+        - enhancement
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Dependencies
+      labels:
+        - dependencies
+    - title: Other Changes
+      labels:
+        - "*"
