@@ -116,6 +116,12 @@ jobs:
         uv venv --allow-existing
         uv pip install maturin
         maturin develop --uv --locked --extras dev,docs,gradio
+    - name: Restore Hypothesis database
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .hypothesis/
+        key: hypothesis-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: hypothesis-${{ runner.os }}-${{ matrix.python-version }}-
     - name: Lint with Mypy
       run: mypy .
     - name: Lint with ty
@@ -183,6 +189,12 @@ jobs:
         mode: simulation
     - name: Run tests (naïve)
       run: find python/evalica -name "*.so" -delete -o -name "*.pyd" -delete && pytest
+    - if: always()
+      name: Save Hypothesis database
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .hypothesis/
+        key: hypothesis-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}
   meta:
     runs-on: ubuntu-slim
     steps:
