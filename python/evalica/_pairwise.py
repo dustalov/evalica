@@ -301,5 +301,7 @@ def pagerank(
     _matrix = pagerank_matrix(matrix, damping)
 
     scores, iterations = eigen(_matrix, tolerance=tolerance, limit=limit)
-    scores /= scores.sum()
+    with np.errstate(all="ignore"):
+        scores /= scores.sum()
+
     return scores, iterations

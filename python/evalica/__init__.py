@@ -221,6 +221,13 @@ def _check_finite(**values: float) -> None:
             raise ValueError(msg)
 
 
+def _check_non_negative(**values: float) -> None:
+    for name, value in values.items():
+        if value < 0:
+            msg = f"{name} must be non-negative"
+            raise ValueError(msg)
+
+
 def _check_limit(limit: int) -> None:
     if not isinstance(limit, (int, np.integer)) or not 0 <= limit <= sys.maxsize:
         msg = "limit must be a non-negative integer"
@@ -1182,6 +1189,7 @@ def pagerank(
 
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
+    _check_non_negative(win_weight=win_weight, tie_weight=tie_weight)
     _check_limit(limit)
 
     if not 0.0 <= damping <= 1.0:
@@ -1192,6 +1200,10 @@ def pagerank(
 
     winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
+
+    if (weights < 0).any():
+        msg = "weights must be non-negative"
+        raise ValueError(msg)
 
     if solver == "pyo3":
         if not PYO3_AVAILABLE:
