@@ -114,6 +114,7 @@ pub fn bradley_terry<A: Float + FromPrimitive + ScalarOperand + AddAssign>(
 /// # Errors
 ///
 /// Returns an error if input matrices have different shapes or are not square.
+#[allow(clippy::suboptimal_flops)]
 pub fn newman(
     win_matrix: &ArrayView2<f64>,
     tie_matrix: &ArrayView2<f64>,
@@ -161,12 +162,12 @@ pub fn newman(
                 let score_j = scores[j];
                 let sqrt_scores_outer = (score_j * score_i).sqrt();
                 let sum_scores = score_j + score_i;
-                let common_denominator = (2.0 * v).mul_add(sqrt_scores_outer, sum_scores);
+                let common_denominator = sum_scores + 2.0 * v * sqrt_scores_outer;
 
-                scores_numerator += win_tie_half[[i, j]] * v.mul_add(sqrt_scores_outer, score_j)
-                    / common_denominator;
+                scores_numerator +=
+                    win_tie_half[[i, j]] * (score_j + v * sqrt_scores_outer) / common_denominator;
                 scores_denominator += win_tie_half_t[[i, j]]
-                    * v.mul_add((score_j / score_i).sqrt(), 1.0)
+                    * (1.0 + v * (score_j / score_i).sqrt())
                     / common_denominator;
                 v_numerator += tie_matrix[[i, j]] * sum_scores / common_denominator;
                 v_denominator += win_matrix[[i, j]] * sqrt_scores_outer / common_denominator;

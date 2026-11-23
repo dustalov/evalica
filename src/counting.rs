@@ -40,7 +40,7 @@ where
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
-        return Ok(Array1::zeros(0));
+        return Ok(Array1::zeros(total));
     }
 
     check_total!(total, xs, ys);
@@ -99,7 +99,7 @@ where
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
-        return Ok(Array1::zeros(0));
+        return Ok(Array1::zeros(total));
     }
 
     let (win_matrix, tie_matrix) = matrices(xs, ys, winners, weights, total)?;
@@ -135,7 +135,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use ndarray::{ArrayView1, array};
+    use ndarray::{Array1, ArrayView1, array};
 
     use crate::utils;
 
@@ -167,5 +167,24 @@ mod tests {
         let actual = average_win_rate(&xs, &ys, &winners, &weights, 5, 1.0, 0.5).unwrap();
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_empty() {
+        let xs = ArrayView1::from(&[]);
+        let ys = ArrayView1::from(&[]);
+        let winners = ArrayView1::from(&[]);
+        let weights = ArrayView1::from(&[]);
+
+        let expected = Array1::<f64>::zeros(3);
+
+        assert_eq!(
+            counting(&xs, &ys, &winners, &weights, 3, 1.0, 0.5).unwrap(),
+            expected
+        );
+        assert_eq!(
+            average_win_rate(&xs, &ys, &winners, &weights, 3, 1.0, 0.5).unwrap(),
+            expected
+        );
     }
 }

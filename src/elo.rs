@@ -50,7 +50,7 @@ where
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
-        return Ok(Array1::zeros(0));
+        return Ok(Array1::from_elem(total, initial));
     }
 
     check_total!(total, xs, ys);
@@ -122,5 +122,29 @@ mod tests {
         for (a, b) in actual.iter().zip(expected.iter()) {
             assert_approx_eq!(*a, *b, epsilon = 1e-0);
         }
+    }
+
+    #[test]
+    fn test_elo_empty() {
+        let empty = Array1::<usize>::zeros(0);
+        let winners = Array1::<Winner>::from(vec![]);
+        let weights = Array1::<f64>::zeros(0);
+
+        let actual = elo(
+            &empty.view(),
+            &empty.view(),
+            &winners.view(),
+            &weights.view(),
+            3,
+            1500.0,
+            10.0,
+            400.0,
+            30.0,
+            1.0,
+            0.5,
+        )
+        .unwrap();
+
+        assert_eq!(actual, Array1::from_elem(3, 1500.0));
     }
 }

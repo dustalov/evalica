@@ -74,7 +74,7 @@ def counting(
     _check_lengths(xs, ys, winners, weights)
 
     if len(xs) == 0:
-        return np.zeros(0)
+        return np.zeros(total)
 
     xs_array = np.asarray(xs, dtype=np.intp)
     ys_array = np.asarray(ys, dtype=np.intp)
@@ -211,7 +211,7 @@ def elo(
     _check_lengths(xs, ys, winners, weights)
 
     if len(xs) == 0:
-        return np.zeros(0)
+        return np.ones(total) * initial
 
     scores = np.ones(total) * initial
 
@@ -301,5 +301,5 @@ def pagerank(
     _matrix = pagerank_matrix(matrix, damping)
 
     scores, iterations = eigen(_matrix, tolerance=tolerance, limit=limit)
-    scores /= np.linalg.norm(scores, ord=1)
+    scores /= scores.sum()
     return scores, iterations

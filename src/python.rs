@@ -1,6 +1,5 @@
 use ndarray::ArrayView1;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1, PyArrayLike2};
-use pyo3::exceptions::PyValueError;
 use pyo3::import_exception;
 use pyo3::prelude::*;
 
@@ -15,9 +14,10 @@ use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
 import_exception!(evalica, LengthMismatchError);
 import_exception!(evalica, InsufficientRatingsError);
 import_exception!(evalica, UnknownDistanceError);
+import_exception!(evalica, UnknownWinnerError);
 
 fn winners_view<'a>(winners: &'a PyArrayLike1<'_, u8>) -> PyResult<ArrayView1<'a, Winner>> {
-    Winner::view_from(&winners.as_array()).map_err(PyValueError::new_err)
+    Winner::view_from(&winners.as_array()).map_err(UnknownWinnerError::new_err)
 }
 
 #[pyfunction(name = "matrices")]
@@ -199,9 +199,11 @@ fn newman_pyo3<'py>(
         Ok((mut win_matrix, mut tie_matrix)) => {
             nan_to_num(&mut win_matrix, tolerance);
             win_matrix *= win_weight;
+            nan_to_num(&mut win_matrix, tolerance);
 
             nan_to_num(&mut tie_matrix, tolerance);
             tie_matrix *= tie_weight;
+            nan_to_num(&mut tie_matrix, tolerance);
 
             match newman(
                 &win_matrix.view(),

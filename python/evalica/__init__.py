@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import math
 import os
+import sys
 import warnings
-from collections.abc import Collection, Hashable, Iterable
+from collections.abc import Collection, Hashable, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
@@ -71,6 +72,20 @@ class UnknownDistanceError(ValueError):
 
         """
         super().__init__(f"Unknown distance '{distance}'")
+
+
+class UnknownWinnerError(ValueError):
+    """Raised when an unknown winner is specified."""
+
+    def __init__(self, message: str = "invalid winner value") -> None:
+        """
+        Create and return a new object.
+
+        Args:
+            message: The error message.
+
+        """
+        super().__init__(message)
 
 
 class RustExtensionWarning(RuntimeWarning):
@@ -206,6 +221,12 @@ def _check_finite(**values: float) -> None:
             raise ValueError(msg)
 
 
+def _check_limit(limit: int) -> None:
+    if not isinstance(limit, (int, np.integer)) or not 0 <= limit <= sys.maxsize:
+        msg = "limit must be a non-negative integer"
+        raise ValueError(msg)
+
+
 def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n: int) -> npt.NDArray[np.float64]:
     if weights is None:
         return np.ones(n, dtype=np.float64)
@@ -217,6 +238,15 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
         raise ValueError(msg)
 
     return array
+
+
+def _wrap_winners(winners: Collection[Winner] | npt.NDArray[Any]) -> npt.NDArray[np.uint8]:
+    array = np.asarray(winners if isinstance(winners, (np.ndarray, pd.Series, Sequence)) else list(winners))
+
+    if array.ndim != 1 or not np.isin(array, (Winner.Draw, Winner.X, Winner.Y)).all():
+        raise UnknownWinnerError
+
+    return array.astype(np.uint8, copy=False)
 
 
 def _make_matrix(
@@ -323,6 +353,7 @@ def matrices(
         The win and tie matrices.
 
     """
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -450,6 +481,7 @@ def counting(
 
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -539,6 +571,7 @@ def average_win_rate(
 
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -661,9 +694,11 @@ def bradley_terry(
 
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
+    _check_limit(limit)
 
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -783,9 +818,11 @@ def newman(
 
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
+    _check_limit(limit)
 
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -815,8 +852,9 @@ def newman(
             solver="naive",
         )
 
-        win_matrix = np.nan_to_num(win_weight * np.nan_to_num(_matrices.win_matrix, nan=tolerance), nan=tolerance)
-        tie_matrix = np.nan_to_num(tie_weight * np.nan_to_num(_matrices.tie_matrix, nan=tolerance), nan=tolerance)
+        with np.errstate(all="ignore"):
+            win_matrix = np.nan_to_num(win_weight * np.nan_to_num(_matrices.win_matrix, nan=tolerance), nan=tolerance)
+            tie_matrix = np.nan_to_num(tie_weight * np.nan_to_num(_matrices.tie_matrix, nan=tolerance), nan=tolerance)
 
         scores, v, iterations = newman_naive(
             win_matrix=win_matrix,
@@ -909,8 +947,11 @@ def elo(
         The Elo result.
 
     """
+    _check_finite(win_weight=win_weight, tie_weight=tie_weight)
+
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -1019,9 +1060,11 @@ def eigen(
 
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
+    _check_limit(limit)
 
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -1139,9 +1182,15 @@ def pagerank(
 
     """
     _check_finite(win_weight=win_weight, tie_weight=tie_weight)
+    _check_limit(limit)
+
+    if not 0.0 <= damping <= 1.0:
+        msg = "damping must be between 0 and 1"
+        raise ValueError(msg)
 
     xs_indexed, ys_indexed, index = _indexing(xs, ys, index)
 
+    winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
     if solver == "pyo3":
@@ -1325,9 +1374,10 @@ def bootstrap(
         **kwargs,
     )
 
+    winners_array = _wrap_winners(winners)
     weights_array = np.array(_wrap_weights(weights, len(xs)), dtype=np.float64)
 
-    samples = (np.array(xs, dtype=object), np.array(ys, dtype=object), np.array(winners, dtype=np.uint8), weights_array)
+    samples = (np.array(xs, dtype=object), np.array(ys, dtype=object), winners_array, weights_array)
 
     def statistic(*data: npt.NDArray[np.generic]) -> npt.NDArray[np.float64]:
         """Compute scores for a single bootstrap resample."""
@@ -1336,7 +1386,7 @@ def bootstrap(
         result_sample = method(
             xs=xs_sample,
             ys=ys_sample,
-            winners=list(winners_sample),  # TODO: ensure no copying needed
+            winners=winners_sample,
             index=index,
             weights=weights_sample,
             win_weight=win_weight,
@@ -1566,6 +1616,7 @@ __all__ = [
     "SolverError",
     "SolverName",
     "UnknownDistanceError",
+    "UnknownWinnerError",
     "Winner",
     "__version__",
     "alpha",

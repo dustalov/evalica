@@ -33,6 +33,11 @@ pub fn eigen<A: Float + ScalarOperand + DivAssign>(
     }
 
     let n = matrix.shape()[0];
+
+    if n == 0 {
+        return Ok((Array1::zeros(0), 0));
+    }
+
     let n_as_a = A::from(n).ok_or_else(|| ShapeError::from_kind(ErrorKind::IncompatibleShape))?;
     let matrix_t = matrix.t();
     let matrix_t = matrix_t.as_standard_layout();

@@ -155,7 +155,7 @@ where
     check_lengths!(xs.len(), ys.len(), winners.len(), weights.len());
 
     if xs.is_empty() {
-        return Ok((Array2::zeros((0, 0)), Array2::zeros((0, 0))));
+        return Ok((Array2::zeros((total, total)), Array2::zeros((total, total))));
     }
 
     check_total!(total, xs, ys);
@@ -263,8 +263,8 @@ pub mod fixtures {
 
 #[cfg(test)]
 mod tests {
-    use super::{Winner, index, matrices, pairwise_scores};
-    use ndarray::array;
+    use super::{Array2, Winner, index, matrices, pairwise_scores};
+    use ndarray::{Array1, array};
 
     #[test]
     fn test_index() {
@@ -309,6 +309,25 @@ mod tests {
 
         assert_eq!(wins, expected_wins);
         assert_eq!(ties, expected_ties);
+    }
+
+    #[test]
+    fn test_matrices_empty() {
+        let empty = Array1::<usize>::zeros(0);
+        let winners = Array1::<Winner>::from(vec![]);
+        let weights = Array1::<f64>::zeros(0);
+
+        let (wins, ties) = matrices(
+            &empty.view(),
+            &empty.view(),
+            &winners.view(),
+            &weights.view(),
+            3,
+        )
+        .unwrap();
+
+        assert_eq!(wins, Array2::<f64>::zeros((3, 3)));
+        assert_eq!(ties, Array2::<f64>::zeros((3, 3)));
     }
 
     #[test]
