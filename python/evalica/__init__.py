@@ -6,7 +6,7 @@ import math
 import os
 import sys
 import warnings
-from collections.abc import Collection, Hashable, Iterable, Sequence
+from collections.abc import Collection, Hashable, Iterable
 from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
@@ -248,7 +248,14 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
 
 
 def _wrap_winners(winners: Collection[Winner] | npt.NDArray[Any]) -> npt.NDArray[np.uint8]:
-    array = np.asarray(winners if isinstance(winners, (np.ndarray, pd.Series, Sequence)) else list(winners))
+    try:
+        array = (
+            np.asarray(winners)
+            if isinstance(winners, (np.ndarray, pd.Series))
+            else np.frombuffer(bytes(winners), np.uint8)
+        )
+    except (TypeError, ValueError) as e:
+        raise UnknownWinnerError from e
 
     if array.ndim != 1 or not np.isin(array, (Winner.Draw, Winner.X, Winner.Y)).all():
         raise UnknownWinnerError
