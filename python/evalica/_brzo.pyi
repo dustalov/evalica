@@ -1,44 +1,49 @@
-from collections.abc import Collection
+from collections.abc import Sequence
+from typing import TypeAlias
 
 import numpy as np
 import numpy.typing as npt
 
 from . import DistanceName
 
+_Indices: TypeAlias = Sequence[int] | npt.NDArray[np.uintp]
+_Winners: TypeAlias = Sequence[int] | npt.NDArray[np.uint8]
+_Weights: TypeAlias = Sequence[float] | npt.NDArray[np.float64]
+
 __version__: str = ...
 """The version of Evalica Brzo module."""
 
 def matrices(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]: ...
-def pairwise_scores(scores: npt.ArrayLike) -> npt.NDArray[np.float64]: ...
+def pairwise_scores(scores: _Weights) -> npt.NDArray[np.float64]: ...
 def counting(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     win_weight: float,
     tie_weight: float,
 ) -> npt.NDArray[np.float64]: ...
 def average_win_rate(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     win_weight: float,
     tie_weight: float,
 ) -> npt.NDArray[np.float64]: ...
 def bradley_terry(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     win_weight: float,
     tie_weight: float,
@@ -46,10 +51,10 @@ def bradley_terry(
     limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 def newman(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     v_init: float,
     win_weight: float,
@@ -58,10 +63,10 @@ def newman(
     limit: int,
 ) -> tuple[npt.NDArray[np.float64], float, int]: ...
 def elo(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     initial: float,
     base: float,
@@ -71,10 +76,10 @@ def elo(
     tie_weight: float,
 ) -> npt.NDArray[np.float64]: ...
 def eigen(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     win_weight: float,
     tie_weight: float,
@@ -82,10 +87,10 @@ def eigen(
     limit: int,
 ) -> tuple[npt.NDArray[np.float64], int]: ...
 def pagerank(
-    xs: Collection[int],
-    ys: Collection[int],
-    winners: Collection[int],
-    weights: Collection[float],
+    xs: _Indices,
+    ys: _Indices,
+    winners: _Winners,
+    weights: _Weights,
     total: int,
     damping: float,
     win_weight: float,

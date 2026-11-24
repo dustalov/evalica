@@ -907,7 +907,7 @@ def _dict_values(winners: Collection[evalica.Winner]) -> Collection[evalica.Winn
 @pytest.mark.parametrize("solver", ["naive", "pyo3"])
 @pytest.mark.parametrize(
     "wrap",
-    [tuple, np.array, partial(np.array, dtype=np.int64), partial(np.array, dtype=np.float64), pd.Series, _dict_values],
+    [tuple, np.array, partial(np.array, dtype=np.int64), pd.Series, _dict_values],
 )
 @given(comparison=comparisons())
 def test_winners_collections(
@@ -930,7 +930,7 @@ VALID_WINNERS = tuple(evalica.Winner)
 
 invalid_winner = st.one_of(
     st.integers().filter(lambda value: value not in VALID_WINNERS),
-    st.floats().filter(lambda value: value not in VALID_WINNERS),
+    st.floats(),
     st.text(),
     st.none(),
 )
@@ -947,7 +947,9 @@ def invalid_winners(draw: st.DrawFn) -> tuple[list[str], list[str], Collection[o
         length = len(winners)
     elif draw(st.booleans()):
         winners = draw(
-            arrays(np.int64, st.integers(1, 5)).filter(lambda array: not np.isin(array, VALID_WINNERS).all()),
+            arrays(st.sampled_from((np.int64, np.float64)), st.integers(1, 5)).filter(
+                lambda array: array.dtype.kind == "f" or not np.isin(array, VALID_WINNERS).all(),
+            ),
         )
         length = len(winners)
     else:
@@ -1239,3 +1241,56 @@ def test_empty_iterations(method: Callable[..., evalica.Result], solver: SolverN
 
     result = method([], [], [], solver=solver)
     assert result.iterations == 0  # type: ignore[attr-defined]
+
+
+def _matrices_outcome(
+    xs: Collection[object],
+    ys: Collection[object],
+    index: pd.Index,
+    solver: SolverName,
+) -> tuple[list[list[float]], list[list[float]]] | type[BaseException]:
+    try:
+        result = evalica.matrices(
+            cast("Collection[int]", xs),
+            cast("Collection[int]", ys),
+            [evalica.Winner.X] * len(xs),
+            index=index,
+            solver=solver,
+        )
+    except Exception as e:  # noqa: BLE001
+        return type(e)
+
+    return result.win_matrix.tolist(), result.tie_matrix.tolist()
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+@pytest.mark.parametrize("wrap", [list, tuple, np.asarray])
+@given(
+    indices=st.lists(st.one_of(st.integers(), st.floats(), st.booleans(), st.text()), min_size=1, max_size=5),
+    data=st.data(),
+)
+def test_matrices_indices_parity(
+    wrap: Callable[[list[object]], Collection[object]],
+    indices: list[object],
+    data: st.DataObject,
+) -> None:
+    index = pd.Index(range(data.draw(st.integers(1, 5))))
+    ys = [0] * len(indices)
+
+    naive = _matrices_outcome(wrap(indices), ys, index, "naive")
+    pyo3 = _matrices_outcome(wrap(indices), ys, index, "pyo3")
+
+    assert naive == pyo3
+    assert naive is IndexError or not isinstance(naive, type)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@given(weights=arrays(np.float64, array_shapes(min_dims=2, max_dims=3, min_side=1, max_side=3)))
+def test_weights_not_one_dimensional(solver: SolverName, weights: npt.NDArray[np.float64]) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    xs = [str(i) for i in range(len(weights))]
+
+    with pytest.raises(ValueError, match="weights must be one-dimensional"):
+        evalica.counting(xs, xs, [evalica.Winner.X] * len(xs), weights=weights, solver=solver)

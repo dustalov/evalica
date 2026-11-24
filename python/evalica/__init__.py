@@ -229,7 +229,7 @@ def _check_non_negative(**values: float) -> None:
 
 
 def _check_limit(limit: int) -> None:
-    if not isinstance(limit, (int, np.integer)) or not 0 <= limit <= sys.maxsize:
+    if isinstance(limit, bool) or not isinstance(limit, (int, np.integer)) or not 0 <= limit <= sys.maxsize:
         msg = "limit must be a non-negative integer"
         raise ValueError(msg)
 
@@ -240,6 +240,10 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
 
     array = np.asarray(weights, dtype=np.float64)
 
+    if array.ndim != 1:
+        msg = "weights must be one-dimensional"
+        raise ValueError(msg)
+
     if not np.isfinite(array).all():
         msg = "weights must be finite"
         raise ValueError(msg)
@@ -248,19 +252,28 @@ def _wrap_weights(weights: Collection[float] | npt.NDArray[np.float64] | None, n
 
 
 def _wrap_winners(winners: Collection[Winner] | npt.NDArray[Any]) -> npt.NDArray[np.uint8]:
-    try:
-        array = (
-            np.asarray(winners)
-            if isinstance(winners, (np.ndarray, pd.Series))
-            else np.frombuffer(bytes(winners), np.uint8)
-        )
-    except (TypeError, ValueError) as e:
-        raise UnknownWinnerError from e
+    if isinstance(winners, (np.ndarray, pd.Series)) and winners.dtype.kind in "biu":
+        array = np.asarray(winners)
+    else:
+        try:
+            array = np.frombuffer(bytes(list(winners)), np.uint8)
+        except (TypeError, ValueError) as e:
+            raise UnknownWinnerError from e
 
     if array.ndim != 1 or not np.isin(array, (Winner.Draw, Winner.X, Winner.Y)).all():
         raise UnknownWinnerError
 
     return array.astype(np.uint8, copy=False)
+
+
+def _wrap_indices(indices: Collection[int], total: int) -> npt.NDArray[np.uintp]:
+    array = np.asarray(indices if isinstance(indices, np.ndarray) else list(indices))
+
+    if array.ndim != 1 or (array.size and (array.dtype.kind not in "biu" or array.min() < 0 or array.max() >= total)):
+        msg = "index out of range"
+        raise IndexError(msg)
+
+    return array.astype(np.uintp, copy=False)
 
 
 def _make_matrix(
@@ -367,6 +380,12 @@ def matrices(
         The win and tie matrices.
 
     """
+    if solver != "pyo3" or not isinstance(xs_indexed, list):
+        xs_indexed = _wrap_indices(xs_indexed, len(index))
+
+    if solver != "pyo3" or not isinstance(ys_indexed, list):
+        ys_indexed = _wrap_indices(ys_indexed, len(index))
+
     winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
 
@@ -1394,7 +1413,7 @@ def bootstrap(
     )
 
     winners_array = _wrap_winners(winners)
-    weights_array = np.array(_wrap_weights(weights, len(xs)), dtype=np.float64)
+    weights_array = _wrap_weights(weights, len(xs))
 
     samples = (np.array(xs, dtype=object), np.array(ys, dtype=object), winners_array, weights_array)
 

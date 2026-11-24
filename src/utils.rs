@@ -33,7 +33,7 @@ macro_rules! check_total {
             .unwrap_or(0);
 
         if max_value >= $total {
-            return Err(ShapeError::from_kind(ErrorKind::IncompatibleShape));
+            return Err(ShapeError::from_kind(ErrorKind::OutOfBounds));
         }
     }};
 }
