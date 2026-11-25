@@ -283,6 +283,9 @@ def _wrap_winners(winners: Collection[Winner] | npt.NDArray[Any]) -> npt.NDArray
 
 
 def _wrap_indices(indices: Collection[int], total: int) -> npt.NDArray[np.uintp]:
+    if PYO3_AVAILABLE and isinstance(indices, list):
+        return _brzo.indices(indices, total)
+
     array = np.asarray(indices if isinstance(indices, np.ndarray) else list(indices))
 
     if array.ndim != 1 or (array.size and (array.dtype.kind not in "biu" or array.min() < 0 or array.max() >= total)):

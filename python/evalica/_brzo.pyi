@@ -13,6 +13,7 @@ _Weights: TypeAlias = Sequence[float] | npt.NDArray[np.float64]
 __version__: str = ...
 """The version of Evalica Brzo module."""
 
+def indices(indices: Sequence[int], total: int) -> npt.NDArray[np.uintp]: ...
 def matrices(
     xs: _Indices,
     ys: _Indices,

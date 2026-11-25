@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use ndarray::{Array1, ArrayView2, ErrorKind, ScalarOperand, ShapeError, Zip};
+use ndarray::{Array1, ArrayView1, ArrayView2, ErrorKind, ScalarOperand, ShapeError, Zip};
 use num_traits::{Float, FromPrimitive};
 
 use crate::utils::{one_nan_to_num, win_plus_tie_matrix};
@@ -144,10 +144,10 @@ pub fn newman(
     let mut scores_new = Array1::<f64>::zeros(n);
     let mut v_new = v;
 
-    let mut numerator_terms = Array1::<f64>::zeros(n);
-    let mut denominator_terms = Array1::<f64>::zeros(n);
-    let mut v_numerator_terms = ndarray::Array2::<f64>::zeros((n, n));
-    let mut v_denominator_terms = ndarray::Array2::<f64>::zeros((n, n));
+    let mut numerator_terms = vec![0.0; n];
+    let mut denominator_terms = vec![0.0; n];
+    let mut v_numerator_terms = vec![0.0; n];
+    let mut v_denominator_terms = vec![0.0; n];
 
     while !converged && iterations < limit {
         iterations += 1;
@@ -155,6 +155,8 @@ pub fn newman(
         v = one_nan_to_num(v_new, tolerance);
 
         let mut squared_difference = 0.0;
+        let mut v_numerator = UnrolledSum::new(n * n);
+        let mut v_denominator = UnrolledSum::new(n * n);
 
         for i in 0..n {
             let score_i = scores[i];
@@ -170,22 +172,25 @@ pub fn newman(
                 denominator_terms[j] = win_tie_half_t[[i, j]]
                     * (1.0 + v * (score_j / score_i).sqrt())
                     / common_denominator;
-                v_numerator_terms[[i, j]] = tie_matrix[[i, j]] * sum_scores / common_denominator;
-                v_denominator_terms[[i, j]] =
+                v_numerator_terms[j] = tie_matrix[[i, j]] * sum_scores / common_denominator;
+                v_denominator_terms[j] =
                     win_matrix[[i, j]] * sqrt_scores_outer / common_denominator;
             }
 
-            scores_new[i] =
-                one_nan_to_num(numerator_terms.sum() / denominator_terms.sum(), tolerance);
+            v_numerator.extend(&v_numerator_terms);
+            v_denominator.extend(&v_denominator_terms);
+
+            scores_new[i] = one_nan_to_num(
+                ArrayView1::from(&numerator_terms).sum()
+                    / ArrayView1::from(&denominator_terms).sum(),
+                tolerance,
+            );
 
             let difference = scores_new[i] - score_i;
             squared_difference += difference * difference;
         }
 
-        let v_numerator = v_numerator_terms.sum();
-        let v_denominator = v_denominator_terms.sum();
-
-        v_new = (v_numerator / 2.0) / (v_denominator * 2.0);
+        v_new = (v_numerator.finish() / 2.0) / (v_denominator.finish() * 2.0);
         converged = squared_difference.sqrt() < tolerance;
 
         std::mem::swap(&mut scores, &mut scores_new);
@@ -198,6 +203,87 @@ pub fn newman(
     Ok((scores, v, iterations))
 }
 
+/// Streaming summation in exactly the order of ndarray's `sum()` on a contiguous slice
+/// of `len` elements: eight lanes over full chunks, combined pairwise, then the tail.
+struct UnrolledSum {
+    lanes: [f64; 8],
+    tail: f64,
+    full: usize,
+    count: usize,
+}
+
+impl UnrolledSum {
+    const fn new(len: usize) -> Self {
+        Self {
+            lanes: [0.0; 8],
+            tail: 0.0,
+            full: len - len % 8,
+            count: 0,
+        }
+    }
+
+    fn extend(&mut self, xs: &[f64]) {
+        let (head, rest) = xs.split_at(self.full.saturating_sub(self.count).min(xs.len()));
+
+        let mut lanes = self.lanes;
+        let mut lane = self.count % 8;
+        let mut aligned = head;
+
+        while lane != 0 && !aligned.is_empty() {
+            lanes[lane] += aligned[0];
+            aligned = &aligned[1..];
+            lane = (lane + 1) % 8;
+        }
+
+        let mut chunks = aligned.chunks_exact(8);
+
+        for chunk in &mut chunks {
+            for k in 0..8 {
+                lanes[k] += chunk[k];
+            }
+        }
+
+        for (k, &x) in chunks.remainder().iter().enumerate() {
+            lanes[k] += x;
+        }
+
+        self.lanes = lanes;
+        self.count += head.len();
+
+        for &x in rest {
+            self.push(x);
+        }
+    }
+
+    fn push(&mut self, x: f64) {
+        if self.count < self.full {
+            self.lanes[self.count % 8] += x;
+        } else {
+            if self.count == self.full {
+                self.tail = self.combined();
+            }
+            self.tail += x;
+        }
+        self.count += 1;
+    }
+
+    fn combined(&self) -> f64 {
+        let mut acc = 0.0;
+        for k in 0..4 {
+            acc += self.lanes[k] + self.lanes[k + 4];
+        }
+        acc
+    }
+
+    fn finish(&self) -> f64 {
+        if self.count > self.full {
+            self.tail
+        } else {
+            self.combined()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_abs_diff_eq;
@@ -206,7 +292,40 @@ mod tests {
     use crate::utils;
     use crate::utils::{matrices, win_plus_tie_matrix};
 
-    use super::{bradley_terry, newman};
+    use super::{UnrolledSum, bradley_terry, newman};
+
+    #[test]
+    fn test_unrolled_sum_matches_ndarray() {
+        let mut state: u64 = 0x9E37_79B9_7F4A_7C15;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+
+        for len in 0..100 {
+            let values: Vec<f64> = (0..len)
+                .map(|_| {
+                    let bits = next();
+                    let magnitude = [1e-300, 1.0, 1e16, 1e308][(bits % 4) as usize];
+                    let sign = if bits & 4 == 0 { 1.0 } else { -1.0 };
+                    sign * magnitude * ((bits >> 3) as f64 / u64::MAX as f64)
+                })
+                .collect();
+
+            let mut sum = UnrolledSum::new(len);
+            let mut rest = values.as_slice();
+            while !rest.is_empty() {
+                let (chunk, tail) = rest.split_at(1 + (next() % 13) as usize % rest.len());
+                sum.extend(chunk);
+                rest = tail;
+            }
+
+            let expected = ArrayView1::from(&values).sum();
+            assert_eq!(sum.finish().to_bits(), expected.to_bits(), "len = {len}");
+        }
+    }
 
     #[test]
     fn test_bradley_terry() {

@@ -30,6 +30,22 @@ fn indices<'py>(indices: &Bound<'py, PyAny>) -> PyResult<PyReadonlyArray1<'py, u
         .map_err(|_| PyIndexError::new_err("index out of range"))
 }
 
+#[pyfunction(name = "indices")]
+fn indices_pyo3<'py>(
+    indices: &Bound<'py, PyAny>,
+    total: usize,
+) -> PyResult<Bound<'py, PyArray1<usize>>> {
+    let vec: Vec<usize> = indices
+        .extract()
+        .map_err(|_| PyIndexError::new_err("index out of range"))?;
+
+    if vec.iter().any(|&index| index >= total) {
+        return Err(PyIndexError::new_err("index out of range"));
+    }
+
+    Ok(vec.into_pyarray(indices.py()))
+}
+
 fn shape_error(error: &ShapeError) -> PyErr {
     if error.kind() == ErrorKind::OutOfBounds {
         PyIndexError::new_err("index out of range")
@@ -507,6 +523,7 @@ fn alpha_bootstrap_pyo3<'py>(
 #[pyo3(name = "_brzo")]
 fn brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add_function(wrap_pyfunction!(indices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;
