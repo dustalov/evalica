@@ -12,6 +12,21 @@ fn winners_view(winners: &[u8]) -> Result<ArrayView1<'_, Winner>, String> {
     Winner::view_from(&ArrayView1::from(winners)).map_err(str::to_owned)
 }
 
+/// `ArrayView2::from_shape` accepts slices longer than the shape, so check the exact length.
+fn codes_view(
+    codes: &[i64],
+    n_units: usize,
+    n_raters: usize,
+) -> Result<ArrayView2<'_, i64>, String> {
+    if n_units.checked_mul(n_raters) != Some(codes.len()) {
+        return Err(
+            ndarray::ShapeError::from_kind(ndarray::ErrorKind::IncompatibleShape).to_string(),
+        );
+    }
+
+    ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())
+}
+
 #[wasm_bindgen(js_name = "counting")]
 /// Runs the counting method in WebAssembly.
 ///
@@ -246,8 +261,7 @@ pub fn alpha_wasm(
 ) -> Result<Vec<f64>, String> {
     let distance_enum = Distance::parse(distance)?;
 
-    let codes_array =
-        ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())?;
+    let codes_array = codes_view(codes, n_units, n_raters)?;
 
     let (alpha, observed, expected) =
         alpha::alpha_from_factorized(&codes_array, unique_values, distance_enum)?;
@@ -275,8 +289,7 @@ pub fn alpha_bootstrap_wasm(
     seed: u64,
 ) -> Result<Vec<f64>, String> {
     let distance_enum = Distance::parse(distance)?;
-    let codes_array =
-        ArrayView2::from_shape((n_units, n_raters), codes).map_err(|e| e.to_string())?;
+    let codes_array = codes_view(codes, n_units, n_raters)?;
     let result = alpha::alpha_bootstrap_from_factorized(
         &codes_array,
         unique_values,

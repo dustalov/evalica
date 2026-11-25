@@ -44,7 +44,7 @@ def read_csv(f: IO[str]) -> tuple[list[str], list[str], list[Winner]]:
 
     xs = df_input["left"].tolist()
     ys = df_input["right"].tolist()
-    ws = df_input["winner"].tolist()
+    ws = [Winner(w) for w in df_input["winner"].astype(int)]
 
     return xs, ys, ws
 

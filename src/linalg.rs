@@ -85,9 +85,11 @@ fn pagerank_matrix(matrix: &ArrayView2<f64>, damping: f64) -> Array2<f64> {
     let sums = matrix.sum_axis(Axis(0));
     let mut matrix = matrix.to_owned();
 
+    let uniform = p / Array1::from_elem(matrix.shape()[0], p).sum();
+
     Zip::from(&mut matrix)
         .and_broadcast(&sums)
-        .for_each(|x, &sum| *x = if sum == 0.0 { p } else { *x / sum });
+        .for_each(|x, &sum| *x = if sum == 0.0 { uniform } else { *x / sum });
 
     matrix *= damping;
     matrix += (1.0 - damping) * p;

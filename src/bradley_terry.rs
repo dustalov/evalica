@@ -144,19 +144,20 @@ pub fn newman(
     let mut scores_new = Array1::<f64>::zeros(n);
     let mut v_new = v;
 
+    let mut numerator_terms = Array1::<f64>::zeros(n);
+    let mut denominator_terms = Array1::<f64>::zeros(n);
+    let mut v_numerator_terms = ndarray::Array2::<f64>::zeros((n, n));
+    let mut v_denominator_terms = ndarray::Array2::<f64>::zeros((n, n));
+
     while !converged && iterations < limit {
         iterations += 1;
 
         v = one_nan_to_num(v_new, tolerance);
 
-        let mut v_numerator = 0.0;
-        let mut v_denominator = 0.0;
         let mut squared_difference = 0.0;
 
         for i in 0..n {
             let score_i = scores[i];
-            let mut scores_numerator = 0.0;
-            let mut scores_denominator = 0.0;
 
             for j in 0..n {
                 let score_j = scores[j];
@@ -164,20 +165,25 @@ pub fn newman(
                 let sum_scores = score_j + score_i;
                 let common_denominator = sum_scores + 2.0 * v * sqrt_scores_outer;
 
-                scores_numerator +=
+                numerator_terms[j] =
                     win_tie_half[[i, j]] * (score_j + v * sqrt_scores_outer) / common_denominator;
-                scores_denominator += win_tie_half_t[[i, j]]
+                denominator_terms[j] = win_tie_half_t[[i, j]]
                     * (1.0 + v * (score_j / score_i).sqrt())
                     / common_denominator;
-                v_numerator += tie_matrix[[i, j]] * sum_scores / common_denominator;
-                v_denominator += win_matrix[[i, j]] * sqrt_scores_outer / common_denominator;
+                v_numerator_terms[[i, j]] = tie_matrix[[i, j]] * sum_scores / common_denominator;
+                v_denominator_terms[[i, j]] =
+                    win_matrix[[i, j]] * sqrt_scores_outer / common_denominator;
             }
 
-            scores_new[i] = one_nan_to_num(scores_numerator / scores_denominator, tolerance);
+            scores_new[i] =
+                one_nan_to_num(numerator_terms.sum() / denominator_terms.sum(), tolerance);
 
             let difference = scores_new[i] - score_i;
-            squared_difference = difference.mul_add(difference, squared_difference);
+            squared_difference += difference * difference;
         }
+
+        let v_numerator = v_numerator_terms.sum();
+        let v_denominator = v_denominator_terms.sum();
 
         v_new = (v_numerator / 2.0) / (v_denominator * 2.0);
         converged = squared_difference.sqrt() < tolerance;

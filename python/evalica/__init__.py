@@ -191,6 +191,22 @@ class DistanceFunc(Protocol[T_distance_contra]):
 SOLVER: SolverName = "pyo3" if PYO3_AVAILABLE else "naive"
 """The default solver."""
 
+_HAS_BLAS: bool = False
+
+
+def __getattr__(name: str) -> Any:  # noqa: ANN401
+    if name == "HAS_BLAS":
+        warnings.warn(
+            "evalica.HAS_BLAS is deprecated and always False: the Rust extension no longer uses BLAS; "
+            "it will be removed in a future release",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _HAS_BLAS
+
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
 
 from ._alpha import (  # noqa: E402
     _alpha_bootstrap_naive,
@@ -380,11 +396,8 @@ def matrices(
         The win and tie matrices.
 
     """
-    if solver != "pyo3" or not isinstance(xs_indexed, list):
-        xs_indexed = _wrap_indices(xs_indexed, len(index))
-
-    if solver != "pyo3" or not isinstance(ys_indexed, list):
-        ys_indexed = _wrap_indices(ys_indexed, len(index))
+    xs_indexed = _wrap_indices(xs_indexed, len(index))
+    ys_indexed = _wrap_indices(ys_indexed, len(index))
 
     winners = _wrap_winners(winners)
     weights = _wrap_weights(weights, len(xs_indexed))
@@ -622,16 +635,15 @@ def average_win_rate(
         )
 
     else:
-        _matrices = matrices(
-            xs_indexed=xs_indexed,
-            ys_indexed=ys_indexed,
+        win_matrix_raw, tie_matrix_raw = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
             winners=winners,
-            index=index,
             weights=weights,
-            solver="naive",
+            total=len(index),
         )
 
-        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight)
+        matrix = _make_matrix(win_matrix_raw, tie_matrix_raw, win_weight, tie_weight)
 
         with np.errstate(all="ignore"):
             denominator = np.nan_to_num(matrix + matrix.T)
@@ -750,16 +762,15 @@ def bradley_terry(
             limit=limit,
         )
     else:
-        _matrices = matrices(
-            xs_indexed=xs_indexed,
-            ys_indexed=ys_indexed,
+        win_matrix_raw, tie_matrix_raw = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
             winners=winners,
-            index=index,
             weights=weights,
-            solver="naive",
+            total=len(index),
         )
 
-        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
+        matrix = _make_matrix(win_matrix_raw, tie_matrix_raw, win_weight, tie_weight, tolerance)
 
         scores, iterations = bradley_terry_naive(
             matrix=matrix,
@@ -876,18 +887,17 @@ def newman(
         )
 
     else:
-        _matrices = matrices(
-            xs_indexed=xs_indexed,
-            ys_indexed=ys_indexed,
+        win_matrix_raw, tie_matrix_raw = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
             winners=winners,
-            index=index,
             weights=weights,
-            solver="naive",
+            total=len(index),
         )
 
         with np.errstate(all="ignore"):
-            win_matrix = np.nan_to_num(win_weight * np.nan_to_num(_matrices.win_matrix, nan=tolerance), nan=tolerance)
-            tie_matrix = np.nan_to_num(tie_weight * np.nan_to_num(_matrices.tie_matrix, nan=tolerance), nan=tolerance)
+            win_matrix = np.nan_to_num(win_weight * np.nan_to_num(win_matrix_raw, nan=tolerance), nan=tolerance)
+            tie_matrix = np.nan_to_num(tie_weight * np.nan_to_num(tie_matrix_raw, nan=tolerance), nan=tolerance)
 
         scores, v, iterations = newman_naive(
             win_matrix=win_matrix,
@@ -1116,16 +1126,15 @@ def eigen(
             limit=limit,
         )
     else:
-        _matrices = matrices(
-            xs_indexed=xs_indexed,
-            ys_indexed=ys_indexed,
+        win_matrix_raw, tie_matrix_raw = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
             winners=winners,
-            index=index,
             weights=weights,
-            solver="naive",
+            total=len(index),
         )
 
-        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
+        matrix = _make_matrix(win_matrix_raw, tie_matrix_raw, win_weight, tie_weight, tolerance)
 
         scores, iterations = eigen_naive(
             matrix=matrix,
@@ -1248,16 +1257,15 @@ def pagerank(
             limit=limit,
         )
     else:
-        _matrices = matrices(
-            xs_indexed=xs_indexed,
-            ys_indexed=ys_indexed,
+        win_matrix_raw, tie_matrix_raw = matrices_naive(
+            xs=xs_indexed,
+            ys=ys_indexed,
             winners=winners,
-            index=index,
             weights=weights,
-            solver="naive",
+            total=len(index),
         )
 
-        matrix = _make_matrix(_matrices.win_matrix, _matrices.tie_matrix, win_weight, tie_weight, tolerance)
+        matrix = _make_matrix(win_matrix_raw, tie_matrix_raw, win_weight, tie_weight, tolerance)
 
         scores, iterations = pagerank_naive(
             matrix=matrix,

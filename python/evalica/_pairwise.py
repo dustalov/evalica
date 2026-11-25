@@ -44,8 +44,8 @@ def matrices(
     weights_array = np.asarray(weights, dtype=np.float64)
 
     x_wins = winners_array == Winner.X
-    wins = x_wins | (winners_array == Winner.Y)
     draws = winners_array == Winner.Draw
+    wins = ~draws
 
     win_matrix = np.zeros((total, total), dtype=np.float64)
     tie_matrix = np.zeros((total, total), dtype=np.float64)
@@ -83,13 +83,12 @@ def counting(
 
     y_wins = winners_array == Winner.Y
     draws = winners_array == Winner.Draw
-    valid = draws | y_wins | (winners_array == Winner.X)
 
     scores = np.zeros(total)
 
     with np.errstate(all="ignore"):
         points = weights_array * np.where(draws, tie_weight, win_weight)
-        mask = np.column_stack((valid, draws))
+        mask = np.column_stack((np.ones_like(draws), draws))
         indices = np.column_stack((np.where(y_wins, ys_array, xs_array), ys_array))[mask]
         np.add.at(scores, indices, np.column_stack((points, points))[mask])
 
