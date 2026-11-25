@@ -105,6 +105,16 @@ def test_envvar_disable_pyo3() -> None:
             sys.modules["evalica._brzo"] = original_brzo
 
 
+def test_has_blas_deprecated() -> None:
+    with pytest.warns(DeprecationWarning, match="HAS_BLAS"):
+        assert evalica.HAS_BLAS is False
+
+
+def test_missing_attribute() -> None:
+    with pytest.raises(AttributeError, match="no attribute 'nonexistent'"):
+        _ = evalica.nonexistent  # type: ignore[attr-defined]
+
+
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
 def test_matrices_solver_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(evalica, "PYO3_AVAILABLE", False)
