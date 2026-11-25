@@ -112,7 +112,7 @@ def test_has_blas_deprecated() -> None:
 
 def test_missing_attribute() -> None:
     with pytest.raises(AttributeError, match="no attribute 'nonexistent'"):
-        _ = evalica.nonexistent  # type: ignore[attr-defined]
+        _ = evalica.nonexistent
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
