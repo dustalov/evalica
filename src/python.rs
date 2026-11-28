@@ -1,7 +1,12 @@
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayLike1, PyArrayLike2};
+use ndarray::{ArrayView1, ErrorKind, ShapeError};
+use numpy::{
+    IntoPyArray, PyArray1, PyArray2, PyArrayLike1, PyArrayLike2, PyArrayMethods, PyReadonlyArray1,
+};
+use pyo3::exceptions::PyIndexError;
 use pyo3::import_exception;
 use pyo3::prelude::*;
 
+use crate::Winner;
 use crate::alpha;
 use crate::bradley_terry::{bradley_terry, newman};
 use crate::counting::{average_win_rate, counting};
@@ -12,6 +17,46 @@ use crate::utils::{matrices, nan_to_num, pairwise_scores, win_plus_tie_matrix};
 import_exception!(evalica, LengthMismatchError);
 import_exception!(evalica, InsufficientRatingsError);
 import_exception!(evalica, UnknownDistanceError);
+import_exception!(evalica, UnknownWinnerError);
+
+fn indices<'py>(indices: &Bound<'py, PyAny>) -> PyResult<PyReadonlyArray1<'py, usize>> {
+    if let Ok(array) = indices.cast::<PyArray1<usize>>() {
+        return Ok(array.readonly());
+    }
+
+    indices
+        .extract::<Vec<usize>>()
+        .map(|vec| vec.into_pyarray(indices.py()).readonly())
+        .map_err(|_| PyIndexError::new_err("index out of range"))
+}
+
+#[pyfunction(name = "indices")]
+fn indices_pyo3<'py>(
+    indices: &Bound<'py, PyAny>,
+    total: usize,
+) -> PyResult<Bound<'py, PyArray1<usize>>> {
+    let vec: Vec<usize> = indices
+        .extract()
+        .map_err(|_| PyIndexError::new_err("index out of range"))?;
+
+    if vec.iter().any(|&index| index >= total) {
+        return Err(PyIndexError::new_err("index out of range"));
+    }
+
+    Ok(vec.into_pyarray(indices.py()))
+}
+
+fn shape_error(error: &ShapeError) -> PyErr {
+    if error.kind() == ErrorKind::OutOfBounds {
+        PyIndexError::new_err("index out of range")
+    } else {
+        LengthMismatchError::new_err("mismatching input shapes")
+    }
+}
+
+fn winners_view<'a>(winners: &'a PyArrayLike1<'_, u8>) -> PyResult<ArrayView1<'a, Winner>> {
+    Winner::view_from(&winners.as_array()).map_err(UnknownWinnerError::new_err)
+}
 
 #[pyfunction(name = "matrices")]
 fn matrices_pyo3<'py>(
@@ -22,15 +67,16 @@ fn matrices_pyo3<'py>(
     weights: &Bound<'py, PyAny>,
     total: usize,
 ) -> PyResult<(Py<PyArray2<f64>>, Py<PyArray2<f64>>)> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -38,7 +84,7 @@ fn matrices_pyo3<'py>(
             wins.into_pyarray(py).unbind(),
             ties.into_pyarray(py).unbind(),
         )),
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+        Err(error) => Err(shape_error(&error)),
     }
 }
 
@@ -64,22 +110,23 @@ fn counting_pyo3<'py>(
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     counting(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
         win_weight,
         tie_weight,
     )
     .map_or_else(
-        |_| Err(LengthMismatchError::new_err("mismatching input shapes")),
+        |error| Err(shape_error(&error)),
         |scores| Ok(scores.into_pyarray(py).unbind()),
     )
 }
@@ -95,22 +142,23 @@ fn average_win_rate_pyo3<'py>(
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     average_win_rate(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
         win_weight,
         tie_weight,
     )
     .map_or_else(
-        |_| Err(LengthMismatchError::new_err("mismatching input shapes")),
+        |error| Err(shape_error(&error)),
         |scores| Ok(scores.into_pyarray(py).unbind()),
     )
 }
@@ -128,15 +176,16 @@ fn bradley_terry_pyo3<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -151,10 +200,10 @@ fn bradley_terry_pyo3<'py>(
 
             match bradley_terry(&matrix.view(), tolerance, limit) {
                 Ok((scores, iterations)) => Ok((scores.into_pyarray(py).unbind(), iterations)),
-                Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+                Err(error) => Err(shape_error(&error)),
             }
         }
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+        Err(error) => Err(shape_error(&error)),
     }
 }
 
@@ -172,24 +221,27 @@ fn newman_pyo3<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, f64, usize)> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
         Ok((mut win_matrix, mut tie_matrix)) => {
             nan_to_num(&mut win_matrix, tolerance);
             win_matrix *= win_weight;
+            nan_to_num(&mut win_matrix, tolerance);
 
             nan_to_num(&mut tie_matrix, tolerance);
             tie_matrix *= tie_weight;
+            nan_to_num(&mut tie_matrix, tolerance);
 
             match newman(
                 &win_matrix.view(),
@@ -201,10 +253,10 @@ fn newman_pyo3<'py>(
                 Ok((scores, v, iterations)) => {
                     Ok((scores.into_pyarray(py).unbind(), v, iterations))
                 }
-                Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+                Err(error) => Err(shape_error(&error)),
             }
         }
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+        Err(error) => Err(shape_error(&error)),
     }
 }
 
@@ -223,15 +275,16 @@ fn elo_pyo3<'py>(
     win_weight: f64,
     tie_weight: f64,
 ) -> PyResult<Py<PyArray1<f64>>> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     elo(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
         initial,
@@ -242,7 +295,7 @@ fn elo_pyo3<'py>(
         tie_weight,
     )
     .map_or_else(
-        |_| Err(LengthMismatchError::new_err("mismatching input shapes")),
+        |error| Err(shape_error(&error)),
         |scores| Ok(scores.into_pyarray(py).unbind()),
     )
 }
@@ -260,15 +313,16 @@ fn eigen_pyo3<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -283,10 +337,10 @@ fn eigen_pyo3<'py>(
 
             match eigen(&matrix.view(), tolerance, limit) {
                 Ok((scores, iterations)) => Ok((scores.into_pyarray(py).unbind(), iterations)),
-                Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+                Err(error) => Err(shape_error(&error)),
             }
         }
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+        Err(error) => Err(shape_error(&error)),
     }
 }
 
@@ -304,15 +358,16 @@ fn pagerank_pyo3<'py>(
     tolerance: f64,
     limit: usize,
 ) -> PyResult<(Py<PyArray1<f64>>, usize)> {
-    let xs: PyArrayLike1<'py, usize> = xs.extract()?;
-    let ys: PyArrayLike1<'py, usize> = ys.extract()?;
+    let xs = indices(xs)?;
+    let ys = indices(ys)?;
     let winners: PyArrayLike1<'py, u8> = winners.extract()?;
+    let winners = winners_view(&winners)?;
     let weights: PyArrayLike1<'py, f64> = weights.extract()?;
 
     match matrices(
         &xs.as_array(),
         &ys.as_array(),
-        &winners.as_array(),
+        &winners,
         &weights.as_array(),
         total,
     ) {
@@ -327,10 +382,10 @@ fn pagerank_pyo3<'py>(
 
             match pagerank(&matrix.view(), damping, tolerance, limit) {
                 Ok((scores, iterations)) => Ok((scores.into_pyarray(py).unbind(), iterations)),
-                Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+                Err(error) => Err(shape_error(&error)),
             }
         }
-        Err(_) => Err(LengthMismatchError::new_err("mismatching input shapes")),
+        Err(error) => Err(shape_error(&error)),
     }
 }
 
@@ -468,7 +523,7 @@ fn alpha_bootstrap_pyo3<'py>(
 #[pyo3(name = "_brzo")]
 fn brzo(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("HAS_BLAS", crate::has_blas())?;
+    m.add_function(wrap_pyfunction!(indices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(matrices_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(pairwise_scores_pyo3, m)?)?;
     m.add_function(wrap_pyfunction!(counting_pyo3, m)?)?;

@@ -12,4 +12,6 @@
 .. autoclass:: evalica.RustExtensionWarning
 
 .. autoclass:: evalica.UnknownDistanceError
+
+.. autoclass:: evalica.UnknownWinnerError
 ```

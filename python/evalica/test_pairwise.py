@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import sys
 import warnings
+from collections.abc import Collection
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -9,7 +11,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
-from hypothesis import assume, given
+from hypothesis import assume, example, given
 from hypothesis.extra._array_helpers import array_shapes
 from hypothesis.extra.numpy import arrays
 from hypothesis.extra.pandas import series
@@ -21,6 +23,8 @@ from conftest import Comparison, comparisons
 from evalica import SolverName
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pytest_codspeed import BenchmarkFixture
 
 
@@ -894,3 +898,399 @@ def test_weights_collections(wrap: type) -> None:
 def test_non_finite_weights(kwargs: dict[str, Any], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         evalica.counting(["a", "b"], ["b", "c"], [evalica.Winner.X] * 2, **kwargs)
+
+
+def _dict_values(winners: Collection[evalica.Winner]) -> Collection[evalica.Winner]:
+    return dict(enumerate(winners)).values()
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@pytest.mark.parametrize(
+    "wrap",
+    [tuple, np.array, partial(np.array, dtype=np.int64), pd.Series, _dict_values],
+)
+@given(comparison=comparisons())
+def test_winners_collections(
+    solver: SolverName,
+    wrap: Callable[[Collection[evalica.Winner]], Collection[evalica.Winner]],
+    comparison: Comparison,
+) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    xs, ys, winners, weights = comparison
+
+    expected = evalica.counting(xs, ys, winners, weights=weights, solver=solver)
+    actual = evalica.counting(xs, ys, wrap(winners), weights=weights, solver=solver)
+
+    assert_series_equal(actual.scores, expected.scores)
+
+
+VALID_WINNERS = tuple(evalica.Winner)
+
+invalid_winner = st.one_of(
+    st.integers().filter(lambda value: value not in VALID_WINNERS),
+    st.floats(),
+    st.text(),
+    st.none(),
+)
+
+
+@st.composite
+def invalid_winners(draw: st.DrawFn) -> tuple[list[str], list[str], Collection[object]]:
+    winners: Collection[object]
+
+    if draw(st.booleans()):
+        valid = draw(st.lists(st.sampled_from(VALID_WINNERS), max_size=5))
+        position = draw(st.integers(0, len(valid)))
+        winners = [*valid[:position], draw(invalid_winner), *valid[position:]]
+        length = len(winners)
+    elif draw(st.booleans()):
+        winners = draw(
+            arrays(st.sampled_from((np.int64, np.float64)), st.integers(1, 5)).filter(
+                lambda array: array.dtype.kind == "f" or not np.isin(array, VALID_WINNERS).all(),
+            ),
+        )
+        length = len(winners)
+    else:
+        array = draw(
+            arrays(
+                np.uint8,
+                array_shapes(min_dims=0, min_side=1, max_side=3).filter(lambda shape: len(shape) != 1),
+                elements=st.sampled_from(VALID_WINNERS),
+            ),
+        )
+        winners = array
+        length = array.shape[0] if array.ndim else 1
+
+    xs = draw(st.lists(st.text(), min_size=length, max_size=length))
+    ys = draw(st.lists(st.text(), min_size=length, max_size=length))
+
+    return xs, ys, winners
+
+
+def _matrices(
+    xs: Collection[str],
+    ys: Collection[str],
+    winners: Collection[evalica.Winner],
+    solver: SolverName,
+) -> evalica.MatricesResult:
+    xs_indexed, ys_indexed, index = evalica.indexing(xs, ys)
+    return evalica.matrices(xs_indexed, ys_indexed, winners, index=index, solver=solver)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@pytest.mark.parametrize(
+    "method",
+    [
+        _matrices,
+        evalica.counting,
+        evalica.average_win_rate,
+        evalica.bradley_terry,
+        evalica.newman,
+        evalica.elo,
+        evalica.eigen,
+        evalica.pagerank,
+    ],
+)
+@given(call=invalid_winners())
+def test_invalid_winners(
+    solver: SolverName,
+    method: Callable[..., object],
+    call: tuple[list[str], list[str], Collection[object]],
+) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    xs, ys, winners = call
+
+    with pytest.raises(evalica.UnknownWinnerError, match="invalid winner value"):
+        method(xs, ys, cast("Collection[evalica.Winner]", winners), solver=solver)
+
+
+EMPTY_EXPECTED: dict[str, tuple[Callable[..., evalica.Result], Callable[[int, dict[str, float]], float]]] = {
+    "counting": (evalica.counting, lambda _n, _kwargs: 0.0),
+    "average_win_rate": (evalica.average_win_rate, lambda _n, _kwargs: 0.0),
+    "bradley_terry": (evalica.bradley_terry, lambda _n, kwargs: kwargs["tolerance"]),
+    "newman": (evalica.newman, lambda _n, kwargs: kwargs["tolerance"]),
+    "elo": (evalica.elo, lambda _n, kwargs: kwargs["initial"]),
+    "eigen": (evalica.eigen, lambda _n, _kwargs: 0.0),
+    "pagerank": (evalica.pagerank, lambda n, _kwargs: 1 / n),
+}
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@pytest.mark.parametrize(("method", "expected"), EMPTY_EXPECTED.values(), ids=EMPTY_EXPECTED.keys())
+@given(
+    labels=st.lists(st.text(), min_size=1, max_size=10, unique=True),
+    tolerance=st.floats(1e-12, 1e-2),
+    initial=st.floats(allow_nan=False, allow_infinity=False),
+)
+def test_empty_comparisons_with_index(
+    solver: SolverName,
+    method: Callable[..., evalica.Result],
+    expected: Callable[[int, dict[str, float]], float],
+    labels: list[str],
+    tolerance: float,
+    initial: float,
+) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    kwargs = {"tolerance": tolerance, "initial": initial}
+    index = pd.Index(labels)
+
+    result = method([], [], [], index=index, solver=solver, **kwargs)
+
+    assert result.scores.index.sort_values().equals(index.sort_values())
+    assert result.scores.to_numpy() == pytest.approx([expected(len(labels), kwargs)] * len(labels))
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@given(labels=st.lists(st.text(), max_size=10, unique=True))
+def test_empty_matrices_with_index(solver: SolverName, labels: list[str]) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    result = evalica.matrices([], [], [], index=pd.Index(labels), solver=solver)
+
+    assert result.win_matrix.shape == result.tie_matrix.shape == (len(labels), len(labels))
+    assert (result.win_matrix == 0).all()
+    assert (result.tie_matrix == 0).all()
+
+
+PARITY_METHODS: dict[str, Callable[..., evalica.Result]] = {
+    "counting": evalica.counting,
+    "average_win_rate": evalica.average_win_rate,
+    "bradley_terry": evalica.bradley_terry,
+    "newman": evalica.newman,
+    "elo": evalica.elo,
+    "eigen": evalica.eigen,
+    "pagerank": evalica.pagerank,
+}
+
+
+def _run_solver(
+    method: Callable[..., evalica.Result],
+    solver: SolverName,
+    *args: object,
+    **kwargs: object,
+) -> evalica.Result | type[BaseException]:
+    try:
+        return method(*args, solver=solver, **kwargs)
+    except Exception as e:  # noqa: BLE001
+        return type(e)
+
+
+def _assert_solver_parity(method: Callable[..., evalica.Result], *args: object, **kwargs: object) -> None:
+    naive = _run_solver(method, "naive", *args, **kwargs)
+    pyo3 = _run_solver(method, "pyo3", *args, **kwargs)
+
+    if isinstance(naive, type) or isinstance(pyo3, type):
+        assert naive == pyo3
+        return
+
+    assert naive.index.equals(pyo3.index)
+
+    np.testing.assert_allclose(
+        naive.scores.reindex(naive.index).to_numpy(),
+        pyo3.scores.reindex(pyo3.index).to_numpy(),
+        rtol=1e-6,
+        atol=1e-9,
+        equal_nan=True,
+    )
+
+    for attr in ("iterations", "v"):
+        if hasattr(naive, attr):
+            np.testing.assert_allclose(getattr(naive, attr), getattr(pyo3, attr), rtol=1e-6, atol=1e-9, equal_nan=True)
+
+
+ParityCall = tuple[tuple[Collection[object], Collection[object], Collection[object]], dict[str, object]]
+
+
+PARITY_WRAPPERS: list[Callable[[Collection[object]], Collection[object]]] = [
+    list,
+    np.asarray,
+    cast("Callable[[Collection[object]], Collection[object]]", pd.Series),
+]
+
+
+@st.composite
+def parity_calls(draw: st.DrawFn) -> ParityCall:
+    xs, ys, winners, weights = draw(st.one_of(comparisons(), comparisons(shape="bad")))
+
+    labels = list(dict.fromkeys([*xs, *ys]))
+
+    kwargs: dict[str, object] = {
+        "weights": draw(
+            st.one_of(
+                st.just(weights),
+                st.lists(st.floats(), min_size=len(winners), max_size=len(winners)),
+                st.lists(st.floats(), max_size=6),
+            ),
+        ),
+        "win_weight": draw(st.floats()),
+        "tie_weight": draw(st.floats()),
+    }
+
+    if draw(st.booleans()):
+        known = draw(st.lists(st.sampled_from(labels), unique=True)) if labels else []
+        extra = draw(st.lists(st.text().filter(lambda label: label not in labels), max_size=3, unique=True))
+        kwargs["index"] = pd.Index([*known, *extra])
+
+    wrap = draw(st.sampled_from(PARITY_WRAPPERS))
+
+    return (wrap(xs), wrap(ys), wrap(winners)), kwargs
+
+
+parity_params = st.fixed_dictionaries(
+    {},
+    optional={
+        "tolerance": st.floats(),
+        "limit": st.one_of(st.integers(-5, 300), st.integers(min_value=sys.maxsize + 1), st.floats()),
+        "v_init": st.floats(),
+        "damping": st.floats(),
+        "initial": st.floats(),
+        "base": st.floats(),
+        "scale": st.floats(),
+        "k": st.floats(),
+    },
+)
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+@pytest.mark.parametrize("method", PARITY_METHODS.values(), ids=PARITY_METHODS.keys())
+@given(call=parity_calls(), params=parity_params)
+@example(
+    call=(
+        (["", "0", "1", "00", "000"], ["0", "1", "000", "", "00"], [evalica.Winner.Draw, *[evalica.Winner.Y] * 4]),
+        {"win_weight": 2.5},
+    ),
+    params={"limit": 1000},
+)
+@example(
+    call=(
+        (["", ""], ["", "0"], [evalica.Winner.Draw, evalica.Winner.X]),
+        {"weights": [5.525978176869229e298, 7.190772539449264e307], "win_weight": 2.5},
+    ),
+    params={},
+)
+def test_solver_parity(method: Callable[..., evalica.Result], call: ParityCall, params: dict[str, object]) -> None:
+    args, kwargs = call
+
+    _assert_solver_parity(method, *args, **kwargs, **params)
+
+
+@pytest.mark.parametrize("method", [evalica.bradley_terry, evalica.newman, evalica.eigen, evalica.pagerank])
+@given(
+    comparison=comparisons(),
+    limit=st.one_of(st.integers(max_value=-1), st.integers(min_value=sys.maxsize + 1), st.floats()),
+)
+def test_invalid_limit(method: Callable[..., evalica.Result], comparison: Comparison, limit: float) -> None:
+    xs, ys, winners, weights = comparison
+
+    with pytest.raises(ValueError, match="limit must be a non-negative integer"):
+        method(xs, ys, winners, weights=weights, limit=limit)
+
+
+@given(comparison=comparisons(), damping=st.floats().filter(lambda damping: not 0.0 <= damping <= 1.0))
+def test_invalid_damping(comparison: Comparison, damping: float) -> None:
+    xs, ys, winners, weights = comparison
+
+    with pytest.raises(ValueError, match="damping must be between 0 and 1"):
+        evalica.pagerank(xs, ys, winners, weights=weights, damping=damping)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@pytest.mark.parametrize("name", ["weights", "win_weight", "tie_weight"])
+@given(
+    comparison=comparisons().filter(lambda comparison: len(comparison.xs) > 0),
+    negative=st.floats(max_value=0.0, exclude_max=True, allow_infinity=False),
+    data=st.data(),
+)
+def test_pagerank_negative_weights(
+    solver: SolverName,
+    name: str,
+    comparison: Comparison,
+    negative: float,
+    data: st.DataObject,
+) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    xs, ys, winners, weights = comparison
+
+    kwargs: dict[str, Any] = {"weights": weights}
+
+    if name == "weights":
+        weights = list(weights) if weights is not None else [1.0] * len(xs)
+        weights[data.draw(st.integers(0, len(weights) - 1))] = negative
+        kwargs["weights"] = weights
+    else:
+        kwargs[name] = negative
+
+    with pytest.raises(ValueError, match=f"{name} must be non-negative"):
+        evalica.pagerank(xs, ys, winners, solver=solver, **kwargs)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@pytest.mark.parametrize("method", [evalica.eigen, evalica.pagerank])
+def test_empty_iterations(method: Callable[..., evalica.Result], solver: SolverName) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    result = method([], [], [], solver=solver)
+    assert result.iterations == 0  # type: ignore[attr-defined]
+
+
+def _matrices_outcome(
+    xs: Collection[object],
+    ys: Collection[object],
+    index: pd.Index,
+    solver: SolverName,
+) -> tuple[list[list[float]], list[list[float]]] | type[BaseException]:
+    try:
+        result = evalica.matrices(
+            cast("Collection[int]", xs),
+            cast("Collection[int]", ys),
+            [evalica.Winner.X] * len(xs),
+            index=index,
+            solver=solver,
+        )
+    except Exception as e:  # noqa: BLE001
+        return type(e)
+
+    return result.win_matrix.tolist(), result.tie_matrix.tolist()
+
+
+@pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")
+@pytest.mark.parametrize("wrap", [list, tuple, np.asarray])
+@given(
+    indices=st.lists(st.one_of(st.integers(), st.floats(), st.booleans(), st.text()), min_size=1, max_size=5),
+    data=st.data(),
+)
+def test_matrices_indices_parity(
+    wrap: Callable[[list[object]], Collection[object]],
+    indices: list[object],
+    data: st.DataObject,
+) -> None:
+    index = pd.Index(range(data.draw(st.integers(1, 5))))
+    ys = [0] * len(indices)
+
+    naive = _matrices_outcome(wrap(indices), ys, index, "naive")
+    pyo3 = _matrices_outcome(wrap(indices), ys, index, "pyo3")
+
+    assert naive == pyo3
+    assert naive is IndexError or not isinstance(naive, type)
+
+
+@pytest.mark.parametrize("solver", ["naive", "pyo3"])
+@given(weights=arrays(np.float64, array_shapes(min_dims=2, max_dims=3, min_side=1, max_side=3)))
+def test_weights_not_one_dimensional(solver: SolverName, weights: npt.NDArray[np.float64]) -> None:
+    if solver == "pyo3" and not evalica.PYO3_AVAILABLE:
+        pytest.skip("Rust extension is not available")
+
+    xs = [str(i) for i in range(len(weights))]
+
+    with pytest.raises(ValueError, match="weights must be one-dimensional"):
+        evalica.counting(xs, xs, [evalica.Winner.X] * len(xs), weights=weights, solver=solver)

@@ -38,18 +38,26 @@ def matrices(
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     _check_lengths(xs, ys, winners, weights)
 
+    xs_array = np.asarray(xs, dtype=np.intp)
+    ys_array = np.asarray(ys, dtype=np.intp)
+    winners_array = np.asarray(winners)
+    weights_array = np.asarray(weights, dtype=np.float64)
+
+    x_wins = winners_array == Winner.X
+    draws = winners_array == Winner.Draw
+    wins = ~draws
+
     win_matrix = np.zeros((total, total), dtype=np.float64)
     tie_matrix = np.zeros((total, total), dtype=np.float64)
 
     with np.errstate(all="ignore"):
-        for x, y, w, weight in zip(xs, ys, winners, weights, strict=True):
-            if w == Winner.X:
-                win_matrix[x, y] += weight
-            elif w == Winner.Y:
-                win_matrix[y, x] += weight
-            elif w == Winner.Draw:
-                tie_matrix[x, y] += weight
-                tie_matrix[y, x] += weight
+        winners_indices = np.where(x_wins, xs_array, ys_array)[wins]
+        losers_indices = np.where(x_wins, ys_array, xs_array)[wins]
+        np.add.at(win_matrix, (winners_indices, losers_indices), weights_array[wins])
+
+        left = np.column_stack((xs_array, ys_array))[draws].ravel()
+        right = np.column_stack((ys_array, xs_array))[draws].ravel()
+        np.add.at(tie_matrix, (left, right), np.repeat(weights_array[draws], 2))
 
     return win_matrix, tie_matrix
 
@@ -65,20 +73,24 @@ def counting(
 ) -> npt.NDArray[np.float64]:
     _check_lengths(xs, ys, winners, weights)
 
-    if not xs:
-        return np.zeros(0)
+    if len(xs) == 0:
+        return np.zeros(total)
+
+    xs_array = np.asarray(xs, dtype=np.intp)
+    ys_array = np.asarray(ys, dtype=np.intp)
+    winners_array = np.asarray(winners)
+    weights_array = np.asarray(weights, dtype=np.float64)
+
+    y_wins = winners_array == Winner.Y
+    draws = winners_array == Winner.Draw
 
     scores = np.zeros(total)
 
     with np.errstate(all="ignore"):
-        for x, y, w, weight in zip(xs, ys, winners, weights, strict=True):
-            if w == Winner.X:
-                scores[x] += weight * win_weight
-            elif w == Winner.Y:
-                scores[y] += weight * win_weight
-            elif w == Winner.Draw:
-                scores[x] += weight * tie_weight
-                scores[y] += weight * tie_weight
+        points = weights_array * np.where(draws, tie_weight, win_weight)
+        mask = np.column_stack((np.ones_like(draws), draws))
+        indices = np.column_stack((np.where(y_wins, ys_array, xs_array), ys_array))[mask]
+        np.add.at(scores, indices, np.column_stack((points, points))[mask])
 
     return np.nan_to_num(scores, copy=False)
 
@@ -197,8 +209,8 @@ def elo(
 ) -> npt.NDArray[np.float64]:
     _check_lengths(xs, ys, winners, weights)
 
-    if not xs:
-        return np.zeros(0)
+    if len(xs) == 0:
+        return np.ones(total) * initial
 
     scores = np.ones(total) * initial
 
@@ -288,5 +300,7 @@ def pagerank(
     _matrix = pagerank_matrix(matrix, damping)
 
     scores, iterations = eigen(_matrix, tolerance=tolerance, limit=limit)
-    scores /= np.linalg.norm(scores, ord=1)
+    with np.errstate(all="ignore"):
+        scores /= scores.sum()
+
     return scores, iterations

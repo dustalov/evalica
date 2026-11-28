@@ -35,10 +35,6 @@ def test_version() -> None:
     assert len(evalica.__version__) > 0
 
 
-def test_has_blas() -> None:
-    assert isinstance(evalica.HAS_BLAS, bool)
-
-
 @pytest.mark.parametrize(
     "algorithm",
     ["counting", "average_win_rate", "bradley_terry", "newman", "elo", "eigen", "pagerank"],
@@ -107,6 +103,16 @@ def test_envvar_disable_pyo3() -> None:
             sys.modules["evalica"] = original_evalica
         if original_brzo is not None:
             sys.modules["evalica._brzo"] = original_brzo
+
+
+def test_has_blas_deprecated() -> None:
+    with pytest.warns(DeprecationWarning, match="HAS_BLAS"):
+        assert evalica.HAS_BLAS is False
+
+
+def test_missing_attribute() -> None:
+    with pytest.raises(AttributeError, match="no attribute 'nonexistent'"):
+        _ = evalica.nonexistent
 
 
 @pytest.mark.skipif(not evalica.PYO3_AVAILABLE, reason="Rust extension is not available")

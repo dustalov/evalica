@@ -14,7 +14,7 @@
 //! [boot-algo]: https://www.asc.upenn.edu/sites/default/files/2021-03/Algorithm%20for%20Bootstrapping%20a%20Distribution%20of%20Alpha.pdf
 //! [hayes-macros]: https://afhayes.com/spss-sas-and-r-macros-and-code.html
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, Zip};
+use ndarray::{Array2, ArrayView1, ArrayView2, Axis, Zip};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 use std::collections::{HashMap, HashSet};
@@ -105,107 +105,118 @@ fn factorize_values(data: &ArrayView2<f64>) -> (Array2<i64>, Vec<f64>) {
 ///
 /// The coincidence matrix.
 fn coincidence_matrix(matrix_indices: &ArrayView2<i64>, n_unique: usize) -> Array2<f64> {
-    let n_units = matrix_indices.nrows();
-    let mut c = Array2::<f64>::zeros((n_units, n_unique));
+    let mut coincidence = Array2::<f64>::zeros((n_unique, n_unique));
+    let mut counts = vec![0.0; n_unique];
+    let mut present = Vec::with_capacity(n_unique);
 
-    for (i, unit_row) in matrix_indices.rows().into_iter().enumerate() {
+    for unit_row in matrix_indices.rows() {
         for &val in unit_row {
             if let Ok(val_idx) = usize::try_from(val) {
-                c[(i, val_idx)] += 1.0;
+                if counts[val_idx] == 0.0 {
+                    present.push(val_idx);
+                }
+                counts[val_idx] += 1.0;
             }
         }
-    }
 
-    let m_u = c.sum_axis(Axis(1));
-    let weights = m_u.mapv(|m| {
-        if m >= MIN_RATERS as f64 {
-            1.0 / (m - 1.0)
-        } else {
-            0.0
+        let m_u: f64 = present.iter().map(|&v| counts[v]).sum();
+
+        if m_u >= MIN_RATERS as f64 {
+            let weight = 1.0 / (m_u - 1.0);
+
+            for &a in &present {
+                let weighted = weight * counts[a];
+
+                for &b in &present {
+                    coincidence[[a, b]] = weighted.mul_add(counts[b], coincidence[[a, b]]);
+                }
+
+                coincidence[[a, a]] -= weighted;
+            }
         }
-    });
 
-    let weights_col = weights.insert_axis(Axis(1));
-    let cw = &c * &weights_col;
-    let mut coincidence = cw.t().dot(&c);
-
-    let diag_adj = cw.sum_axis(Axis(0));
-    Zip::from(coincidence.diag_mut())
-        .and(&diag_adj)
-        .for_each(|d, &a| *d -= a);
+        for &v in &present {
+            counts[v] = 0.0;
+        }
+        present.clear();
+    }
 
     coincidence
 }
 
 /// Compute nominal distance matrix.
 fn nominal_distance(n_unique: usize) -> Array2<f64> {
-    Array2::<f64>::ones((n_unique, n_unique)) - Array2::<f64>::eye(n_unique)
+    Array2::from_shape_fn(
+        (n_unique, n_unique),
+        |(i, j)| if i == j { 0.0 } else { 1.0 },
+    )
 }
 
 /// Compute ordinal distance matrix based on cumulative frequencies.
-fn ordinal_distance(coincidence: &ArrayView2<f64>) -> Array2<f64> {
-    let n_c = coincidence.sum_axis(Axis(1));
-    let mut cum_freqs = n_c.clone();
+fn ordinal_distance(marginals: &ArrayView1<f64>) -> Array2<f64> {
     let mut cumsum = 0.0;
-    for x in &mut cum_freqs {
-        cumsum += *x;
-        *x = cumsum;
-    }
+    let midpoints: Vec<f64> = marginals
+        .iter()
+        .map(|&n| {
+            cumsum += n;
+            cumsum - n / 2.0
+        })
+        .collect();
 
-    let midpoints = &cum_freqs - &(&n_c / 2.0);
-    let midpoints_col = midpoints.view().insert_axis(Axis(1));
-    let midpoints_row = midpoints.view().insert_axis(Axis(0));
-    (&midpoints_col - &midpoints_row).mapv(|x| x.powi(2))
+    let n_unique = midpoints.len();
+    Array2::from_shape_fn((n_unique, n_unique), |(i, j)| {
+        (midpoints[i] - midpoints[j]).powi(2)
+    })
 }
 
 /// Compute interval distance matrix.
 fn interval_distance(unique_values: &[f64]) -> Array2<f64> {
-    let values = ArrayView1::from(unique_values);
-    let v_col = values.insert_axis(Axis(1));
-    let v_row = values.insert_axis(Axis(0));
-    (&v_col - &v_row).mapv(|x| x.powi(2))
+    let n_unique = unique_values.len();
+    Array2::from_shape_fn((n_unique, n_unique), |(i, j)| {
+        (unique_values[i] - unique_values[j]).powi(2)
+    })
 }
 
 /// Compute ratio distance matrix.
 fn ratio_distance(unique_values: &[f64]) -> Array2<f64> {
-    let values = ArrayView1::from(unique_values);
-    let v_col = values.insert_axis(Axis(1));
-    let v_row = values.insert_axis(Axis(0));
-    let sum_matrix = &v_col + &v_row;
-    let diff_matrix = &v_col - &v_row;
-
-    Zip::from(&diff_matrix)
-        .and(&sum_matrix)
-        .map_collect(|&d, &s| if s == 0.0 { 0.0 } else { (d / s).powi(2) })
+    let n_unique = unique_values.len();
+    Array2::from_shape_fn((n_unique, n_unique), |(i, j)| {
+        let sum = unique_values[i] + unique_values[j];
+        if sum == 0.0 {
+            0.0
+        } else {
+            ((unique_values[i] - unique_values[j]) / sum).powi(2)
+        }
+    })
 }
 
-/// Compute the expected disagreement matrix.
-fn compute_expected_matrix(coincidence: &ArrayView2<f64>) -> Array2<f64> {
-    let n_c = coincidence.sum_axis(Axis(1));
-    let n_total = n_c.sum();
+/// Compute the expected disagreement from the coincidence marginals.
+fn compute_expected_disagreement(marginals: &ArrayView1<f64>, delta: &ArrayView2<f64>) -> f64 {
+    let n_total = marginals.sum();
 
-    if n_total > 1.0 {
-        let n_c_col = n_c.view().insert_axis(Axis(1));
-        let n_c_row = n_c.view().insert_axis(Axis(0));
-        let mut expected = &n_c_col * &n_c_row;
-        Zip::from(expected.diag_mut())
-            .and(&n_c)
-            .for_each(|d, &n| *d = n * (n - 1.0));
-        expected / (n_total - 1.0)
-    } else {
-        Array2::<f64>::zeros(coincidence.dim())
+    if n_total <= 1.0 {
+        return 0.0;
     }
+
+    Zip::indexed(delta).fold(0.0, |acc, (i, j), &d| {
+        let expected = if i == j {
+            marginals[i] * (marginals[i] - 1.0)
+        } else {
+            marginals[i] * marginals[j]
+        };
+        (expected / (n_total - 1.0)).mul_add(d, acc)
+    })
 }
 
 fn delta_matrix_from_distance(
     distance: Distance,
     n_unique: usize,
     unique_values: &[f64],
-    coincidence: &ArrayView2<f64>,
+    marginals: &ArrayView1<f64>,
 ) -> Array2<f64> {
     match distance {
         Distance::Nominal => nominal_distance(n_unique),
-        Distance::Ordinal => ordinal_distance(coincidence),
+        Distance::Ordinal => ordinal_distance(marginals),
         Distance::Interval => interval_distance(unique_values),
         Distance::Ratio => ratio_distance(unique_values),
         Distance::CustomFunc(func) => func(unique_values),
@@ -233,10 +244,12 @@ fn alpha_compute_from_factorized(
 ) -> AlphaComputed {
     let n_unique = unique_values.len();
     let coincidence = coincidence_matrix(matrix_indices, n_unique);
-    let expected = compute_expected_matrix(&coincidence.view());
-    let delta = delta_matrix_from_distance(distance, n_unique, unique_values, &coincidence.view());
-    let observed_disagreement: f64 = (&coincidence * &delta).sum();
-    let expected_disagreement: f64 = (&expected * &delta).sum();
+    let marginals = coincidence.sum_axis(Axis(1));
+    let delta = delta_matrix_from_distance(distance, n_unique, unique_values, &marginals.view());
+    let observed_disagreement = Zip::from(&coincidence)
+        .and(&delta)
+        .fold(0.0, |acc, &c, &d| c.mul_add(d, acc));
+    let expected_disagreement = compute_expected_disagreement(&marginals.view(), &delta.view());
 
     AlphaComputed {
         delta,
@@ -259,12 +272,11 @@ fn compute_pair_errors(
     expected_disagreement: f64,
 ) -> Vec<f64> {
     let mut errors = Vec::new();
+    let mut valid = Vec::with_capacity(matrix_indices.ncols());
 
     for row in matrix_indices.rows() {
-        let valid: Vec<usize> = row
-            .iter()
-            .filter_map(|&v| usize::try_from(v).ok())
-            .collect();
+        valid.clear();
+        valid.extend(row.iter().filter_map(|&v| usize::try_from(v).ok()));
 
         if valid.len() < 2 {
             continue;
@@ -352,21 +364,21 @@ pub fn alpha_bootstrap_from_factorized(
     }
 
     let unit_rater_counts = unit_counts(matrix_indices);
-    let pair_errors_vec = compute_pair_errors(
+    let pair_errors = compute_pair_errors(
         matrix_indices,
         &computed.delta.view(),
         computed.expected_disagreement,
     );
-    if pair_errors_vec.is_empty() {
+    if pair_errors.is_empty() {
         return Err("Bootstrapping cannot proceed without pairable units.".to_string());
     }
-    let pair_errors = Array1::from(pair_errors_vec);
 
-    let mut distribution = Array1::from_elem(n_resamples, 1.0);
+    let mut distribution = vec![1.0; n_resamples];
     let mut rng: StdRng =
         seed.map_or_else(|| StdRng::from_rng(&mut rand::rng()), StdRng::seed_from_u64);
 
-    let mut previous_draws = Array1::<usize>::zeros(n_resamples);
+    let mut previous_draws = vec![0; n_resamples];
+    let mut current_draws = vec![0; n_resamples];
 
     for &raters_per_unit in &unit_rater_counts {
         if raters_per_unit < MIN_RATERS {
@@ -377,28 +389,31 @@ pub fn alpha_bootstrap_from_factorized(
         let weight = 1.0 / (raters_per_unit - 1) as f64;
 
         for draw_index in 1..=n_draws {
-            let mut current_draws =
-                Array1::from_shape_fn(n_resamples, |_| rng.random_range(0..pair_errors.len()));
+            for draw in &mut current_draws {
+                *draw = rng.random_range(0..pair_errors.len());
+            }
 
             match draw_index {
-                1 => previous_draws.assign(&current_draws),
+                1 => previous_draws.copy_from_slice(&current_draws),
                 2 => {
-                    for r in 0..n_resamples {
-                        if current_draws[r] == previous_draws[r] {
-                            current_draws[r] = rng.random_range(0..pair_errors.len());
+                    for (current, &previous) in current_draws.iter_mut().zip(&previous_draws) {
+                        if *current == previous {
+                            *current = rng.random_range(0..pair_errors.len());
                         }
                     }
                 }
                 _ => {}
             }
 
-            for r in 0..n_resamples {
-                distribution[r] = pair_errors[current_draws[r]].mul_add(-weight, distribution[r]);
+            for (value, &draw) in distribution.iter_mut().zip(&current_draws) {
+                *value = pair_errors[draw].mul_add(-weight, *value);
             }
         }
     }
 
-    distribution.mapv_inplace(|a| a.max(-1.0));
+    for value in &mut distribution {
+        *value = value.max(-1.0);
+    }
 
     let alpha = if computed.expected_disagreement == 0.0 {
         0.0
@@ -410,7 +425,7 @@ pub fn alpha_bootstrap_from_factorized(
         alpha,
         observed: computed.observed_disagreement,
         expected: computed.expected_disagreement,
-        distribution: distribution.to_vec(),
+        distribution,
     })
 }
 
@@ -451,30 +466,18 @@ pub fn alpha(data: &ArrayView2<f64>, distance: Distance) -> Result<(f64, f64, f6
     alpha_from_factorized(&matrix_indices.view(), &unique_values, distance)
 }
 
-/// Example custom distance function: squared difference.
-/// This is equivalent to the interval distance metric.
-#[must_use]
-pub fn custom_squared_diff(unique_values: &[f64]) -> Array2<f64> {
-    let values = Array1::from_vec(unique_values.to_vec());
-    let v_col = values.view().insert_axis(Axis(1));
-    let v_row = values.view().insert_axis(Axis(0));
-    (&v_col - &v_row).mapv(|x| x.powi(2))
-}
-
-/// Example custom distance function: absolute difference.
-#[must_use]
-pub fn custom_abs_diff(unique_values: &[f64]) -> Array2<f64> {
-    let values = Array1::from_vec(unique_values.to_vec());
-    let v_col = values.view().insert_axis(Axis(1));
-    let v_row = values.view().insert_axis(Axis(0));
-    (&v_col - &v_row).mapv(f64::abs)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_abs_diff_eq as assert_approx_eq;
     use ndarray::array;
+
+    fn abs_diff(unique_values: &[f64]) -> Array2<f64> {
+        let n_unique = unique_values.len();
+        Array2::from_shape_fn((n_unique, n_unique), |(i, j)| {
+            (unique_values[i] - unique_values[j]).abs()
+        })
+    }
 
     #[test]
     fn test_factorize_values() {
@@ -503,7 +506,7 @@ mod tests {
         let data = array![[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]];
 
         let result_interval = alpha(&data.view(), Distance::Interval).unwrap();
-        let result_custom = alpha(&data.view(), Distance::CustomFunc(custom_squared_diff)).unwrap();
+        let result_custom = alpha(&data.view(), Distance::CustomFunc(interval_distance)).unwrap();
 
         assert_approx_eq!(result_interval.0, result_custom.0, epsilon = 1e-10);
         assert_approx_eq!(result_interval.1, result_custom.1, epsilon = 1e-10);
@@ -514,7 +517,7 @@ mod tests {
     fn test_custom_distance_abs_diff() {
         let data = array![[1.0, 2.0], [2.0, 3.0], [3.0, 4.0]];
 
-        let result = alpha(&data.view(), Distance::CustomFunc(custom_abs_diff)).unwrap();
+        let result = alpha(&data.view(), Distance::CustomFunc(abs_diff)).unwrap();
 
         assert!(result.0.is_finite());
         assert!(result.1 >= 0.0);
@@ -525,7 +528,7 @@ mod tests {
     fn test_custom_distance_with_missing_values() {
         let data = array![[1.0, f64::NAN], [2.0, 3.0], [3.0, 4.0]];
 
-        let result = alpha(&data.view(), Distance::CustomFunc(custom_squared_diff)).unwrap();
+        let result = alpha(&data.view(), Distance::CustomFunc(interval_distance)).unwrap();
 
         assert!(result.0.is_finite());
         assert!(result.1 >= 0.0);
